@@ -35,20 +35,43 @@ typedef struct player
 {
 	//
 	int x, y;
-
 } player_t;
 
 typedef struct team
 {
 	//
-
 } team_t;
+
+enum
+{
+	CELL_WALK = 0,
+	CELL_BLOCK,
+};
+
+typedef struct cell_file
+{
+	uint8_t ctyp;
+	uint8_t tset, tidx;
+	uint8_t p1;
+} cell_file_t;
 
 typedef struct cell
 {
-	//
-
+	cell_file_t f;
 } cell_t;
+
+typedef struct layer
+{
+	int w, h;
+	int x, y;
+	cell_t *data;
+} layer_t;
+
+typedef struct level
+{
+	int lcount;
+	layer_t *layers;
+} level_t;
 
 #define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
 

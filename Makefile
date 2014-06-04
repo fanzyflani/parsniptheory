@@ -4,6 +4,10 @@ OBJDIR = build
 SRCDIR = src
 BINNAME = parsniptheory
 
+IMAGES = \
+	tga/player.tga \
+	tga/tiles1.tga
+
 OBJS = \
 	$(OBJDIR)/cell.o \
 	$(OBJDIR)/clip.o \
@@ -23,10 +27,13 @@ LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) -lm
 LIBS_DIRS = -L/usr/local/lib
 LIBS_SDL = `sdl-config --libs`
 
-all: $(BINNAME)
+all: $(BINNAME) dat/pal1.pal
 
 clean:
 	rm -r $(OBJDIR)
+
+dat/pal1.pal: tools/buildpal.py $(IMAGES)
+	python2 tools/buildpal.py
 
 $(BINNAME): $(OBJDIR) $(OBJS)
 	$(CC) -o $(BINNAME) $(LDFLAGS) $(OBJS)
