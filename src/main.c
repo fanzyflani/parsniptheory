@@ -30,6 +30,12 @@ img_t *i_tiles1 = NULL;
 uint8_t *cm_player = NULL;
 uint8_t *cm_tiles1 = NULL;
 
+int sdiv(int n, int d)
+{
+	if(n >= 0) return n / d;
+	else return (n / d) - 1;
+}
+
 int smod(int n, int d)
 {
 	if(n >= 0) return n % d;

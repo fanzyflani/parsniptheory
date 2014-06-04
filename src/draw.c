@@ -60,20 +60,18 @@ void draw_img_trans_cmap_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, in
 void draw_hline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
 	if(y < 0 || y >= dst->h) return;
-	if(x >= dst->w) return;
 	if(x < 0) { len += x; x = 0; }
 	if(x + len > dst->w) { len = dst->w - x; }
 
 	uint8_t *dp = dst->data + x + y*dst->w;
 
-	for(; len > 0; len--)
-		*(dp++) = c;
+	for(; len > 0; len--, dp++)
+		*dp = c;
 }
 
 void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
 	if(x < 0 || x >= dst->w) return;
-	if(y >= dst->h) return;
 	if(y < 0) { len += y; y = 0; }
 	if(y + len > dst->h) { len = dst->h - y; }
 
@@ -86,7 +84,6 @@ void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c)
 void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
 	if(y < 0 || y >= dst->h) return;
-	if(x >= dst->w) return;
 	if(x < 0) { len += x; x = 0; }
 	if(x + len > dst->w) { len = dst->w - x; }
 	if(((x^y)&1) != 0) { x++; len--; }
@@ -101,7 +98,6 @@ void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c)
 void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
 	if(x < 0 || x >= dst->w) return;
-	if(y >= dst->h) return;
 	if(y < 0) { len += y; y = 0; }
 	if(y + len > dst->h) { len = dst->h - y; }
 	if(((x^y)&1) != 0) { y++; len--; }
@@ -121,7 +117,7 @@ void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c)
 	draw_vline_d(dst, x+w, y+1, y+h-2, c);
 }
 
-void draw_layer(img_t *dst, layer_t *ay, int dx, int dy)
+void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 {
 	int cx1, cy1, cx2, cy2;
 	int x, y;
@@ -135,10 +131,10 @@ void draw_layer(img_t *dst, layer_t *ay, int dx, int dy)
 	cy2 = (dy + 200 -1) / 24;
 
 	// Clamp to layer boundary
-	if(cx1 < ay->x) cx1 = ay->x;
-	if(cy1 < ay->y) cy1 = ay->y;
-	if(cx2 >= ay->x + ay->w) cx2 = ay->x + ay->w - 1;
-	if(cy2 >= ay->y + ay->h) cy2 = ay->y + ay->h - 1;
+	if(cx1 < ar->x) cx1 = ar->x;
+	if(cy1 < ar->y) cy1 = ar->y;
+	if(cx2 >= ar->x + ar->w) cx2 = ar->x + ar->w - 1;
+	if(cy2 >= ar->y + ar->h) cy2 = ar->y + ar->h - 1;
 
 	// Bail out if collapsed
 	if(cx1 > cx2) return;
@@ -146,8 +142,9 @@ void draw_layer(img_t *dst, layer_t *ay, int dx, int dy)
 
 	// Draw cells
 	// TODO: support tilesets other than 0 (tiles1.tga)
-	cestep = ay->w - (cx2-cx1+1);
-	for(y = cy1, ce = ay->data; y <= cy2; y++, ce += cestep)
+	cestep = ar->w - (cx2-cx1+1);
+	ce = ar->data + cx1 + cy1*ar->w;
+	for(y = cy1; y <= cy2; y++, ce += cestep)
 	for(x = cx1; x <= cx2; x++, ce++)
 		draw_img_trans_cmap_d_sd(dst, i_tiles1,
 			x*32-dx, y*24-dy,

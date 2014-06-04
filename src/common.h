@@ -132,6 +132,10 @@ struct level
 extern cell_file_t *ce_defaults[];
 
 // cell.c
+void cell_reprep(cell_t *ce, int tset, int tidx);
+cell_t *layer_cell_ptr(layer_t *ar, int x, int y);
+void layer_free(layer_t *ar);
+layer_t *layer_new(int x, int y, int w, int h);
 level_t *level_new(int w, int h);
 
 // clip.c
@@ -141,7 +145,7 @@ int clip_d_sd(img_t *dst, img_t *src, int *dx, int *dy, int *sx, int *sy, int *s
 // draw.c
 void draw_img_trans_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, int sy, int sw, int sh, uint8_t tcol);
 void draw_img_trans_cmap_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, int sy, int sw, int sh, uint8_t tcol, uint8_t *cmap);
-void draw_layer(img_t *dst, layer_t *ay, int dx, int dy);
+void draw_layer(img_t *dst, layer_t *ar, int dx, int dy);
 void draw_level(img_t *dst, level_t *lv, int dx, int dy, int ayidx);
 void draw_hline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
@@ -159,6 +163,9 @@ img_t *img_load_tga(const char *fname);
 void load_palette(const char *fname);
 
 // input.c
+extern int mouse_x, mouse_y, mouse_b;
+extern int mouse_ox, mouse_oy, mouse_ob;
+
 void input_key_queue_flush(void);
 int input_poll(void);
 
@@ -167,6 +174,7 @@ void screen_clear(uint8_t col);
 void screen_flip(void);
 
 // main.c
+int sdiv(int n, int d);
 int smod(int n, int d);
 
 extern SDL_Surface *screen_surface;
