@@ -19,6 +19,51 @@ uint16_t pal_dither[256][2][2]; // For 16bpp modes
 
 // Images
 img_t *i_player = NULL;
+img_t *i_tiles1 = NULL;
+
+void mainloop_draw(void)
+{
+	// Clear the screen
+	screen_clear(0);
+
+	// Draw an image
+	int i;
+	for(i = 0; i <  4; i++)
+	{
+		draw_img_trans_d_sd(screen, i_player, 32*i, 0, 32*i, 48*6, 32, 48, 0);
+		draw_img_trans_d_sd(screen, i_player, 32*i, 0, 32*i, 48*5, 32, 48, 0);
+		draw_img_trans_d_sd(screen, i_player, 32*i, 0, 32*i, 48*4, 32, 48, 0);
+		draw_img_trans_d_sd(screen, i_player, 32*i, 0, 32*i, 48*3, 32, 48, 0);
+		draw_img_trans_d_sd(screen, i_player, 32*i, 0, 32*i, 48*2, 32, 48, 0);
+		draw_img_trans_d_sd(screen, i_player, 32*i, 0, 32*i, 48*1, 32, 48, 0);
+		draw_img_trans_d_sd(screen, i_player, 32*i, 0, 32*i, 48*0, 32, 48, 0);
+	}
+
+	// Flip
+	screen_flip();
+	SDL_Delay(10);
+
+}
+
+void mainloop(void)
+{
+	SDL_Event ev;
+
+	for(;;)
+	{
+		// Draw
+		mainloop_draw();
+
+		// Process events
+		while(SDL_PollEvent(&ev))
+		switch(ev.type)
+		{
+			case SDL_QUIT:
+				return;
+
+		}
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -36,20 +81,13 @@ int main(int argc, char *argv[])
 	screen = img_new(320, 200);
 
 	// Load images
-	i_player = img_load_tga("tga/player.tga"); // TODO: png support (and hence the dat/ directory)
-	memcpy(pal_main, i_player->pal, 256*4);
+	// TODO: png support (and hence the dat/ directory)
+	i_player = img_load_tga("tga/player.tga"); 
+	i_tiles1 = img_load_tga("tga/tiles1.tga"); 
+	memcpy(pal_main, i_tiles1->pal, 256*4);
 
-	// Draw an image.
-	int i;
-	screen_clear(0);
-	for(i = 0; i < screen->w * screen->h; i++)
-		screen->data[i] = (uint8_t)i;
-
-	// "Flip" the screen.
-	screen_flip();
-
-	// TODO!
-	SDL_Delay(1000);
+	// Enter main loop
+	mainloop();
 
 	// Clean up
 	

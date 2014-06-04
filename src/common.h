@@ -31,7 +31,34 @@ struct img
 	uint8_t *data;
 };
 
+typedef struct player
+{
+	//
+	int x, y;
+
+} player_t;
+
+typedef struct team
+{
+	//
+
+} team_t;
+
+typedef struct cell
+{
+	//
+
+} cell_t;
+
 #define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
+
+// clip.c
+int clip_d_scox(img_t *dst, img_t *src, int *dx, int *dy, int *sx1, int *sy1, int *sx2, int *sy2);
+int clip_d_sd(img_t *dst, img_t *src, int *dx, int *dy, int *sx, int *sy, int *sw, int *sh);
+
+// draw.c
+void draw_img_trans_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, int sy, int sw, int sh, uint8_t tcol);
+void draw_img_trans_cmap_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, int sy, int sw, int sh, uint8_t tcol, uint8_t *cmap);
 
 // img.c
 void img_free(img_t *img);

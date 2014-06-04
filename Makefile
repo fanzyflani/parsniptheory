@@ -5,8 +5,13 @@ SRCDIR = src
 BINNAME = parsniptheory
 
 OBJS = \
+	$(OBJDIR)/cell.o \
+	$(OBJDIR)/clip.o \
+	$(OBJDIR)/draw.o \
 	$(OBJDIR)/img.o \
+	$(OBJDIR)/player.o \
 	$(OBJDIR)/screen.o \
+	$(OBJDIR)/team.o \
 	\
 	$(OBJDIR)/main.o
 	#
