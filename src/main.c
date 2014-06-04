@@ -19,6 +19,9 @@ cmap_t *cmaps = NULL;
 uint8_t pal_main[256][4];
 uint16_t pal_dither[256][2][2]; // For 16bpp modes
 
+// Level
+level_t *rootlv = NULL;
+
 // Images
 img_t *i_player = NULL;
 img_t *i_tiles1 = NULL;
@@ -26,6 +29,12 @@ img_t *i_tiles1 = NULL;
 // Colourmaps
 uint8_t *cm_player = NULL;
 uint8_t *cm_tiles1 = NULL;
+
+int smod(int n, int d)
+{
+	if(n >= 0) return n % d;
+	else return d - ((-n) % d);
+}
 
 void mainloop_draw(void)
 {
@@ -113,7 +122,7 @@ int main(int argc, char *argv[])
 
 	// Load palette and colourmaps
 	load_palette("dat/pal1.pal");
-	pal_main[0][0] = 170;
+	pal_main[0][0] = 255/5;
 
 	// Load images
 	// TODO: png support (and hence the dat/ directory)
@@ -132,8 +141,14 @@ int main(int argc, char *argv[])
 		cm_player[40+i] = 64+i + 8*6;
 	}
 
-	// Enter main loop
-	mainloop();
+	// Create level
+	rootlv = level_new(40, 40);
+
+	// Enter menu loop
+	// TODO: Actually have a menu loop.
+	// We'll just use one of these two loops.
+	editloop();
+	//mainloop();
 
 	// Clean up
 	

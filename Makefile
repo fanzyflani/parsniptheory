@@ -9,9 +9,11 @@ IMAGES = \
 	tga/tiles1.tga
 
 OBJS = \
+	$(OBJDIR)/cdefs.o \
 	$(OBJDIR)/cell.o \
 	$(OBJDIR)/clip.o \
 	$(OBJDIR)/draw.o \
+	$(OBJDIR)/edit.o \
 	$(OBJDIR)/img.o \
 	$(OBJDIR)/player.o \
 	$(OBJDIR)/screen.o \
