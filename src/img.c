@@ -28,6 +28,7 @@ img_t *img_new(int w, int h)
 	img->data = malloc(w*h*1);
 	img->w = w;
 	img->h = h;
+	img->cmidx = -1;
 
 	// We really don't care about the palette.
 
@@ -121,8 +122,84 @@ img_t *img_load_tga(const char *fname)
 		}
 	}
 
-	// Close + return
+	// Close
 	fclose(fp);
+	
+	// Find colourmap
+	for(i = 0; cmaps[i].fname != NULL; i++)
+	{
+		if(!strcasecmp(cmaps[i].fname, fname))
+		{
+			img->cmidx = i;
+			break;
+		}
+	}
+
+	assert(cmaps[i].fname != NULL);
+
+	// Return
 	return img;
+}
+
+void load_palette(const char *fname)
+{
+	int i, j;
+	cmap_t *cm;
+	char *fndata;
+	int fnsize;
+	int cmcount;
+
+	// FIXME: This isn't very error-safe.
+	// Then again, we should only have to do this once.
+	// So, assertiontime!
+
+	// Clear all the colourmap info
+	if(cmaps != NULL)
+	{
+		for(cm = cmaps; cm->fname != NULL; cm++)
+			free(cm->fname);
+
+		free(cmaps);
+
+		cmaps = NULL;
+	}
+
+	// Load our file
+	FILE *fp = fopen("dat/pal1.pal", "rb");
+	if(fp == NULL) perror("load_palette");
+	assert(fp != NULL);
+
+	// Load the palette data
+	for(i = 0; i < 256; i++)
+	for(j = 2; j >= 0; j--)
+		pal_src[i][j] = pal_main[i][j] = fgetc(fp);
+	
+	// Get the colourmap count
+	cmcount = fgetc(fp);
+	assert(cmcount >= 0);
+	
+	// Create colourmaps
+	cmaps = malloc((cmcount+1)*sizeof(cmap_t));
+
+	// Load filenames
+	fnsize = io_get2le(fp);
+	fndata = malloc(fnsize);
+	fread(fndata, fnsize, 1, fp);
+	assert(fndata[fnsize-1] == '\x00');
+
+	// Copy filenames to colourmaps
+	cmaps[cmcount].fname = NULL;
+	for(i = 0; i < cmcount; i++)
+		cmaps[i].fname = strdup(fndata + (int)io_get2le(fp));
+
+	// Free filename data
+	free(fndata);
+
+	// Load colourmaps
+	for(i = 0; i < cmcount; i++)
+		fread(cmaps[i].data, 256, 1, fp);
+
+	// Close and return
+	fclose(fp);
 }
 

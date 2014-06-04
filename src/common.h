@@ -29,6 +29,7 @@ struct img
 	int w, h;
 	uint8_t pal[256][4];
 	uint8_t *data;
+	int cmidx;
 };
 
 typedef struct player
@@ -73,6 +74,12 @@ typedef struct level
 	layer_t *layers;
 } level_t;
 
+typedef struct cmap
+{
+	char *fname;
+	uint8_t data[256];
+} cmap_t;
+
 #define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
 
 // clip.c
@@ -87,6 +94,7 @@ void draw_img_trans_cmap_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, in
 void img_free(img_t *img);
 img_t *img_new(int w, int h);
 img_t *img_load_tga(const char *fname);
+void load_palette(const char *fname);
 
 // screen.c
 void screen_clear(uint8_t col);
@@ -100,6 +108,8 @@ extern int screen_scale;
 extern int screen_ofx;
 extern int screen_ofy;
 
+extern uint8_t pal_src[256][4];
+extern cmap_t *cmaps;
 extern uint8_t pal_main[256][4];
 extern uint16_t pal_dither[256][2][2]; // For 16bpp modes
 

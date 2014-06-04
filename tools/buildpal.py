@@ -35,9 +35,9 @@ pranges["player"] = [
 	("exact", 1, 255, 255, 255),
 	("exact", 2, 0, 0, 0),
 	("map", "pskin", 16, 8),
-	("map", "pteam", 24, 8),
-	("map", "pteam", 32, 8),
-	("map", "pteam", 40, 8),
+	("map", "pteam", 24, 8), # Body
+	("map", "pteam", 32, 8), # Hair
+	("map", "pteam", 40, 8), # Feet
 ]
 
 pranges["tiles"] = [
@@ -53,8 +53,8 @@ base_prange = [
 	("exact", 2, 0, 0, 0),
 	("any", 3, 32-3),
 	("map", "pskin", 32, 32),
-	("map", "pteam", 64, 32),
-	("any", 96, 256-96),
+	("map", "pteam", 64, 64),
+	("any", 128, 256-64),
 ]
 
 
@@ -149,7 +149,7 @@ for cat in files:
 
 			elif tup[0] == "exact":
 				# TODO: Actually map these out properly
-				cmap[tup[1]] = outpal.index((tup[2], tup[3], tup[4]))
+				cmap[tup[1]] = outpal.index((tup[2], tup[3], tup[4]), 1)
 
 			elif tup[0] == "map":
 				for i in xrange(tup[3]):
