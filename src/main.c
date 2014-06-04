@@ -25,23 +25,49 @@ img_t *i_tiles1 = NULL;
 
 // Colourmaps
 uint8_t *cm_player = NULL;
+uint8_t *cm_tiles1 = NULL;
 
 void mainloop_draw(void)
 {
+	int x, y, i;
+
 	// Clear the screen
 	screen_clear(0);
 
-	// Draw an image
-	int i;
+	// TEST: Draw some tiles
+	for(y = 0; y < 200; y += 24)
+	for(x = 0; x < 320; x += 32)
+		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, y, 32*1, 24*0, 32, 24, 0, cm_tiles1);
+	
+	// Oh, and a back wall might be nice
+	for(x = 0; x < 320; x += 32)
+		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, 24*0, 32*15, 24*0, 32, 24, 0, cm_tiles1);
+	for(x = 0; x < 320; x += 32)
+		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, 24*1, 32*4, 24*0, 32, 24, 0, cm_tiles1);
+	for(x = 0; x < 320; x += 32)
+		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, 24*2, 32*3, 24*0, 32, 24, 0, cm_tiles1);
+	for(x = 0; x < 320; x += 32)
+		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, 24*3, 32*2, 24*0, 32, 24, 0, cm_tiles1);
+
+	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*0, 32*13, 24*1, 32, 24, 0, cm_tiles1);
+	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*1, 32*12, 24*3, 32, 24, 0, cm_tiles1);
+	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*2, 32*12, 24*3, 32, 24, 0, cm_tiles1);
+	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*3, 32*12, 24*3, 32, 24, 0, cm_tiles1);
+	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*4, 32*12, 24*2, 32, 24, 0, cm_tiles1);
+	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*5, 32*4, 24*0, 32, 24, 0, cm_tiles1);
+	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*6, 32*3, 24*0, 32, 24, 0, cm_tiles1);
+	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*7, 32*2, 24*0, 32, 24, 0, cm_tiles1);
+	
+	// TEST: Draw player sprites
 	for(i = 0; i <  4; i++)
 	{
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i, 0, 32*i, 48*6, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i, 0, 32*i, 48*5, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i, 0, 32*i, 48*4, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i, 0, 32*i, 48*3, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i, 0, 32*i, 48*2, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i, 0, 32*i, 48*1, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i, 0, 32*i, 48*0, 32, 48, 0, cm_player);
+		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*6, 32, 48, 0, cm_player);
+		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*5, 32, 48, 0, cm_player);
+		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*4, 32, 48, 0, cm_player);
+		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*3, 32, 48, 0, cm_player);
+		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*2, 32, 48, 0, cm_player);
+		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*1, 32, 48, 0, cm_player);
+		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*0, 32, 48, 0, cm_player);
 	}
 
 	// Flip
@@ -94,6 +120,7 @@ int main(int argc, char *argv[])
 	i_player = img_load_tga("tga/player.tga"); 
 	i_tiles1 = img_load_tga("tga/tiles1.tga"); 
 	cm_player = cmaps[i_player->cmidx].data;
+	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
 
 	// TEST: Modify the colourmap
 	int i;
