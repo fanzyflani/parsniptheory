@@ -11,7 +11,7 @@ int edit_layer = 0;
 
 void editloop_draw(void)
 {
-	int x, y, i;
+	int x, y;
 
 	// Clear the screen
 	screen_clear(0);
@@ -33,21 +33,13 @@ void editloop_draw(void)
 
 void editloop(void)
 {
-	SDL_Event ev;
-
 	for(;;)
 	{
 		// Draw
 		editloop_draw();
 
 		// Process events
-		while(SDL_PollEvent(&ev))
-		switch(ev.type)
-		{
-			case SDL_QUIT:
-				return;
-
-		}
+		if(input_poll()) break;
 	}
 }
 

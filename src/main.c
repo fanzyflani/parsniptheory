@@ -87,21 +87,13 @@ void mainloop_draw(void)
 
 void mainloop(void)
 {
-	SDL_Event ev;
-
 	for(;;)
 	{
 		// Draw
 		mainloop_draw();
 
 		// Process events
-		while(SDL_PollEvent(&ev))
-		switch(ev.type)
-		{
-			case SDL_QUIT:
-				return;
-
-		}
+		if(input_poll()) break;
 	}
 }
 
@@ -113,6 +105,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT,  SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 #endif
+	SDL_EnableUNICODE(1);
 
 	// Set up basic video mode
 	// TODO: Video mode selector

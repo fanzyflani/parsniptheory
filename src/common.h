@@ -147,6 +147,7 @@ void draw_hline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
+void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
 
 // edit.c
 void editloop(void);
@@ -156,6 +157,10 @@ void img_free(img_t *img);
 img_t *img_new(int w, int h);
 img_t *img_load_tga(const char *fname);
 void load_palette(const char *fname);
+
+// input.c
+void input_key_queue_flush(void);
+int input_poll(void);
 
 // screen.c
 void screen_clear(uint8_t col);

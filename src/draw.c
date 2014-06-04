@@ -59,12 +59,12 @@ void draw_img_trans_cmap_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, in
 
 void draw_hline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
-	uint8_t *dp = dst->data + x + y*dst->w;
-
 	if(y < 0 || y >= dst->h) return;
 	if(x >= dst->w) return;
 	if(x < 0) { len += x; x = 0; }
 	if(x + len > dst->w) { len = dst->w - x; }
+
+	uint8_t *dp = dst->data + x + y*dst->w;
 
 	for(; len > 0; len--)
 		*(dp++) = c;
@@ -72,12 +72,12 @@ void draw_hline_d(img_t *dst, int x, int y, int len, uint8_t c)
 
 void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
-	uint8_t *dp = dst->data + x + y*dst->w;
-
 	if(x < 0 || x >= dst->w) return;
 	if(y >= dst->h) return;
 	if(y < 0) { len += y; y = 0; }
 	if(y + len > dst->h) { len = dst->h - y; }
+
+	uint8_t *dp = dst->data + x + y*dst->w;
 
 	for(; len > 0; len--, dp += dst->w)
 		*dp = c;
@@ -85,8 +85,6 @@ void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c)
 
 void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
-	uint8_t *dp = dst->data + x + y*dst->w;
-
 	if(y < 0 || y >= dst->h) return;
 	if(x >= dst->w) return;
 	if(x < 0) { len += x; x = 0; }
@@ -94,14 +92,14 @@ void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c)
 	if(((x^y)&1) != 0) { x++; len--; }
 	len >>= 1;
 
+	uint8_t *dp = dst->data + x + y*dst->w;
+
 	for(; len > 0; len--, dp += 2)
 		*dp = c;
 }
 
 void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
-	uint8_t *dp = dst->data + x + y*dst->w;
-
 	if(x < 0 || x >= dst->w) return;
 	if(y >= dst->h) return;
 	if(y < 0) { len += y; y = 0; }
@@ -109,8 +107,18 @@ void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c)
 	if(((x^y)&1) != 0) { y++; len--; }
 	len >>= 1;
 
+	uint8_t *dp = dst->data + x + y*dst->w;
+
 	for(; len > 0; len--, dp += dst->w << 1)
 		*dp = c;
+}
+
+void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c)
+{
+	draw_hline_d(dst, x,   y,   x+w,   c);
+	draw_hline_d(dst, x,   y+h, x+w,   c);
+	draw_vline_d(dst, x,   y+1, y+h-2, c);
+	draw_vline_d(dst, x+w, y+1, y+h-2, c);
 }
 
 void draw_layer(img_t *dst, layer_t *ay, int dx, int dy)

@@ -15,6 +15,7 @@ OBJS = \
 	$(OBJDIR)/draw.o \
 	$(OBJDIR)/edit.o \
 	$(OBJDIR)/img.o \
+	$(OBJDIR)/input.o \
 	$(OBJDIR)/player.o \
 	$(OBJDIR)/screen.o \
 	$(OBJDIR)/team.o \
