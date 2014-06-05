@@ -132,11 +132,16 @@ struct level
 extern cell_file_t *ce_defaults[];
 
 // cell.c
+#define MAP_FVERSION 1
+
 void cell_reprep(cell_t *ce, int tset, int tidx);
 cell_t *layer_cell_ptr(layer_t *ar, int x, int y);
 void layer_free(layer_t *ar);
 layer_t *layer_new(int x, int y, int w, int h);
+void level_free(level_t *lv);
 level_t *level_new(int w, int h);
+level_t *level_load(const char *fname);
+int level_save(level_t *lv, const char *fname);
 
 // clip.c
 int clip_d_scox(img_t *dst, img_t *src, int *dx, int *dy, int *sx1, int *sy1, int *sx2, int *sy2);
@@ -157,6 +162,9 @@ void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
 int editloop(void);
 
 // img.c
+uint16_t io_get2le(FILE *fp);
+void io_put2le(int v, FILE *fp);
+
 void img_free(img_t *img);
 img_t *img_new(int w, int h);
 img_t *img_load_tga(const char *fname);

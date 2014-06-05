@@ -130,18 +130,20 @@ int edit_tselloop(void)
 			int pressed = (k>>31)&1;
 			int sym = (k>>16)&0x7FFF;
 
-			if(!pressed) switch(sym)
+			if(pressed) switch(sym)
 			{
+			} else switch(sym) {
 				case SDLK_ESCAPE:
 					// Bail out.
 					return 0;
+
 			}
+
 		}
 
 	}
 
 }
-
 
 int editloop(void)
 {
@@ -190,8 +192,42 @@ int editloop(void)
 			int pressed = (k>>31)&1;
 			int sym = (k>>16)&0x7FFF;
 
-			if(!pressed) switch(sym)
+			if(pressed) switch(sym)
 			{
+				case SDLK_l:
+					if(key_state[SDLK_LCTRL] || key_state[SDLK_RCTRL])
+					{
+						// Load
+
+						printf("Loading...\n");
+						level_t *tlv = level_load("dat/honk.psl");
+
+						if(tlv != NULL)
+						{
+							if(rootlv != NULL)
+							{
+								printf("Cleaning up...\n");
+								level_free(rootlv);
+							}
+
+							printf("Transferring...\n");
+							rootlv = tlv;
+						}
+					}
+
+					break;
+
+				case SDLK_s:
+					if(key_state[SDLK_LCTRL] || key_state[SDLK_RCTRL])
+					{
+						// Save
+
+						printf("Saving...\n");
+						level_save(rootlv, "dat/honk.psl");
+					}
+
+					break;
+
 				case SDLK_t:
 					if(edit_tselloop()) return 1;
 					break;

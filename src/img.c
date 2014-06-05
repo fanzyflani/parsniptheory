@@ -5,13 +5,25 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
-static uint16_t io_get2le(FILE *fp)
+// TODO: Relocate
+uint16_t io_get2le(FILE *fp)
 {
 	int v0 = fgetc(fp);
 	int v1 = fgetc(fp);
 
 	return (v1<<8)|v0;
 }
+
+void io_put2le(int v, FILE *fp)
+{
+	int v0 = v&255;
+	int v1 = (v>>8)&255;
+
+	fputc(v0, fp);
+	fputc(v1, fp);
+}
+
+
 
 void img_free(img_t *img)
 {
