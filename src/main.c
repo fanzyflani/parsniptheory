@@ -5,6 +5,14 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
+// Constants
+const int face_dir[4][2] = {
+	{ 0, 1},
+	{ 1, 0},
+	{ 0,-1},
+	{-1, 0},
+};
+
 // Screen
 SDL_Surface *screen_surface = NULL;
 img_t *screen = NULL;
@@ -32,79 +40,6 @@ uint8_t *cm_tiles1 = NULL;
 
 // Teams
 team_t *teams[TEAM_MAX];
-
-int sdiv(int n, int d)
-{
-	if(n >= 0) return n / d;
-	else return (n / d) - 1;
-}
-
-int smod(int n, int d)
-{
-	if(n >= 0) return n % d;
-	else return d - ((-n) % d);
-}
-
-void mainloop_draw(void)
-{
-	int x, y, i;
-
-	// Clear the screen
-	screen_clear(0);
-
-	// TEST: Draw some tiles
-	for(y = 0; y < 200; y += 24)
-	for(x = 0; x < 320; x += 32)
-		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, y, 32*1, 24*0, 32, 24, 0, cm_tiles1);
-	
-	// Oh, and a back wall might be nice
-	for(x = 0; x < 320; x += 32)
-		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, 24*0, 32*15, 24*0, 32, 24, 0, cm_tiles1);
-	for(x = 0; x < 320; x += 32)
-		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, 24*1, 32*4, 24*0, 32, 24, 0, cm_tiles1);
-	for(x = 0; x < 320; x += 32)
-		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, 24*2, 32*3, 24*0, 32, 24, 0, cm_tiles1);
-	for(x = 0; x < 320; x += 32)
-		draw_img_trans_cmap_d_sd(screen, i_tiles1, x, 24*3, 32*2, 24*0, 32, 24, 0, cm_tiles1);
-
-	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*0, 32*13, 24*1, 32, 24, 0, cm_tiles1);
-	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*1, 32*12, 24*3, 32, 24, 0, cm_tiles1);
-	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*2, 32*12, 24*3, 32, 24, 0, cm_tiles1);
-	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*3, 32*12, 24*3, 32, 24, 0, cm_tiles1);
-	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*4, 32*12, 24*2, 32, 24, 0, cm_tiles1);
-	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*5, 32*4, 24*0, 32, 24, 0, cm_tiles1);
-	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*6, 32*3, 24*0, 32, 24, 0, cm_tiles1);
-	draw_img_trans_cmap_d_sd(screen, i_tiles1, 0, 24*7, 32*2, 24*0, 32, 24, 0, cm_tiles1);
-	
-	// TEST: Draw player sprites
-	for(i = 0; i <  4; i++)
-	{
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*6, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*5, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*4, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*3, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*2, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*1, 32, 48, 0, cm_player);
-		draw_img_trans_cmap_d_sd(screen, i_player, 32*i+32*3, 24*5+8, 32*i, 48*0, 32, 48, 0, cm_player);
-	}
-
-	// Flip
-	screen_flip();
-	SDL_Delay(10);
-
-}
-
-void mainloop(void)
-{
-	for(;;)
-	{
-		// Draw
-		mainloop_draw();
-
-		// Process events
-		if(input_poll()) break;
-	}
-}
 
 int main(int argc, char *argv[])
 {
@@ -139,14 +74,11 @@ int main(int argc, char *argv[])
 	for(i = 0; i < TEAM_MAX; i++)
 		teams[i] = team_new(i);
 
-	// Create level
-	rootlv = level_new(40, 40);
-
 	// Enter menu loop
 	// TODO: Actually have a menu loop.
 	// We'll just use one of these two loops.
-	editloop();
-	//mainloop();
+	//editloop();
+	gameloop();
 
 	// Clean up
 	

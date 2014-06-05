@@ -148,6 +148,10 @@ int editloop(void)
 {
 	obj_t *ob;
 
+	// Create level
+	rootlv = level_new(40, 40);
+
+	// Loop
 	for(;;)
 	{
 		// Draw

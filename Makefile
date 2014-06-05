@@ -14,12 +14,13 @@ OBJS = \
 	$(OBJDIR)/clip.o \
 	$(OBJDIR)/draw.o \
 	$(OBJDIR)/edit.o \
+	$(OBJDIR)/game.o \
 	$(OBJDIR)/img.o \
 	$(OBJDIR)/input.o \
 	$(OBJDIR)/obj.o \
-	$(OBJDIR)/player.o \
 	$(OBJDIR)/screen.o \
 	$(OBJDIR)/team.o \
+	$(OBJDIR)/tools.o \
 	\
 	$(OBJDIR)/main.o
 	#

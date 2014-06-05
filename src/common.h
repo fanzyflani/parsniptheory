@@ -26,6 +26,14 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 // Limits
 #define TEAM_MAX 128
 
+enum
+{
+	DI_SOUTH = 0,
+	DI_EAST  = 1,
+	DI_NORTH = 2,
+	DI_WEST  = 3,
+};
+
 // This is a bit simpler than pixra's structure.
 // It's probably because this isn't an image editor.
 typedef struct img img_t;
@@ -127,6 +135,7 @@ struct obj
 	// Visible state
 	img_t *img;
 	uint8_t *cmap;
+	int bx, by, bw, bh; // Click box, relative to f.[oc][xy]
 
 };
 
@@ -186,6 +195,9 @@ void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
 // edit.c
 int editloop(void);
 
+// game.c
+int gameloop(void);
+
 // img.c
 uint16_t io_get2le(FILE *fp);
 void io_put2le(int v, FILE *fp);
@@ -219,9 +231,12 @@ void screen_flip(void);
 // team.c
 team_t *team_new(int idx);
 
-// main.c
+// tools.c
 int sdiv(int n, int d);
 int smod(int n, int d);
+
+// main.c
+extern const int face_dir[4][2];
 
 extern SDL_Surface *screen_surface;
 extern img_t *screen;

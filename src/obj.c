@@ -17,6 +17,11 @@ int obj_player_f_init(obj_t *ob)
 	ob->img = i_player;
 	ob->cmap = teams[fde->team]->cm_player;
 
+	ob->bx =   6;
+	ob->by = -16;
+	ob->bw =  20;
+	ob->bh =  36;
+
 	return 1;
 }
 
@@ -60,8 +65,56 @@ void obj_player_f_reset(obj_t *ob)
 
 void obj_player_f_tick(obj_t *ob)
 {
-	//
+	int i;
+	int cx, cy;
+	int dx, dy;
+	struct fd_player *fde = (struct fd_player *)ob->f.fd;
 
+	// TEST: Walk everywhere
+	
+	// Check if walking
+	if(ob->f.ox == 0 && ob->f.oy == 0)
+	{
+		// Find a new direction
+		int dir = (rand()>>12) & 3;
+
+		for(i = 0; i < 4; i++)
+		{
+			// Get direction
+			dx = face_dir[dir][0];
+			dy = face_dir[dir][1];
+
+			// Get neighbour cell
+			cx = ob->f.cx + dx;
+			cy = ob->f.cy + dy;
+
+			// Check cell
+			cell_t *ce = layer_cell_ptr(rootlv->layers[ob->f.layer], cx, cy);
+			if(ce == NULL) continue;
+			if(ce->f.ctyp != CELL_FLOOR) continue;
+
+			// Move
+			ob->f.cx += dx;
+			ob->f.cy += dy;
+			ob->f.ox -= 32*dx;
+			ob->f.oy -= 24*dy;
+			fde->face = dir;
+
+			break;
+		}
+
+	} else {
+		// Move
+		if(ob->f.ox < 0) ob->f.ox += 3;
+		if(ob->f.ox > 0) ob->f.ox -= 1;
+		if(ob->f.ox > 0) ob->f.ox -= 1;
+		if(ob->f.ox > 0) ob->f.ox -= 1;
+
+		if(ob->f.oy < 0) ob->f.oy += 2;
+		if(ob->f.oy > 0) ob->f.oy -= 1;
+		if(ob->f.oy > 0) ob->f.oy -= 1;
+
+	}
 }
 
 void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
@@ -165,6 +218,11 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 
 	ob->img = NULL;
 	ob->cmap = NULL;
+
+	ob->bx = 0;
+	ob->by = 0;
+	ob->bw = 0;
+	ob->bh = 0;
 
 	// Check things
 	assert(otyp < OBJ_COUNT);
