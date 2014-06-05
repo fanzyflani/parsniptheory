@@ -47,14 +47,24 @@ void input_key_queue_push(uint32_t key)
 
 }
 
-uint32_t input_key_queue_pop(void)
+uint32_t input_key_queue_peek(void)
 {
 	// Check if empty
 	if(key_queue_head == key_queue_tail)
 		return 0;
 
+	// Return key
+	return key_queue[key_queue_tail];
+
+}
+
+uint32_t input_key_queue_pop(void)
+{
 	// Get key
-	uint32_t ret = key_queue[key_queue_tail];
+	uint32_t ret = input_key_queue_peek();
+
+	// If empty, return
+	if(ret == 0) return 0;
 
 	// Advance tail
 	key_queue_tail = (key_queue_tail + 1) % KEY_QUEUE_SIZE;

@@ -111,10 +111,11 @@ void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c)
 
 void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c)
 {
-	draw_hline_d(dst, x,   y,   x+w,   c);
-	draw_hline_d(dst, x,   y+h, x+w,   c);
-	draw_vline_d(dst, x,   y+1, y+h-2, c);
-	draw_vline_d(dst, x+w, y+1, y+h-2, c);
+	h--; w--;
+	draw_hline_d(dst, x,   y,   w+1, c);
+	draw_hline_d(dst, x,   y+h, w+1, c);
+	draw_vline_d(dst, x,   y+1, h-1, c);
+	draw_vline_d(dst, x+w, y+1, h-1, c);
 }
 
 void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)

@@ -154,7 +154,7 @@ void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
 
 // edit.c
-void editloop(void);
+int editloop(void);
 
 // img.c
 void img_free(img_t *img);
@@ -165,8 +165,12 @@ void load_palette(const char *fname);
 // input.c
 extern int mouse_x, mouse_y, mouse_b;
 extern int mouse_ox, mouse_oy, mouse_ob;
+extern uint8_t key_state[SDLK_LAST];
 
 void input_key_queue_flush(void);
+void input_key_queue_push(uint32_t key);
+uint32_t input_key_queue_peek(void);
+uint32_t input_key_queue_pop(void);
 int input_poll(void);
 
 // screen.c
