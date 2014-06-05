@@ -16,6 +16,7 @@ OBJS = \
 	$(OBJDIR)/edit.o \
 	$(OBJDIR)/img.o \
 	$(OBJDIR)/input.o \
+	$(OBJDIR)/obj.o \
 	$(OBJDIR)/player.o \
 	$(OBJDIR)/screen.o \
 	$(OBJDIR)/team.o \
@@ -23,7 +24,7 @@ OBJS = \
 	$(OBJDIR)/main.o
 	#
 
-INCLUDES = src/common.h
+INCLUDES = src/common.h src/obj.h
 
 CFLAGS = -Wall -Wextra -Wno-unused-parameter -O2 -g -Isrc -I/usr/local/include `sdl-config --cflags`
 LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) -lm

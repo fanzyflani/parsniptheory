@@ -157,7 +157,19 @@ void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 
 void draw_level(img_t *dst, level_t *lv, int dx, int dy, int ayidx)
 {
+	int i;
+
 	// TODO: Show linked layers
 	draw_layer(dst, lv->layers[ayidx], dx, dy);
+
+	// Also draw objects
+	for(i = 0; i < lv->ocount; i++)
+	{
+		obj_t *ob = lv->objects[i];
+
+		if(ob->f.layer == ayidx && ob->f_draw != NULL)
+			ob->f_draw(ob, dst, -dx, -dy);
+	}
+
 }
 

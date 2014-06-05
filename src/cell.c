@@ -90,6 +90,17 @@ void level_free(level_t *lv)
 
 	}
 
+	if(lv->objects != NULL)
+	{
+		// Free objects
+		for(i = 0; i < lv->ocount; i++)
+			obj_free(lv->objects[i]);
+
+		// Free object list
+		free(lv->objects);
+
+	}
+
 	// Free level
 	free(lv);
 
@@ -99,6 +110,7 @@ level_t *level_new(int w, int h)
 {
 	level_t *lv = malloc(sizeof(level_t));
 
+	// Layers
 	if(w == 0 && h == 0)
 	{
 		lv->layers = NULL;
@@ -110,7 +122,31 @@ level_t *level_new(int w, int h)
 		lv->lcount = 1;
 	}
 
+	// Objects
+	lv->ocount = 0;
+	lv->objects = NULL;
+
 	return lv;
+}
+
+obj_t *level_obj_add(level_t *lv, int otyp, int flags, int cx, int cy, int layer)
+{
+	// FIXME: Seriously need to refactor this stuff
+	// This is actually terrible
+	// Not just this function... I really want to see the objects in a linked list
+
+	// Allocate
+	obj_t *ob = obj_new(otyp, flags, cx, cy, layer);
+	if(ob == NULL) return NULL;
+
+	// Put in level
+	lv->objects = realloc(lv->objects, sizeof(obj_t) * (lv->ocount+1));
+	lv->objects[lv->ocount] = ob;
+	lv->ocount++;
+
+	// Return
+	return ob;
+
 }
 
 static layer_t *level_load_layer(FILE *fp)
@@ -155,7 +191,7 @@ level_t *level_load(const char *fname)
 	level_t *lv;
 	int i;
 
-	// Open file for writing
+	// Open file for reading
 	fp = fopen(fname, "rb");
 	if(fp == NULL)
 	{
@@ -203,9 +239,20 @@ level_t *level_load(const char *fname)
 	}
 	
 	// Read object count
-	// TODO: Handle objects
-	int objcount = io_get2le(fp);
-	assert(objcount == 0); // TODO!
+	lv->ocount = io_get2le(fp);
+
+	// Prepare object pointer array
+	lv->objects = malloc(sizeof(obj_t *) * lv->ocount);
+	for(i = 0; i < lv->lcount; i++)
+		lv->objects[i] = NULL;
+
+	// Load objects
+	for(i = 0; i < lv->ocount; i++)
+	{
+		lv->objects[i] = obj_load(fp);
+		if(lv->objects[i] == NULL)
+			goto fail_delevel;
+	}
 
 	// Return with success
 	fclose(fp);
@@ -276,8 +323,12 @@ int level_save(level_t *lv, const char *fname)
 			goto fail;
 	
 	// Write object count
-	// TODO: Handle objects
-	io_put2le(0, fp);
+	io_put2le(lv->ocount, fp);
+
+	// Write objects
+	for(i = 0; i < lv->ocount; i++)
+		if(!obj_save(fp, lv->objects[i]))
+			goto fail;
 
 	// Close and return with success
 	fclose(fp);

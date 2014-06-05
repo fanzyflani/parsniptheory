@@ -27,7 +27,7 @@ void editloop_draw(void)
 	draw_level(screen, rootlv, edit_camx, edit_camy, edit_layer);
 
 	// Draw a grid
-	if(!key_state[SDLK_g])
+	if(key_state[SDLK_g])
 	{
 		for(y = smod(-edit_camy-1, 24); y < 200; y += 24)
 			draw_dot_hline_d(screen, 0, y, 320, 2);
@@ -39,7 +39,6 @@ void editloop_draw(void)
 	draw_border_d(screen,
 		32*ay->x-1-edit_camx, 32*ay->y-1-edit_camy,
 		2+32*ay->w, 2+24*ay->h, 1);
-
 
 	// Flip
 	screen_flip();
@@ -194,6 +193,13 @@ int editloop(void)
 
 			if(pressed) switch(sym)
 			{
+				case SDLK_1:
+					level_obj_add(rootlv, OBJ_PLAYER, 0,
+						sdiv(mouse_x + edit_camx, 32),
+						sdiv(mouse_y + edit_camy, 24),
+						edit_layer);
+					break;
+
 				case SDLK_l:
 					if(key_state[SDLK_LCTRL] || key_state[SDLK_RCTRL])
 					{

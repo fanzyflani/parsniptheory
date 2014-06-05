@@ -3,6 +3,8 @@ Copyright (c) 2014 fanzyflani. All rights reserved.
 CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 */
 
+#ifndef _PARSNIP_COMMON_H_
+#define _PARSNIP_COMMON_H_
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -64,7 +66,7 @@ enum
 enum
 {
 	OBJ_FREE = 0,
-	OBJ_DUMMY, // Useful for visible parts of e.g. a player
+	OBJ_PLAYER,
 
 	OBJ_COUNT
 };
@@ -88,11 +90,13 @@ struct cell
 
 typedef struct obj_file
 {
-	uint8_t typ;
-	uint8_t layer;
-	uint8_t p1, p2;
+	void *fd;
 	int16_t cx, cy; // measured in  CELLS
 	int16_t ox, oy; // measured in PIXELS offset from x,y
+	uint16_t fdlen;
+	uint16_t flags;
+	uint8_t otyp;
+	uint8_t layer;
 } obj_file_t;
 
 struct obj
@@ -101,13 +105,20 @@ struct obj
 	obj_t *next, *prev;
 	obj_t *parent;
 
+	// Function pointers
+	int (*f_init)(obj_t *ob);
+	int (*f_init_fd)(obj_t *ob);
+	int (*f_load_fd)(obj_t *ob, FILE *fp);
+	int (*f_save_fd)(obj_t *ob, FILE *fp);
+	void (*f_reset)(obj_t *ob);
+	void (*f_tick)(obj_t *ob);
+	void (*f_draw)(obj_t *ob, img_t *dst, int camx, int camy);
+	void (*f_free)(obj_t *ob);
+
 	// Level state
 	obj_file_t f;
-	int cx, cy; // measured in  CELLS
-	int ox, oy; // measured in PIXELS offset from x,y
 
 	// Visible state
-	int sx, sy, sw, sh;
 	img_t *img;
 	uint8_t *cmap;
 
@@ -123,10 +134,15 @@ struct layer
 struct level
 {
 	int lcount;
+	int ocount;
 	layer_t **layers;
+	obj_t **objects;
 };
 
 #define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
+
+// other includes
+#include "obj.h"
 
 // cdefs.c
 extern cell_file_t *ce_defaults[];
@@ -135,11 +151,14 @@ extern cell_file_t *ce_defaults[];
 #define MAP_FVERSION 1
 
 void cell_reprep(cell_t *ce, int tset, int tidx);
+
 cell_t *layer_cell_ptr(layer_t *ar, int x, int y);
 void layer_free(layer_t *ar);
 layer_t *layer_new(int x, int y, int w, int h);
+
 void level_free(level_t *lv);
 level_t *level_new(int w, int h);
+obj_t *level_obj_add(level_t *lv, int otyp, int flags, int cx, int cy, int layer);
 level_t *level_load(const char *fname);
 int level_save(level_t *lv, const char *fname);
 
@@ -181,6 +200,12 @@ uint32_t input_key_queue_peek(void);
 uint32_t input_key_queue_pop(void);
 int input_poll(void);
 
+// obj.c
+void obj_free(obj_t *ob);
+obj_t *obj_new(int otyp, int flags, int cx, int cy, int layer);
+obj_t *obj_load(FILE *fp);
+int obj_save(FILE *fp, obj_t *ob);
+
 // screen.c
 void screen_clear(uint8_t col);
 void screen_flip(void);
@@ -206,4 +231,6 @@ extern uint8_t pal_src[256][4];
 extern cmap_t *cmaps;
 extern uint8_t pal_main[256][4];
 extern uint16_t pal_dither[256][2][2]; // For 16bpp modes
+
+#endif
 
