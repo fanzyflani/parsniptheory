@@ -5,11 +5,11 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
-int mouse_x = 0;
-int mouse_y = 0;
+int mouse_x = 160;
+int mouse_y = 100;
 int mouse_b = 0;
-int mouse_ox = 0;
-int mouse_oy = 0;
+int mouse_ox = 160;
+int mouse_oy = 100;
 int mouse_ob = 0;
 
 // We are not a key charity. (NO PUN THERE)

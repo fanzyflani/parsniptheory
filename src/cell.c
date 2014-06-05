@@ -67,6 +67,7 @@ layer_t *layer_new(int x, int y, int w, int h)
 	ar->h = h;
 
 	ar->data = malloc(sizeof(cell_t) * w * h);
+	ar->astar = malloc(sizeof(int8_t) * w * h);
 
 	for(i = 0; i < w*h; i++)
 		cell_prep(ar->data + i, 0, 0);

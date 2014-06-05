@@ -74,6 +74,9 @@ enum
 	CELL_SOLID,
 	CELL_LAYER,
 
+	CELL_BACKWALL,
+	CELL_TABLE,
+
 	CELL_COUNT
 };
 
@@ -144,6 +147,7 @@ struct layer
 	int w, h;
 	int x, y;
 	cell_t *data;
+	int8_t *astar;
 };
 
 struct level
@@ -234,6 +238,7 @@ team_t *team_new(int idx);
 // tools.c
 int sdiv(int n, int d);
 int smod(int n, int d);
+int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2, int y2);
 
 // main.c
 extern const int face_dir[4][2];
