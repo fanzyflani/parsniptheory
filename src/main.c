@@ -30,6 +30,9 @@ img_t *i_tiles1 = NULL;
 uint8_t *cm_player = NULL;
 uint8_t *cm_tiles1 = NULL;
 
+// Teams
+team_t *teams[TEAM_MAX];
+
 int sdiv(int n, int d)
 {
 	if(n >= 0) return n / d;
@@ -105,6 +108,8 @@ void mainloop(void)
 
 int main(int argc, char *argv[])
 {
+	int i;
+
 	// General SDL setup
 	SDL_Init(SDL_INIT_VIDEO);
 #ifndef WIN32
@@ -130,15 +135,9 @@ int main(int argc, char *argv[])
 	cm_player = cmaps[i_player->cmidx].data;
 	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
 
-	// TEST: Modify the colourmap
-	int i;
-	for(i = 0; i < 8; i++)
-	{
-		cm_player[16+i] = 37+i;
-		cm_player[24+i] = 64+i + 8*0;
-		cm_player[32+i] = 64+i + 8*5;
-		cm_player[40+i] = 64+i + 8*6;
-	}
+	// Prepare teams
+	for(i = 0; i < TEAM_MAX; i++)
+		teams[i] = team_new(i);
 
 	// Create level
 	rootlv = level_new(40, 40);

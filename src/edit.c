@@ -146,6 +146,8 @@ int edit_tselloop(void)
 
 int editloop(void)
 {
+	obj_t *ob;
+
 	for(;;)
 	{
 		// Draw
@@ -194,10 +196,16 @@ int editloop(void)
 			if(pressed) switch(sym)
 			{
 				case SDLK_1:
-					level_obj_add(rootlv, OBJ_PLAYER, 0,
+				case SDLK_2:
+				case SDLK_3:
+				case SDLK_4:
+					ob = level_obj_add(rootlv, OBJ_PLAYER, 0,
 						sdiv(mouse_x + edit_camx, 32),
 						sdiv(mouse_y + edit_camy, 24),
 						edit_layer);
+					((struct fd_player *)(ob->f.fd))->team = sym - SDLK_1;
+					ob->f_init(ob);
+
 					break;
 
 				case SDLK_l:

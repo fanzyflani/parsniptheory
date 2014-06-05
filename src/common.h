@@ -23,6 +23,9 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #include <signal.h>
 #endif
 
+// Limits
+#define TEAM_MAX 128
+
 // This is a bit simpler than pixra's structure.
 // It's probably because this isn't an image editor.
 typedef struct img img_t;
@@ -50,6 +53,9 @@ typedef struct player
 typedef struct team
 {
 	//
+	int idx;
+	uint8_t cm_player[256];
+
 } team_t;
 
 // Here's the level stuff.
@@ -210,6 +216,9 @@ int obj_save(FILE *fp, obj_t *ob);
 void screen_clear(uint8_t col);
 void screen_flip(void);
 
+// team.c
+team_t *team_new(int idx);
+
 // main.c
 int sdiv(int n, int d);
 int smod(int n, int d);
@@ -226,6 +235,7 @@ extern img_t *i_player;
 extern img_t *i_tiles1;
 extern uint8_t *cm_player;
 extern uint8_t *cm_tiles1;
+extern team_t *teams[TEAM_MAX];
 
 extern uint8_t pal_src[256][4];
 extern cmap_t *cmaps;

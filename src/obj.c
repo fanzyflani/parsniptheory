@@ -11,11 +11,11 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 int obj_player_f_init(obj_t *ob)
 {
-	//struct fd_player *fde = (struct fd_player *)ob->f.fd;
-	//struct fd_player *rde = (struct fd_player *)ob->rd;
+	struct fd_player *fde = (struct fd_player *)ob->f.fd;
 
+	assert(fde->team >= 0 && fde->team < TEAM_MAX);
 	ob->img = i_player;
-	ob->cmap = cm_player; // TODO: Per-team stuff
+	ob->cmap = teams[fde->team]->cm_player;
 
 	return 1;
 }
