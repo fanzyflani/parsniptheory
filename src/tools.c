@@ -24,13 +24,41 @@ struct pq_level
 	int x, y;
 };
 
+void pq_check_heap(struct pq_level *pq, int *pqlen)
+{
+	// Enable this if the heap is being stupid.
+#if 0
+	int i;
+	int ci1, ci2, pidx;
+
+	fflush(stdout);
+
+	for(i = 0; i < *pqlen; i++)
+	{
+		pidx = ((i+1)>>1)-1;
+		ci1 = ((i+1)<<1)-1;
+		ci2 = ci1+1;
+
+		if(pidx >= 0)
+			assert(pq[pidx].ptotal <= pq[i].ptotal);
+
+		if(ci1 >= *pqlen) continue;
+		assert(pq[i].ptotal <= pq[ci1].ptotal);
+
+		if(ci2 >= *pqlen) continue;
+		assert(pq[i].ptotal <= pq[ci2].ptotal);
+	}
+#endif
+}
+
 void pq_push(struct pq_level *pq, int *pqlen, int pqmax, int ptotal, int pacc, int x, int y)
 {
 	int pidx, idx;
 	struct pq_level ptemp;
 
 	// Allocate a slot
-	idx = (*pqlen)++;
+	idx = *pqlen;
+	(*pqlen) += 1;
 	assert((*pqlen) <= pqmax);
 
 	// Fill in end entry
@@ -46,18 +74,21 @@ void pq_push(struct pq_level *pq, int *pqlen, int pqmax, int ptotal, int pacc, i
 		pidx = ((idx+1)>>1)-1;
 
 		// Compare ptotal
-		if(!(pq[idx].ptotal >= pq[pidx].ptotal))
+		if(pq[pidx].ptotal <= pq[idx].ptotal)
 			break;
 
 		// Swap
-		memcpy(&ptemp, pq + idx, sizeof(struct pq_level));
-		memcpy(pq + idx, pq + pidx, sizeof(struct pq_level));
-		memcpy(pq + pidx, &ptemp, sizeof(struct pq_level));
+		ptemp = pq[idx];
+		pq[idx] = pq[pidx];
+		pq[pidx] = ptemp;
 
 		// Change indices
 		idx = pidx;
 
 	}
+
+	// Check
+	pq_check_heap(pq, pqlen);
 }
 
 void pq_deque(struct pq_level *pq, int *pqlen)
@@ -70,7 +101,7 @@ void pq_deque(struct pq_level *pq, int *pqlen)
 	assert(*pqlen >= 0);
 
 	// Copy end to top
-	memcpy(pq, pq + *pqlen, sizeof(struct pq_level));
+	pq[0] = pq[*pqlen];
 
 	// Float down
 	idx = 0;
@@ -81,19 +112,49 @@ void pq_deque(struct pq_level *pq, int *pqlen)
 		cidx = ((idx+1)<<1)-1;
 		if(cidx >= *pqlen) break;
 
-		// Determine largest child
-		if(cidx+1 < *pqlen && pq[cidx+1].ptotal < pq[cidx].ptotal)
-			cidx = cidx+1;
+		// Check if there's a second child
+		if(cidx+1 < *pqlen)
+		{
+			// There is
+
+			// Determine route to take
+			if(pq[idx].ptotal <= pq[cidx].ptotal && pq[idx].ptotal <= pq[cidx+1].ptotal)
+				// Tree in order
+				break;
+			else if(pq[cidx+1].ptotal < pq[cidx].ptotal)
+				// Swapping with cidx+1
+				cidx = cidx+1;
+			else
+				// Swapping with cidx
+				;//cidx = cidx;
+
+		} else {
+			// There isn't
+
+			// Do a check
+			if(pq[idx].ptotal <= pq[cidx].ptotal)
+				// Tree in order
+				break;
+			else
+				// Swapping with cidx
+				;//cidx = cidx;
+
+		}
 
 		// Swap
-		memcpy(&ptemp, pq + idx, sizeof(struct pq_level));
-		memcpy(pq + idx, pq + cidx, sizeof(struct pq_level));
-		memcpy(pq + cidx, &ptemp, sizeof(struct pq_level));
+		ptemp = pq[idx];
+		pq[idx] = pq[cidx];
+		pq[cidx] = ptemp;
+
+		assert(pq[idx].ptotal <= pq[cidx].ptotal);
 
 		// Change indices
 		idx = cidx;
 
 	}
+
+	// Check
+	pq_check_heap(pq, pqlen);
 
 }
 
@@ -153,7 +214,7 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 
 		// We MUST pop pq[0], otherwise we get race conditions
 		// Copy and pop
-		memcpy(&p, pq + 0, sizeof(struct pq_level));
+		p = pq[0];
 		pq_deque(pq, &pqlen);
 
 		// Mark cell as visited
