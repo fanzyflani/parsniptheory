@@ -32,7 +32,7 @@ static void gameloop_start_turn(void)
 		
 		// Do the compare
 		if(fde->team == game_curplayer)
-			ob->steps_left = 7;
+			ob->steps_left = STEPS_PER_TURN;
 	}
 }
 
