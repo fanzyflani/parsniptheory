@@ -9,6 +9,9 @@ static void cell_deprep(cell_t *ce)
 {
 	// Nothing to free yet!
 
+	// But we have to drop the cell association
+	ce->ob = NULL;
+
 }
 
 static void cell_prep(cell_t *ce, int tset, int tidx)
@@ -18,6 +21,8 @@ static void cell_prep(cell_t *ce, int tset, int tidx)
 	ce->f.tidx = tidx;
 
 	ce->f.p1 = ce_defaults[tset][tidx].p1;
+
+	ce->ob = NULL;
 }
 
 void cell_reprep(cell_t *ce, int tset, int tidx)

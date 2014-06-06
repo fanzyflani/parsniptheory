@@ -69,6 +69,11 @@ void obj_player_f_tick(obj_t *ob)
 	int dx, dy;
 	struct fd_player *fde = (struct fd_player *)ob->f.fd;
 
+	// Enforce cell association
+	cell_t *cs = layer_cell_ptr(rootlv->layers[ob->f.layer], ob->f.cx, ob->f.cy);
+	assert(cs != NULL);
+	cs->ob = ob;
+
 	// TEST:
 	// Get coordinates
 	int asendx = (mouse_x + game_camx)/32;
@@ -77,8 +82,56 @@ void obj_player_f_tick(obj_t *ob)
 	// Check if walking
 	if(ob->f.ox == 0 && ob->f.oy == 0) do
 	{
+		// If A* works, follow
+		if(ob->v1 != NULL) do
+		{
+			// Check if at end
+			if(ob->i2 >= ob->i1)
+			{
+				// Destroy the path and try again
+				free(ob->v1);
+				ob->v1 = NULL;
+
+				break;
+
+			}
+
+			// Get direction
+			int dir = ((int *)ob->v1)[ob->i2];
+			dx = face_dir[dir][0];
+			dy = face_dir[dir][1];
+
+			// Get neighbour cell
+			cx = ob->f.cx + dx;
+			cy = ob->f.cy + dy;
+
+			// Check cell
+			cell_t *ce = layer_cell_ptr(rootlv->layers[ob->f.layer], cx, cy);
+			if(ce == NULL || ce->f.ctyp != CELL_FLOOR || ce->ob != NULL)
+			{
+				// Destroy the path and try again
+				free(ob->v1);
+				ob->v1 = NULL;
+
+				break;
+			}
+
+			// Move cell association
+			assert(cs->ob == ob);
+			cs->ob = NULL;
+			ce->ob = ob;
+
+			// Move object
+			ob->i2++;
+			ob->f.cx += dx;
+			ob->f.cy += dy;
+			ob->f.ox -= 32*dx;
+			ob->f.oy -= 24*dy;
+			fde->face = dir;
+		} while(0);
+
 		// Perform A* towards target
-		if(asendx != ob->tx && asendy != ob->ty)
+		if(ob->v1 == NULL || (asendx != ob->tx && asendy != ob->ty))
 		{
 			// Do A* trace
 			int dirlist[1024];
@@ -101,33 +154,6 @@ void obj_player_f_tick(obj_t *ob)
 			}
 		}
 
-		// If it works, follow
-		if(ob->v1 != NULL && ob->i2 < ob->i1) do
-		{
-			// Get direction
-			int dir = ((int *)ob->v1)[ob->i2];
-			dx = face_dir[dir][0];
-			dy = face_dir[dir][1];
-
-			// Get neighbour cell
-			cx = ob->f.cx + dx;
-			cy = ob->f.cy + dy;
-
-			// Check cell
-			cell_t *ce = layer_cell_ptr(rootlv->layers[ob->f.layer], cx, cy);
-			if(ce == NULL) continue;
-			if(ce->f.ctyp != CELL_FLOOR) continue;
-
-			// Move
-			ob->i2++;
-			ob->f.cx += dx;
-			ob->f.cy += dy;
-			ob->f.ox -= 32*dx;
-			ob->f.oy -= 24*dy;
-			fde->face = dir;
-
-			break;
-		} while(0);
 
 	} while(0); else {
 		// Move

@@ -65,7 +65,7 @@ void gameloop_draw(void)
 				24*y + 6 - game_camy,
 				16,
 				12,
-				1);
+				ce->ob == NULL ? 1 : 2);
 		}
 
 	}

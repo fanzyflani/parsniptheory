@@ -103,6 +103,7 @@ typedef struct cell_file
 struct cell
 {
 	cell_file_t f;
+	obj_t *ob;
 };
 
 typedef struct obj_file

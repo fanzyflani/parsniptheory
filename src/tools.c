@@ -206,8 +206,9 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 			y = p.y + dy;
 
 			// Check if cell valid
-			ce = layer_cell_ptr(ar, p.x, p.y);
+			ce = layer_cell_ptr(ar, x, y);
 			if(ce == NULL) continue;
+			if(ce->ob != NULL) continue;
 			if(ar->astar[x + y*ar->w] >= 4) continue;
 
 			// Mark spot on table
