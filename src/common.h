@@ -143,6 +143,8 @@ struct obj
 	// Extra state for anything to use
 	// THIS IS TOTALLY A GOOD IDEA
 	int tx, ty;
+	void *v1;
+	int i1, i2;
 
 };
 

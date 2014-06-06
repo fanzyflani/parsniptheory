@@ -65,31 +65,47 @@ void obj_player_f_reset(obj_t *ob)
 
 void obj_player_f_tick(obj_t *ob)
 {
-	int i;
 	int cx, cy;
 	int dx, dy;
 	struct fd_player *fde = (struct fd_player *)ob->f.fd;
 
-	// TEST: Walk everywhere
-	
-	// Check if walking
-	if(ob->f.ox == 0 && ob->f.oy == 0)
-	{
-		// FIXME: DOING A* FOR EVERY STEP IS TOTALLY NOT A TERRIBLE IDEA
-		// Get coordinates
-		int asendx = (mouse_x + game_camx)/32;
-		int asendy = (mouse_y + game_camy)/24;
+	// TEST:
+	// Get coordinates
+	int asendx = (mouse_x + game_camx)/32;
+	int asendy = (mouse_y + game_camy)/24;
 
-		// Do A* trace
-		int dirlist[1024];
-		int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
-			ob->f.cx, ob->f.cy, asendx, asendy);
+	// Check if walking
+	if(ob->f.ox == 0 && ob->f.oy == 0) do
+	{
+		// Perform A* towards target
+		if(asendx != ob->tx && asendy != ob->ty)
+		{
+			// Do A* trace
+			int dirlist[1024];
+			int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
+				ob->f.cx, ob->f.cy, asendx, asendy);
+
+			// If it works, produce a new list
+			if(dirlen >= 1)
+			{
+				// Allocate + copy
+				ob->v1 = realloc(ob->v1, sizeof(int) * dirlen);
+				memcpy(ob->v1, dirlist, sizeof(int) * dirlen);
+
+				// Set things
+				ob->i1 = dirlen;
+				ob->i2 = 0;
+				ob->tx = asendx;
+				ob->ty = asendy;
+				
+			}
+		}
 
 		// If it works, follow
-		if(dirlen >= 1) do
+		if(ob->v1 != NULL && ob->i2 < ob->i1) do
 		{
 			// Get direction
-			int dir = dirlist[0];
+			int dir = ((int *)ob->v1)[ob->i2];
 			dx = face_dir[dir][0];
 			dy = face_dir[dir][1];
 
@@ -103,6 +119,7 @@ void obj_player_f_tick(obj_t *ob)
 			if(ce->f.ctyp != CELL_FLOOR) continue;
 
 			// Move
+			ob->i2++;
 			ob->f.cx += dx;
 			ob->f.cy += dy;
 			ob->f.ox -= 32*dx;
@@ -112,7 +129,7 @@ void obj_player_f_tick(obj_t *ob)
 			break;
 		} while(0);
 
-	} else {
+	} while(0); else {
 		// Move
 		if(ob->f.ox < 0) ob->f.ox += 3;
 		if(ob->f.ox > 0) ob->f.ox -= 1;
@@ -246,6 +263,13 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	ob->f_tick = obj_fptrs[otyp].f_tick;
 	ob->f_draw = obj_fptrs[otyp].f_draw;
 	ob->f_free = obj_fptrs[otyp].f_free;
+
+	// Fill in extra crap
+	ob->tx = 0;
+	ob->ty = 0;
+	ob->v1 = NULL;
+	ob->i1 = 0;
+	ob->i2 = 0;
 
 	// Return
 	return ob;
