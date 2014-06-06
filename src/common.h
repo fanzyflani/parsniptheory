@@ -140,6 +140,10 @@ struct obj
 	uint8_t *cmap;
 	int bx, by, bw, bh; // Click box, relative to f.[oc][xy]
 
+	// Extra state for anything to use
+	// THIS IS TOTALLY A GOOD IDEA
+	int tx, ty;
+
 };
 
 struct layer
@@ -200,6 +204,8 @@ void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
 int editloop(void);
 
 // game.c
+extern int game_camx;
+extern int game_camy;
 int gameloop(void);
 
 // img.c

@@ -46,7 +46,7 @@ void pq_push(struct pq_level *pq, int *pqlen, int pqmax, int ptotal, int pacc, i
 		pidx = ((idx+1)>>1)-1;
 
 		// Compare ptotal
-		if(!(pq[idx].ptotal > pq[pidx].ptotal))
+		if(!(pq[idx].ptotal >= pq[pidx].ptotal))
 			break;
 
 		// Swap
@@ -108,7 +108,8 @@ int pq_ptotal(int pacc, int x1, int y1, int x2, int y2)
 	if(dy < 0) dy = -dy;
 
 	// Finally...
-	return pacc + dx + dy;
+	//return pacc + dx + dy;
+	return pacc;
 
 }
 
@@ -134,7 +135,7 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 	if(ce->f.ctyp != CELL_FLOOR) return -1;
 
 	// Clear layer A* table
-	memset(ar->astar, -1, ar->w * ar->h);
+	memset(ar->astar, 0, ar->w * ar->h);
 
 	// Push
 	ptotal = pq_ptotal(0, x1, y1, x2, y2);
@@ -155,6 +156,9 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 		memcpy(&p, pq + 0, sizeof(struct pq_level));
 		pq_deque(pq, &pqlen);
 
+		// Mark cell as visited
+		ar->astar[p.x + p.y*ar->w] |= 4;
+
 		//printf("%i: [%i] %i,%i -> %i\n", pqlen, p.pacc, p.x, p.y, ar->astar[p.x + p.y*ar->w]);
 
 		// Are we there yet?
@@ -174,7 +178,7 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 				//printf("%i: %i %i\n", i, x, y);
 				// Get direction
 				assert(x >= 0 && y >= 0 && x < ar->w && y < ar->h);
-				dir = ar->astar[x + y*ar->w];
+				dir = ar->astar[x + y*ar->w] & 3;
 				dirbuf[p.pacc - 1 - i] = dir;
 
 				// Get delta
@@ -202,12 +206,12 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 			y = p.y + dy;
 
 			// Check if cell valid
-			if(ar->astar[x + y*ar->w] >= 0) continue;
 			ce = layer_cell_ptr(ar, p.x, p.y);
 			if(ce == NULL) continue;
+			if(ar->astar[x + y*ar->w] >= 4) continue;
 
 			// Mark spot on table
-			ar->astar[x + y*ar->w] = i;
+			ar->astar[x + y*ar->w] = i | 4;
 
 			// Check if we can actually move here
 			if(ce->f.ctyp != CELL_FLOOR) continue;

@@ -52,6 +52,24 @@ void gameloop_draw(void)
 			2);
 	}
 
+	// TEST: Mark walkable paths
+	for(y = 0; y < rootlv->layers[0]->w; y++)
+	for(x = 0; x < rootlv->layers[0]->h; x++)
+	{
+		cell_t *ce = layer_cell_ptr(rootlv->layers[0], x, y);
+
+		if(ce != NULL && ce->f.ctyp == CELL_FLOOR)
+		{
+			draw_border_d(screen,
+				32*x + 8 - game_camx,
+				24*y + 6 - game_camy,
+				16,
+				12,
+				1);
+		}
+
+	}
+
 	// TEST: A* route
 	{
 		// Get coordinates

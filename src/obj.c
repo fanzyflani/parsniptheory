@@ -75,12 +75,21 @@ void obj_player_f_tick(obj_t *ob)
 	// Check if walking
 	if(ob->f.ox == 0 && ob->f.oy == 0)
 	{
-		// Find a new direction
-		int dir = (rand()>>12) & 3;
+		// FIXME: DOING A* FOR EVERY STEP IS TOTALLY NOT A TERRIBLE IDEA
+		// Get coordinates
+		int asendx = (mouse_x + game_camx)/32;
+		int asendy = (mouse_y + game_camy)/24;
 
-		for(i = 0; i < 4; i++)
+		// Do A* trace
+		int dirlist[1024];
+		int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
+			ob->f.cx, ob->f.cy, asendx, asendy);
+
+		// If it works, follow
+		if(dirlen >= 1) do
 		{
 			// Get direction
+			int dir = dirlist[0];
 			dx = face_dir[dir][0];
 			dy = face_dir[dir][1];
 
@@ -101,7 +110,7 @@ void obj_player_f_tick(obj_t *ob)
 			fde->face = dir;
 
 			break;
-		}
+		} while(0);
 
 	} else {
 		// Move
