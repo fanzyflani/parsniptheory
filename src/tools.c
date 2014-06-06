@@ -43,7 +43,7 @@ void pq_push(struct pq_level *pq, int *pqlen, int pqmax, int ptotal, int pacc, i
 	while(idx > 0)
 	{
 		// Get parent
-		pidx = idx>>1;
+		pidx = ((idx+1)>>1)-1;
 
 		// Compare ptotal
 		if(!(pq[idx].ptotal > pq[pidx].ptotal))
@@ -78,7 +78,7 @@ void pq_deque(struct pq_level *pq, int *pqlen)
 	for(;;)
 	{
 		// Get first child
-		cidx = idx<<1;
+		cidx = ((idx+1)<<1)-1;
 		if(cidx >= *pqlen) break;
 
 		// Determine largest child
@@ -125,6 +125,9 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 	struct pq_level pq[PQMAX];
 	int pqlen = 0;
 
+	// Very quick test
+	if(x1 == x2 && y1 == y2) return 0;
+
 	// Quick test
 	ce = layer_cell_ptr(ar, x1, y1);
 	if(ce == NULL) return -1;
@@ -140,7 +143,6 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 	// Mark spot on table
 	ar->astar[x1 + y1*ar->w] = 0; // Doesn't matter as long as it's valid + marked
 
-	//pq[0].pacc + 1, pq[0].x + dx, pq[0].y + dy)
 	// Start tracing
 	for(;;)
 	{
@@ -153,11 +155,12 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 		memcpy(&p, pq + 0, sizeof(struct pq_level));
 		pq_deque(pq, &pqlen);
 
+		//printf("%i: [%i] %i,%i -> %i\n", pqlen, p.pacc, p.x, p.y, ar->astar[p.x + p.y*ar->w]);
+
 		// Are we there yet?
 		if(p.x == x2 && p.y == y2)
 		{
 			// Yep! Let's spew the chain!
-
 			// Check if it will fit
 			if(p.pacc > dirbuflen) return -1;
 			
@@ -168,14 +171,15 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 			// Follow
 			for(i = 0; i < p.pacc; i++)
 			{
+				//printf("%i: %i %i\n", i, x, y);
 				// Get direction
 				assert(x >= 0 && y >= 0 && x < ar->w && y < ar->h);
 				dir = ar->astar[x + y*ar->w];
 				dirbuf[p.pacc - 1 - i] = dir;
 
 				// Get delta
-				dx = face_dir[i][0];
-				dy = face_dir[i][1];
+				dx = face_dir[dir][0];
+				dy = face_dir[dir][1];
 
 				// Proceed
 				x -= dx;
@@ -201,10 +205,12 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 			if(ar->astar[x + y*ar->w] >= 0) continue;
 			ce = layer_cell_ptr(ar, p.x, p.y);
 			if(ce == NULL) continue;
-			if(ce->f.ctyp != CELL_FLOOR) continue;
 
 			// Mark spot on table
 			ar->astar[x + y*ar->w] = i;
+
+			// Check if we can actually move here
+			if(ce->f.ctyp != CELL_FLOOR) continue;
 
 			// Push new entry
 			ptotal = pq_ptotal(p.pacc + 1, x, y, x2, y2);

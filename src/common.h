@@ -28,10 +28,10 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 enum
 {
-	DI_SOUTH = 0,
-	DI_EAST  = 1,
-	DI_NORTH = 2,
-	DI_WEST  = 3,
+	DIR_SOUTH = 0,
+	DIR_EAST  = 1,
+	DIR_NORTH = 2,
+	DIR_WEST  = 3,
 };
 
 // This is a bit simpler than pixra's structure.

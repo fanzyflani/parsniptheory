@@ -12,11 +12,14 @@ int game_mouse_y = 0;
 int game_mouse_ox = 0;
 int game_mouse_oy = 0;
 
+int game_astarx = 0;
+int game_astary = 0;
+
 obj_t *game_selobj = NULL;
 
 void gameloop_draw(void)
 {
-	int i;
+	int x, y, i;
 	obj_t *ob;
 
 	// Clear the screen
@@ -49,6 +52,72 @@ void gameloop_draw(void)
 			2);
 	}
 
+	// TEST: A* route
+	{
+		// Get coordinates
+		int asendx = (game_mouse_x + game_camx)/32;
+		int asendy = (game_mouse_y + game_camy)/24;
+
+		// Do A* trace
+		int dirlist[1024];
+		int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
+			game_astarx, game_astary, asendx, asendy);
+
+		// Trace
+		if(dirlen != -1)
+		{
+			// Get start pos
+			x = game_astarx;
+			y = game_astary;
+
+			for(i = 0; i < dirlen; i++)
+			{
+				// Get delta
+				int dx = face_dir[dirlist[i]][0];
+				int dy = face_dir[dirlist[i]][1];
+
+				// Draw line
+				switch(dirlist[i])
+				{
+					case DIR_SOUTH:
+						draw_vline_d(screen,
+							x*32+16 - game_camx,
+							y*24+12 - game_camy,
+							24, 2);
+						break;
+
+					case DIR_NORTH:
+						draw_vline_d(screen,
+							x*32+16 - game_camx,
+							y*24-12 - game_camy,
+							24, 2);
+						break;
+
+					case DIR_EAST:
+						draw_hline_d(screen,
+							x*32+16 - game_camx,
+							y*24+12 - game_camy,
+							32, 2);
+						break;
+
+					case DIR_WEST:
+						draw_hline_d(screen,
+							x*32-16 - game_camx,
+							y*24+12 - game_camy,
+							32, 2);
+						break;
+
+				}
+
+				// Move
+				x += dx;
+				y += dy;
+
+			}
+		}
+	}
+
+
 	// Draw HUD
 	// TODO!
 
@@ -60,9 +129,27 @@ void gameloop_draw(void)
 
 int gameloop_tick(void)
 {
-	int i;
+	int x, y, i;
 	obj_t *ob;
+	cell_t *ce;
 
+	// TEST: A* route
+	if(mouse_b & 1)
+	{
+		// Get coordinates
+		x = (game_mouse_x + game_camx)/32;
+		y = (game_mouse_y + game_camy)/24;
+		ce = layer_cell_ptr(rootlv->layers[0], x, y);
+
+		if(ce != NULL)
+		{
+			// Set start point
+			game_astarx = x;
+			game_astary = y;
+		}
+	}
+
+	// Tick objects
 	for(i = 0; i < rootlv->ocount; i++)
 	{
 		ob = rootlv->objects[i];
