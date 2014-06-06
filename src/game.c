@@ -12,10 +12,7 @@ int game_mouse_y = 0;
 int game_mouse_ox = 0;
 int game_mouse_oy = 0;
 
-int game_astarx = 0;
-int game_astary = 0;
-
-obj_t *game_selobj = NULL;
+obj_t *game_selob = NULL;
 
 void gameloop_draw(void)
 {
@@ -44,6 +41,7 @@ void gameloop_draw(void)
 			1);
 
 		// Bounding box
+		if(ob == game_selob)
 		draw_border_d(screen,
 			ob->bx + ob->f.ox + ob->f.cx*32 - game_camx,
 			ob->by + ob->f.oy + ob->f.cy*24 - game_camy,
@@ -70,7 +68,8 @@ void gameloop_draw(void)
 
 	}
 
-	// TEST: A* route
+	// Draw A* route for selected object
+	if(game_selob != NULL)
 	{
 		// Get coordinates
 		int asendx = (game_mouse_x + game_camx)/32;
@@ -79,14 +78,14 @@ void gameloop_draw(void)
 		// Do A* trace
 		int dirlist[1024];
 		int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
-			game_astarx, game_astary, asendx, asendy);
+			game_selob->f.cx, game_selob->f.cy, asendx, asendy);
 
 		// Trace
 		if(dirlen != -1)
 		{
 			// Get start pos
-			x = game_astarx;
-			y = game_astary;
+			x = game_selob->f.cx;
+			y = game_selob->f.cy;
 
 			for(i = 0; i < dirlen; i++)
 			{
@@ -147,24 +146,52 @@ void gameloop_draw(void)
 
 int gameloop_tick(void)
 {
-	int x, y, i;
+	int i;
+	int mx, my;
 	obj_t *ob;
 	cell_t *ce;
 
-	// TEST: A* route
-	if(mouse_b & 1)
-	{
-		// Get coordinates
-		x = (game_mouse_x + game_camx)/32;
-		y = (game_mouse_y + game_camy)/24;
-		ce = layer_cell_ptr(rootlv->layers[0], x, y);
+	// Get coordinates
+	mx = (game_mouse_x + game_camx)/32;
+	my = (game_mouse_y + game_camy)/24;
+	ce = layer_cell_ptr(rootlv->layers[0], mx, my);
 
-		if(ce != NULL)
+	// TEST: A* route
+	if((mouse_b & ~mouse_ob) & 1)
+	{
+
+		if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER)
 		{
-			// Set start point
-			game_astarx = x;
-			game_astary = y;
+			// Select object
+			game_selob = ce->ob;
+
+		} else {
+			// Deselect objects
+			game_selob = NULL;
+
 		}
+	}
+
+	if((mouse_b & ~mouse_ob) & 4)
+	{
+		// Check if we have an object selected
+
+		if(game_selob != NULL)
+		{
+			// Move it
+			game_selob->tx = mx;
+			game_selob->ty = my;
+
+			// Destroy the old list
+			if(game_selob->asdir != NULL)
+			{
+				free(game_selob->asdir);
+				game_selob->asdir = NULL;
+			}
+
+
+		}
+
 	}
 
 	// Tick objects

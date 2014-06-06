@@ -184,6 +184,10 @@ static layer_t *level_load_layer(FILE *fp)
 		ce->f.tset = fgetc(fp);
 		ce->f.tidx = fgetc(fp);
 		ce->f.p1 = fgetc(fp);
+
+		// TODO: replace this stupid hack
+		ce->f.ctyp = ce_defaults[ce->f.tset][ce->f.tidx].ctyp;
+
 	}
 
 	// Return

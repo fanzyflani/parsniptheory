@@ -143,9 +143,10 @@ struct obj
 
 	// Extra state for anything to use
 	// THIS IS TOTALLY A GOOD IDEA
+	int turnsleft;
 	int tx, ty;
-	void *v1;
-	int i1, i2;
+	int *asdir;
+	int aslen, asidx;
 
 };
 

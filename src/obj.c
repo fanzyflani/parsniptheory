@@ -22,6 +22,9 @@ int obj_player_f_init(obj_t *ob)
 	ob->bw =  20;
 	ob->bh =  36;
 
+	ob->tx = ob->f.cx;
+	ob->ty = ob->f.cy;
+
 	return 1;
 }
 
@@ -74,30 +77,25 @@ void obj_player_f_tick(obj_t *ob)
 	assert(cs != NULL);
 	cs->ob = ob;
 
-	// TEST:
-	// Get coordinates
-	int asendx = (mouse_x + game_camx)/32;
-	int asendy = (mouse_y + game_camy)/24;
-
 	// Check if walking
 	if(ob->f.ox == 0 && ob->f.oy == 0) do
 	{
 		// If A* works, follow
-		if(ob->v1 != NULL) do
+		if(ob->asdir != NULL) do
 		{
 			// Check if at end
-			if(ob->i2 >= ob->i1)
+			if(ob->asidx >= ob->aslen)
 			{
 				// Destroy the path and try again
-				free(ob->v1);
-				ob->v1 = NULL;
+				free(ob->asdir);
+				ob->asdir = NULL;
 
 				break;
 
 			}
 
 			// Get direction
-			int dir = ((int *)ob->v1)[ob->i2];
+			int dir = ((int *)ob->asdir)[ob->asidx];
 			dx = face_dir[dir][0];
 			dy = face_dir[dir][1];
 
@@ -110,8 +108,8 @@ void obj_player_f_tick(obj_t *ob)
 			if(ce == NULL || ce->f.ctyp != CELL_FLOOR || ce->ob != NULL)
 			{
 				// Destroy the path and try again
-				free(ob->v1);
-				ob->v1 = NULL;
+				free(ob->asdir);
+				ob->asdir = NULL;
 
 				break;
 			}
@@ -122,7 +120,7 @@ void obj_player_f_tick(obj_t *ob)
 			ce->ob = ob;
 
 			// Move object
-			ob->i2++;
+			ob->asidx++;
 			ob->f.cx += dx;
 			ob->f.cy += dy;
 			ob->f.ox -= 32*dx;
@@ -131,25 +129,23 @@ void obj_player_f_tick(obj_t *ob)
 		} while(0);
 
 		// Perform A* towards target
-		if(ob->v1 == NULL || (asendx != ob->tx && asendy != ob->ty))
+		if(ob->asdir == NULL)
 		{
 			// Do A* trace
 			int dirlist[1024];
 			int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
-				ob->f.cx, ob->f.cy, asendx, asendy);
+				ob->f.cx, ob->f.cy, ob->tx, ob->ty);
 
 			// If it works, produce a new list
 			if(dirlen >= 1)
 			{
 				// Allocate + copy
-				ob->v1 = realloc(ob->v1, sizeof(int) * dirlen);
-				memcpy(ob->v1, dirlist, sizeof(int) * dirlen);
+				ob->asdir = realloc(ob->asdir, sizeof(int) * dirlen);
+				memcpy(ob->asdir, dirlist, sizeof(int) * dirlen);
 
 				// Set things
-				ob->i1 = dirlen;
-				ob->i2 = 0;
-				ob->tx = asendx;
-				ob->ty = asendy;
+				ob->aslen = dirlen;
+				ob->asidx = 0;
 				
 			}
 		}
@@ -293,9 +289,9 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	// Fill in extra crap
 	ob->tx = 0;
 	ob->ty = 0;
-	ob->v1 = NULL;
-	ob->i1 = 0;
-	ob->i2 = 0;
+	ob->asdir = NULL;
+	ob->aslen = 0;
+	ob->asidx = 0;
 
 	// Return
 	return ob;
