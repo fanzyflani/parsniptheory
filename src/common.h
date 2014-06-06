@@ -25,6 +25,7 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 // Limits
 #define TEAM_MAX 128
+#define STEPS_PER_TURN 7
 
 enum
 {
@@ -143,7 +144,8 @@ struct obj
 
 	// Extra state for anything to use
 	// THIS IS TOTALLY A GOOD IDEA
-	int turnsleft;
+	int please_wait;
+	int steps_left;
 	int tx, ty;
 	int *asdir;
 	int aslen, asidx;
@@ -210,7 +212,7 @@ int editloop(void);
 // game.c
 extern int game_camx;
 extern int game_camy;
-int gameloop(void);
+int gameloop(const char *fname, int player_count);
 
 // img.c
 uint16_t io_get2le(FILE *fp);

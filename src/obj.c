@@ -77,6 +77,21 @@ void obj_player_f_tick(obj_t *ob)
 	assert(cs != NULL);
 	cs->ob = ob;
 
+	// Check if we have steps left
+	if(ob->steps_left == 0)
+	{
+		// Forfeit motion
+		// TODO: Allow this to continue
+		free(ob->asdir);
+		ob->asdir = NULL;
+		ob->tx = ob->f.cx;
+		ob->ty = ob->f.cy;
+
+		// Forfeit lock
+		ob->please_wait = 0;
+		return;
+	}
+
 	// Check if walking
 	if(ob->f.ox == 0 && ob->f.oy == 0) do
 	{
@@ -147,6 +162,10 @@ void obj_player_f_tick(obj_t *ob)
 				ob->aslen = dirlen;
 				ob->asidx = 0;
 				
+			} else {
+				// Release "please wait" flag
+				ob->please_wait = 0;
+
 			}
 		}
 
@@ -162,6 +181,9 @@ void obj_player_f_tick(obj_t *ob)
 		if(ob->f.oy > 0) ob->f.oy -= 1;
 		if(ob->f.oy > 0) ob->f.oy -= 1;
 
+		// Decrease steps at end
+		if(ob->f.ox == 0 && ob->f.oy == 0)
+			ob->steps_left--;
 	}
 }
 
@@ -287,6 +309,8 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	ob->f_free = obj_fptrs[otyp].f_free;
 
 	// Fill in extra crap
+	ob->please_wait = 0;
+	ob->steps_left = 0;
 	ob->tx = 0;
 	ob->ty = 0;
 	ob->asdir = NULL;

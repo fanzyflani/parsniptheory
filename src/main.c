@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 	// TODO: Actually have a menu loop.
 	// We'll just use one of these two loops.
 	//editloop();
-	gameloop();
+	gameloop("dat/genesis.psl", 4);
 
 	// Clean up
 	

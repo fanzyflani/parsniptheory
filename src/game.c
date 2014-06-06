@@ -14,6 +14,42 @@ int game_mouse_oy = 0;
 
 obj_t *game_selob = NULL;
 
+int game_player_count = 0;
+int game_curplayer = 0;
+
+static void gameloop_start_turn(void)
+{
+	int i;
+	obj_t *ob;
+	struct fd_player *fde;
+
+	// Grant steps to all players of this team
+	for(i = 0; i < rootlv->ocount; i++)
+	{
+		// Get object
+		ob = rootlv->objects[i];
+		fde = (struct fd_player *)(ob->f.fd);
+		
+		// Do the compare
+		if(fde->team == game_curplayer)
+			ob->steps_left = 7;
+	}
+}
+
+static void gameloop_next_turn(void)
+{
+	// Deselect object
+	game_selob = NULL;
+
+	// Move to the next player
+	game_curplayer++;
+	if(game_curplayer >= game_player_count)
+		game_curplayer = 0;
+	
+	// Start their turn
+	gameloop_start_turn();
+}
+
 void gameloop_draw(void)
 {
 	int x, y, i;
@@ -51,6 +87,7 @@ void gameloop_draw(void)
 	}
 
 	// TEST: Mark walkable paths
+	/*
 	for(y = 0; y < rootlv->layers[0]->w; y++)
 	for(x = 0; x < rootlv->layers[0]->h; x++)
 	{
@@ -67,6 +104,7 @@ void gameloop_draw(void)
 		}
 
 	}
+	*/
 
 	// Draw A* route for selected object
 	if(game_selob != NULL)
@@ -100,28 +138,28 @@ void gameloop_draw(void)
 						draw_vline_d(screen,
 							x*32+16 - game_camx,
 							y*24+12 - game_camy,
-							24, 2);
+							24, (i < game_selob->steps_left ? 2 : 1));
 						break;
 
 					case DIR_NORTH:
 						draw_vline_d(screen,
 							x*32+16 - game_camx,
 							y*24-12 - game_camy,
-							24, 2);
+							24, (i < game_selob->steps_left ? 2 : 1));
 						break;
 
 					case DIR_EAST:
 						draw_hline_d(screen,
 							x*32+16 - game_camx,
 							y*24+12 - game_camy,
-							32, 2);
+							32, (i < game_selob->steps_left ? 2 : 1));
 						break;
 
 					case DIR_WEST:
 						draw_hline_d(screen,
 							x*32-16 - game_camx,
 							y*24+12 - game_camy,
-							32, 2);
+							32, (i < game_selob->steps_left ? 2 : 1));
 						break;
 
 				}
@@ -156,11 +194,44 @@ int gameloop_tick(void)
 	my = (game_mouse_y + game_camy)/24;
 	ce = layer_cell_ptr(rootlv->layers[0], mx, my);
 
-	// TEST: A* route
+	// Tick objects
+	for(i = 0; i < rootlv->ocount; i++)
+	{
+		ob = rootlv->objects[i];
+
+		if(ob == NULL) continue;
+
+		if(ob->f_tick != NULL) ob->f_tick(ob);
+	}
+
+	// Update UI
+	if(game_mouse_x < (screen->w>>2)) game_camx -= 4;
+	if(game_mouse_y < (screen->h>>2)) game_camy -= 4;
+	if(game_mouse_x >= ((screen->w*3)>>2)) game_camx += 4;
+	if(game_mouse_y >= ((screen->h*3)>>2)) game_camy += 4;
+
+	// Block input if waiting for object
+	if(game_selob != NULL && game_selob->please_wait)
+		return 0;
+
+	// INPUT STARTS HERE
+
+	// Scan keys
+	while(input_key_queue_peek() != 0)
+	switch(input_key_queue_pop()>>16)
+	{
+		case SDLK_RETURN | 0x8000:
+			// Next turn!
+			gameloop_next_turn();
+			break;
+	}
+
+	// Object select
 	if((mouse_b & ~mouse_ob) & 1)
 	{
 
-		if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER)
+		if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
+			&& ((struct fd_player *)(ce->ob->f.fd))->team == game_curplayer)
 		{
 			// Select object
 			game_selob = ce->ob;
@@ -172,6 +243,7 @@ int gameloop_tick(void)
 		}
 	}
 
+	// Object move
 	if((mouse_b & ~mouse_ob) & 4)
 	{
 		// Check if we have an object selected
@@ -189,39 +261,30 @@ int gameloop_tick(void)
 				game_selob->asdir = NULL;
 			}
 
+			// Mark it as "please wait"
+			game_selob->please_wait = 1;
 
 		}
 
 	}
 
-	// Tick objects
-	for(i = 0; i < rootlv->ocount; i++)
-	{
-		ob = rootlv->objects[i];
-
-		if(ob == NULL) continue;
-
-		if(ob->f_tick != NULL) ob->f_tick(ob);
-	}
-
-	// Update UI
-	if(game_mouse_x < (screen->w>>2)) game_camx -= 4;
-	if(game_mouse_y < (screen->h>>2)) game_camy -= 4;
-	if(game_mouse_x >= ((screen->w*3)>>2)) game_camx += 4;
-	if(game_mouse_y >= ((screen->h*3)>>2)) game_camy += 4;
-
 	return 0;
 }
 
-int gameloop(void)
+int gameloop(const char *fname, int player_count)
 {
 	// Initialise
 	game_camx = 0;
 	game_camy = 0;
+	game_player_count = player_count;
+	game_curplayer = 0;
 
 	// Load level
-	rootlv = level_load("dat/genesis.psl");
+	rootlv = level_load(fname);
 	assert(rootlv != NULL); // TODO: Be more graceful
+
+	// Start turn
+	gameloop_start_turn();
 	
 	for(;;)
 	{
