@@ -147,7 +147,12 @@ img_t *img_load_tga(const char *fname)
 		}
 	}
 
-	assert(cmaps[i].fname != NULL);
+	// Did we find one?
+	if(cmaps[i].fname == NULL)
+	{
+		// Use a dummy
+		img->cmidx = -1;
+	}
 
 	// Return
 	return img;

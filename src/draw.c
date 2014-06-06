@@ -118,6 +118,41 @@ void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c)
 	draw_vline_d(dst, x+w, y+1, h-1, c);
 }
 
+void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, const char *fmt, ...)
+{
+	va_list va;
+	char buf[1024];
+
+	// Firstly, make sure we actually *have* a font.
+	if(font == NULL) return;
+
+	// Secondly, make sure dx, dy are in range.
+	//if(dx + fsize > screen->w || dy + fsize > screen->h || dy < 0) return;
+
+	// Now format the string.
+	va_start(va, fmt);
+	vsnprintf(buf, 1023, fmt, va);
+	buf[1023] = '\x00';
+
+	// Finally, start drawing it.
+	// TODO: Support multiple colours! (i.e. use cmap)
+	uint8_t *cp = (uint8_t *)buf;
+	for(; *cp != '\x00' /*&& dx + fsize <= screen->w*/; cp++, dx += fsize)
+	{
+		// Check if X in range
+		//if(dx < 0) continue;
+
+		// Get source char position
+		int sx = (*cp)&15;
+		int sy = (*cp)>>4;
+		sx *= fsize;
+		sy *= fsize;
+
+		// Draw
+		draw_img_trans_d_sd(dst, font, dx, dy, sx, sy, fsize, fsize, 0);
+	}
+}
+
 void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 {
 	int cx1, cy1, cx2, cy2;

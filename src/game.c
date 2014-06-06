@@ -172,8 +172,16 @@ void gameloop_draw(void)
 		}
 	}
 
-
 	// Draw HUD
+	for(i = 6; i >= 0; i--)
+		draw_img_trans_cmap_d_sd(screen, ob->img,
+			0,
+			0,
+			0*32, i*48, 32, 48,
+			0, teams[game_curplayer]->cm_player);
+		
+	draw_printf(screen, i_font16, 16, 32, 0, 1, "PLAYER %i TURN", game_curplayer+1);
+
 	// TODO!
 
 	// Flip

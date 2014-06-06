@@ -205,6 +205,7 @@ void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
+void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, const char *fmt, ...);
 
 // edit.c
 int editloop(void);
@@ -262,9 +263,11 @@ extern int screen_scale;
 extern int screen_ofx;
 extern int screen_ofy;
 
+
 extern level_t *rootlv;
 extern img_t *i_player;
 extern img_t *i_tiles1;
+extern img_t *i_font16;
 extern uint8_t *cm_player;
 extern uint8_t *cm_tiles1;
 extern team_t *teams[TEAM_MAX];
