@@ -16,6 +16,8 @@ static void cell_deprep(cell_t *ce)
 
 static void cell_prep(cell_t *ce, int tset, int tidx)
 {
+	int i;
+
 	ce->f.ctyp = ce_defaults[tset][tidx].ctyp;
 	ce->f.tset = tset;
 	ce->f.tidx = tidx;
@@ -23,6 +25,9 @@ static void cell_prep(cell_t *ce, int tset, int tidx)
 	ce->f.p1 = ce_defaults[tset][tidx].p1;
 
 	ce->ob = NULL;
+
+	for(i = 0; i < FOOD_COUNT; i++)
+		ce->splatters[i] = 0;
 }
 
 void cell_reprep(cell_t *ce, int tset, int tidx)

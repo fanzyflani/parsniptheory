@@ -24,6 +24,7 @@ def rgb_lerp_chain(sz, l):
 files = {
 	"player": [ "tga/player.tga" ],
 	"tiles": [ "tga/tiles1.tga" ],
+	"food": [ "tga/food1.tga" ],
 }
 
 cmaps = {}
@@ -41,6 +42,13 @@ pranges["player"] = [
 ]
 
 pranges["tiles"] = [
+	("trans", 0),
+	("exact", 1, 255, 255, 255),
+	("exact", 2, 0, 0, 0),
+	("any", 32, 256-32),
+]
+
+pranges["food"] = [
 	("trans", 0),
 	("exact", 1, 255, 255, 255),
 	("exact", 2, 0, 0, 0),

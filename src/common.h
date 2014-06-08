@@ -89,6 +89,13 @@ enum
 	OBJ_COUNT
 };
 
+enum
+{
+	FOOD_TOMATO = 0,
+
+	FOOD_COUNT
+};
+
 typedef struct cell cell_t;
 typedef struct obj obj_t;
 typedef struct layer layer_t;
@@ -105,6 +112,7 @@ struct cell
 {
 	cell_file_t f;
 	obj_t *ob;
+	uint8_t splatters[FOOD_COUNT];
 };
 
 typedef struct obj_file
@@ -267,9 +275,11 @@ extern int screen_ofy;
 extern level_t *rootlv;
 extern img_t *i_player;
 extern img_t *i_tiles1;
+extern img_t *i_food1;
 extern img_t *i_font16;
 extern uint8_t *cm_player;
 extern uint8_t *cm_tiles1;
+extern uint8_t *cm_food1;
 extern team_t *teams[TEAM_MAX];
 
 extern uint8_t pal_src[256][4];

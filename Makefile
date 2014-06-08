@@ -5,6 +5,7 @@ SRCDIR = src
 BINNAME = parsniptheory
 
 IMAGES = \
+	tga/food1.tga \
 	tga/player.tga \
 	tga/tiles1.tga
 

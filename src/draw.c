@@ -157,6 +157,7 @@ void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 {
 	int cx1, cy1, cx2, cy2;
 	int x, y;
+	int i, j;
 	cell_t *ce;
 	int cestep;
 
@@ -182,11 +183,28 @@ void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 	ce = ar->data + cx1 + cy1*ar->w;
 	for(y = cy1; y <= cy2; y++, ce += cestep)
 	for(x = cx1; x <= cx2; x++, ce++)
+	{
+		// Draw tile
 		draw_img_trans_cmap_d_sd(dst, i_tiles1,
 			x*32-dx, y*24-dy,
 			(ce->f.tidx&15)*32,
 			(ce->f.tidx>>4)*24,
 			32, 24, 0, cm_tiles1);
+
+		// Draw food splatters
+		// Interleave between foods
+		for(i = 0; i < 4; i++)
+		for(j = 0; j < FOOD_COUNT; j++)
+		if(ce->splatters[j] & (1<<i))
+		{
+			draw_img_trans_cmap_d_sd(dst, i_food1,
+				x*32-dx, y*24-dy-4,
+				i*32 + 128,
+				j*64,
+				32, 32, 0, cm_food1);
+		}
+
+	}
 
 }
 

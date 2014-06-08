@@ -33,11 +33,13 @@ level_t *rootlv = NULL;
 // Images
 img_t *i_player = NULL;
 img_t *i_tiles1 = NULL;
+img_t *i_food1 = NULL;
 img_t *i_font16 = NULL;
 
 // Colourmaps
 uint8_t *cm_player = NULL;
 uint8_t *cm_tiles1 = NULL;
+uint8_t *cm_food1 = NULL;
 
 // Teams
 team_t *teams[TEAM_MAX];
@@ -69,8 +71,10 @@ int main(int argc, char *argv[])
 	i_player = img_load_tga("tga/player.tga"); 
 	i_tiles1 = img_load_tga("tga/tiles1.tga"); 
 	i_font16 = img_load_tga("tga/font16.tga"); 
+	i_food1 = img_load_tga("tga/food1.tga"); 
 	cm_player = cmaps[i_player->cmidx].data;
 	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
+	cm_food1 = cmaps[i_food1->cmidx].data;
 
 	// Prepare teams
 	for(i = 0; i < TEAM_MAX; i++)
