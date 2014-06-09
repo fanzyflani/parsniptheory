@@ -46,6 +46,112 @@ uint8_t *cm_food1 = NULL;
 // Teams
 team_t *teams[TEAM_MAX];
 
+static void menu_draw_player(int x, int y, int team, int face)
+{
+	int i;
+
+	for(i = 6; i >= 0; i--)
+		draw_img_trans_cmap_d_sd(screen, i_player,
+			x,
+			y,
+			face*32, i*48, 32, 48,
+			0, teams[team]->cm_player);
+}
+
+int menuloop(void)
+{
+	int i;
+
+	for(;;)
+	{
+		// Clear the screen
+		screen_clear(0);
+
+		// Work out what's selected
+		int sel = -1;
+
+		if(mouse_x >= 10 && mouse_x < screen->w/2 - 10)
+		{
+			if(mouse_y >= 10 && mouse_y < screen->h/2 - 10)
+			{
+				sel = 0;
+
+			} else if(mouse_y >= screen->h/2 + 10 && mouse_y < screen->h - 10) {
+				sel = 2;
+
+			}
+
+		} else if(mouse_x >= screen->w/2 + 10 && mouse_x < screen->w - 10) {
+			if(mouse_y >= 10 && mouse_y < screen->h/2 - 10)
+			{
+				sel = 1;
+
+			} else if(mouse_y >= screen->h/2 + 10 && mouse_y < screen->h - 10) {
+				sel = 3;
+
+			}
+
+
+		}
+
+		// Draw rectangles
+		draw_rect_d(screen, 10, 10, screen->w/2-20, screen->h/2-20, 64 + (sel==0 ? 0 : 2) + 8*0);
+		draw_rect_d(screen, screen->w/2 + 10, 10, screen->w/2-20, screen->h/2-20, 64 + (sel==1 ? 0 : 2) + 8*1);
+		draw_rect_d(screen, 10, screen->h/2 + 10, screen->w/2-20, screen->h/2-20, 64 + (sel==2 ? 0 : 2) + 8*2);
+		draw_rect_d(screen, screen->w/2 + 10, screen->h/2 + 10, screen->w/2-20, screen->h/2-20, 64 + (sel==3 ? 0 : 2) + 8*3);
+
+		// Draw backgrounds
+		for(i = 0; i < 2; i++)
+			menu_draw_player(screen->w/2 - 10 - 32 - 28*1 + 28*i, screen->h/2 - 10 - 44, i, 0);
+		for(i = 0; i < 3; i++)
+			menu_draw_player(screen->w - 10 - 32 - 28*2 + 28*i, screen->h/2 - 10 - 44, i, 0);
+		for(i = 0; i < 4; i++)
+			menu_draw_player(screen->w/2 - 10 - 32 - 28*3 + 28*i, screen->h - 10 - 44, i, 0);
+
+		draw_img_trans_cmap_d_sd(screen, i_tiles1,
+			screen->w - 10 - 10 - 36*3, screen->h - 10 - 10 - 24,
+			32*1, 24*0, 32, 24, 0, cm_tiles1);
+		draw_img_trans_cmap_d_sd(screen, i_tiles1,
+			screen->w - 10 - 10 - 36*2, screen->h - 10 - 10 - 24,
+			32*5, 24*0, 32, 24, 0, cm_tiles1);
+		draw_img_trans_cmap_d_sd(screen, i_tiles1,
+			screen->w - 10 - 10 - 36*1, screen->h - 10 - 10 - 24,
+			32*12, 24*0, 32, 24, 0, cm_tiles1);
+
+		// Draw texts
+		draw_printf(screen, i_font16, 16, 15, 20, 1, "2 PLAYER");
+		draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "3 PLAYER");
+		draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "4 PLAYER");
+		draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "LVL EDIT");
+		draw_printf(screen, i_font16, 16, screen->w/2 - 8*(7+1+6), screen->h/2 - 8, 1,
+			"PARSNIP THEORY");
+
+		// Flip
+		screen_flip();
+		SDL_Delay(20);
+
+		// Check if clicked
+		if((mouse_ob & 1) && !(mouse_b & 1))
+		switch(sel)
+		{
+			case 0:
+				return 2;
+			case 1:
+				return 3;
+			case 2:
+				return 4;
+			case 3:
+				return 0xED17;
+
+		}
+
+		// Poll input
+		if(input_poll()) return -1;
+
+	}
+
+}
+
 int main(int argc, char *argv[])
 {
 	int i;
@@ -60,7 +166,7 @@ int main(int argc, char *argv[])
 
 	// Set up basic video mode
 	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip Theory - UNRELEASED TESTING version", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 1)", NULL);
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, 0);
 	screen = img_new(320, 200);
 
@@ -85,14 +191,30 @@ int main(int argc, char *argv[])
 		teams[i] = team_new(i);
 
 	// Enter menu loop
-	// TODO: Actually have a menu loop.
-	// We'll just use one of these two loops.
-	//editloop();
-	gameloop("dat/genesis.psl", 2);
+	for(;;)
+	switch(menuloop())
+	{
+		case 2:
+			gameloop("dat/level.psl", 2);
+			break;
 
-	// Clean up
-	
-	// That's all folks!
-	return 0;
+		case 3:
+			gameloop("dat/level.psl", 3);
+			break;
+
+		case 4:
+			gameloop("dat/level.psl", 4);
+			break;
+
+		case 0xED17:
+			editloop();
+			break;
+		
+		case -1:
+			// Clean up
+			
+			// That's all folks!
+			return 0;
+	}
 }
 

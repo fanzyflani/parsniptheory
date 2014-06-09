@@ -57,6 +57,32 @@ void draw_img_trans_cmap_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, in
 
 }
 
+void draw_rect_d(img_t *dst, int dx, int dy, int dw, int dh, uint8_t col)
+{
+	int x, y;
+	uint8_t *dp;
+	int dpitch;
+
+	// Clip
+	if(dx < 0) { dw += dx; dx = 0; }
+	if(dy < 0) { dh += dy; dy = 0; }
+	if(dx + dw > dst->w) { dw = dst->w - dx; }
+	if(dy + dh > dst->h) { dh = dst->h - dy; }
+
+	// Get pitches and pointers
+	dpitch = dst->w - dw;
+	dp = IMG8(dst, dx, dy);
+
+	// Draw
+	for(y = 0; y < dh; y++, dp += dpitch)
+	for(x = 0; x < dw; x++, dp++)
+		*dp = col;
+	
+	//
+
+}
+
+
 void draw_hline_d(img_t *dst, int x, int y, int len, uint8_t c)
 {
 	if(y < 0 || y >= dst->h) return;

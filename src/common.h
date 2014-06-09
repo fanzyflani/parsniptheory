@@ -220,6 +220,7 @@ int clip_d_sd(img_t *dst, img_t *src, int *dx, int *dy, int *sx, int *sy, int *s
 // draw.c
 void draw_img_trans_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, int sy, int sw, int sh, uint8_t tcol);
 void draw_img_trans_cmap_d_sd(img_t *dst, img_t *src, int dx, int dy, int sx, int sy, int sw, int sh, uint8_t tcol, uint8_t *cmap);
+void draw_rect_d(img_t *dst, int dx, int dy, int dw, int dh, uint8_t col);
 void draw_layer(img_t *dst, layer_t *ar, int dx, int dy);
 void draw_level(img_t *dst, level_t *lv, int dx, int dy, int ayidx);
 void draw_hline_d(img_t *dst, int x, int y, int len, uint8_t c);

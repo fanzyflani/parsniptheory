@@ -212,13 +212,26 @@ int editloop(void)
 
 					break;
 
+				case SDLK_n:
+					if(key_state[SDLK_LCTRL] || key_state[SDLK_RCTRL])
+					{
+						// Clear objects
+
+						// FIXME: If a NULL shows up, ouch
+						printf("Freeing objects...\n");
+						while(rootlv->ocount > 0)
+							level_obj_free(rootlv, rootlv->objects[0]);
+
+					}
+
+					break;
 				case SDLK_l:
 					if(key_state[SDLK_LCTRL] || key_state[SDLK_RCTRL])
 					{
 						// Load
 
 						printf("Loading...\n");
-						level_t *tlv = level_load("dat/honk.psl");
+						level_t *tlv = level_load("dat/level.psl");
 
 						if(tlv != NULL)
 						{
@@ -241,7 +254,7 @@ int editloop(void)
 						// Save
 
 						printf("Saving...\n");
-						level_save(rootlv, "dat/honk.psl");
+						level_save(rootlv, "dat/level.psl");
 					}
 
 					break;
