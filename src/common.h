@@ -86,6 +86,8 @@ enum
 	OBJ_FREE = 0,
 	OBJ_PLAYER,
 
+	OBJ_FOOD_TOMATO,
+
 	OBJ_COUNT
 };
 
@@ -154,6 +156,7 @@ struct obj
 	// THIS IS TOTALLY A GOOD IDEA
 	int please_wait;
 	int steps_left;
+	int health;
 	int tx, ty;
 	int *asdir;
 	int aslen, asidx;
@@ -260,6 +263,7 @@ team_t *team_new(int idx);
 int sdiv(int n, int d);
 int smod(int n, int d);
 int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2, int y2);
+int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2);
 
 // main.c
 extern const int face_dir[4][2];

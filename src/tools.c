@@ -288,3 +288,69 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 
 }
 
+int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
+{
+	int trx, try;
+	int vx, vy;
+	int gx, gy;
+	int dx, dy;
+	int cx, cy;
+	cell_t *ce;
+
+	// Shove some dummies in
+	if(rx == NULL) rx = &trx;
+	if(ry == NULL) ry = &try;
+
+	// Get velocity + direction
+	gx = (x2 < x1 ? -1 : 1);
+	gy = (y2 < y1 ? -1 : 1);
+	vx = (x2 < x1 ? x1-x2 : x2-x1);
+	vy = (y2 < y1 ? y1-y2 : y2-y1);
+
+	// Get distance to edge
+	dx = 1<<8;
+	dy = 1<<8;
+	cx = x1;
+	cy = y1;
+
+	// Trace
+	while(cx != x2 || cy != y2)
+	{
+		// Get cell
+		ce = layer_cell_ptr(ar, cx, cy);
+
+		// Check
+		if(ce == NULL) break;
+		//if(ce->ob != NULL) break;
+		if(ce->f.ctyp == CELL_OOB) break;
+		if(ce->f.ctyp == CELL_SOLID) break;
+		if(ce->f.ctyp == CELL_BACKWALL) break;
+
+		// Advance
+		//if(dx/vx < dy/vy) // What's actually happening.
+		//if(time_to_x < time_to_y) // What I'm trying to actually calculate.
+		if(cy == y2 || (cx != x2 && dx*vy < dy*vx))
+		{
+			// Advance X
+			dy -= (dx*vy)/vx;
+			cx += gx;
+			dx = 2<<8;
+
+		} else {
+			// Advance Y
+			dx -= (dy*vx)/vy;
+			cy += gy;
+			dy = 2<<8;
+
+		}
+
+	}
+
+	// Return
+	*rx = cx;
+	*ry = cy;
+
+	return (cx == x2 && cy == y2);
+
+}
+

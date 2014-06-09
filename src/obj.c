@@ -25,6 +25,8 @@ int obj_player_f_init(obj_t *ob)
 	ob->tx = ob->f.cx;
 	ob->ty = ob->f.cy;
 
+	ob->health = 100;
+
 	return 1;
 }
 
@@ -199,10 +201,97 @@ void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 			camy + ob->f.cy*24 + ob->f.oy - 21,
 			(fde->face&3)*32, i*48, 32, 48,
 			0, ob->cmap);
-
 }
 
 void obj_player_f_free(obj_t *ob)
+{
+	//
+
+}
+
+
+//
+// OBJ_FOOD_TOMATO
+//
+
+int obj_food_tomato_f_init(obj_t *ob)
+{
+	struct fd_food *fde = (struct fd_food *)ob->f.fd;
+
+	assert(fde->team >= 0 && fde->team < TEAM_MAX);
+	ob->img = i_food1;
+	ob->cmap = cm_food1;
+
+	ob->bx =   5;
+	ob->by =   5;
+	ob->bw =   6;
+	ob->bh =   6;
+
+	ob->tx = ob->f.cx;
+	ob->ty = ob->f.cy;
+
+	return 1;
+}
+
+int obj_food_tomato_f_init_fd(obj_t *ob)
+{
+	struct fd_food *fde = (struct fd_food *)ob->f.fd;
+
+	fde->team = 0;
+	fde->face = 0;
+
+	return 1;
+}
+
+int obj_food_tomato_f_load_fd(obj_t *ob, FILE *fp)
+{
+	struct fd_food *fde = (struct fd_food *)ob->f.fd;
+
+	fde->team = fgetc(fp);
+	fde->face = fgetc(fp);
+
+	return 1;
+
+}
+
+int obj_food_tomato_f_save_fd(obj_t *ob, FILE *fp)
+{
+	struct fd_food *fde = (struct fd_food *)ob->f.fd;
+
+	fputc(fde->team, fp);
+	fputc(fde->face, fp);
+
+	return 1;
+
+}
+
+void obj_food_tomato_f_reset(obj_t *ob)
+{
+	//
+
+}
+
+void obj_food_tomato_f_tick(obj_t *ob)
+{
+	//struct fd_food *fde = (struct fd_food *)ob->f.fd;
+
+	// TODO!
+
+}
+
+void obj_food_tomato_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
+{
+	struct fd_food *fde = (struct fd_food *)ob->f.fd;
+
+	draw_img_trans_cmap_d_sd(dst, ob->img,
+		camx + ob->f.cx*32 + ob->f.ox - 8,
+		camy + ob->f.cy*24 + ob->f.oy - 8,
+		(fde->face&3)*32, 0, 32, 32,
+		0, ob->cmap);
+
+}
+
+void obj_food_tomato_f_free(obj_t *ob)
 {
 	//
 
@@ -242,6 +331,25 @@ struct {
 		obj_player_f_draw,
 
 		obj_player_f_free,
+	},
+
+
+	// OBJ_FOOD_TOMATO
+	{
+		sizeof(struct fd_food),
+
+		obj_food_tomato_f_init,
+
+		obj_food_tomato_f_init_fd,
+		obj_food_tomato_f_load_fd,
+		obj_food_tomato_f_save_fd,
+
+		obj_food_tomato_f_reset,
+
+		obj_food_tomato_f_tick,
+		obj_food_tomato_f_draw,
+
+		obj_food_tomato_f_free,
 	},
 
 };
@@ -311,6 +419,7 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	// Fill in extra crap
 	ob->please_wait = 0;
 	ob->steps_left = 0;
+	ob->health = 1;
 	ob->tx = 0;
 	ob->ty = 0;
 	ob->asdir = NULL;

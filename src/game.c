@@ -113,6 +113,16 @@ void gameloop_draw(void)
 		int asendx = (game_mouse_x + game_camx)/32;
 		int asendy = (game_mouse_y + game_camy)/24;
 
+		// Line trace
+		line_layer(rootlv->layers[0], &x, &y,
+			game_selob->f.cx, game_selob->f.cy, asendx, asendy);
+		draw_border_d(screen,
+			x*32 - game_camx + 1,
+			y*24 - game_camy + 1,
+			30,
+			22,
+			2);
+
 		// Do A* trace
 		int dirlist[1024];
 		int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
@@ -181,6 +191,9 @@ void gameloop_draw(void)
 			0, teams[game_curplayer]->cm_player);
 		
 	draw_printf(screen, i_font16, 16, 32, 0, 1, "PLAYER %i TURN", game_curplayer+1);
+
+	if(game_selob != NULL)
+		draw_printf(screen, i_font16, 16, 32, 16, 1, "STEPS %i", game_selob->steps_left);
 
 	// TODO!
 

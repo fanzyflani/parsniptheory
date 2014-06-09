@@ -13,5 +13,12 @@ struct fd_player
 
 };
 
+struct fd_food
+{
+	uint8_t team;
+	uint8_t face;
+
+};
+
 #endif
 
