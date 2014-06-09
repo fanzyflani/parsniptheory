@@ -26,6 +26,9 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 // Limits
 #define TEAM_MAX 128
 #define STEPS_PER_TURN 7
+#define STEPS_ATTACK 2
+#define TOMATO_SPEED 1
+#define PLAYER_HEALTH 100
 
 enum
 {
@@ -158,8 +161,14 @@ struct obj
 	int steps_left;
 	int health;
 	int tx, ty;
+	int vx, vy;
 	int *asdir;
 	int aslen, asidx;
+	int time;
+
+	level_t *level;
+
+	int freeme;
 
 };
 
@@ -199,6 +208,8 @@ layer_t *layer_new(int x, int y, int w, int h);
 void level_free(level_t *lv);
 level_t *level_new(int w, int h);
 obj_t *level_obj_add(level_t *lv, int otyp, int flags, int cx, int cy, int layer);
+int level_obj_free(level_t *lv, obj_t *ob);
+obj_t *level_obj_waiting(level_t *lv);
 level_t *level_load(const char *fname);
 int level_save(level_t *lv, const char *fname);
 
@@ -216,6 +227,7 @@ void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
+void draw_num1_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ...);
 void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, const char *fmt, ...);
 
 // edit.c
@@ -280,7 +292,9 @@ extern level_t *rootlv;
 extern img_t *i_player;
 extern img_t *i_tiles1;
 extern img_t *i_food1;
+extern img_t *i_icons1;
 extern img_t *i_font16;
+extern img_t *i_fontnum1;
 extern uint8_t *cm_player;
 extern uint8_t *cm_tiles1;
 extern uint8_t *cm_food1;

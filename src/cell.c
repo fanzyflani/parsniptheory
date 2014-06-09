@@ -149,9 +149,10 @@ obj_t *level_obj_add(level_t *lv, int otyp, int flags, int cx, int cy, int layer
 	// Allocate
 	obj_t *ob = obj_new(otyp, flags, cx, cy, layer);
 	if(ob == NULL) return NULL;
+	ob->level = lv;
 
 	// Put in level
-	lv->objects = realloc(lv->objects, sizeof(obj_t) * (lv->ocount+1));
+	lv->objects = realloc(lv->objects, sizeof(obj_t *) * (lv->ocount+1));
 	lv->objects[lv->ocount] = ob;
 	lv->ocount++;
 
@@ -159,6 +160,53 @@ obj_t *level_obj_add(level_t *lv, int otyp, int flags, int cx, int cy, int layer
 	return ob;
 
 }
+
+int level_obj_free(level_t *lv, obj_t *ob)
+{
+	// FIXME: The object list thing needs work...
+	int i;
+	int ctr;
+	cell_t *ce;
+
+	// Initialise instance counter
+	// (Just in case some dip sticks it in the objects list twice)
+	ctr = 0;
+
+	// Remove from cell
+	ce = layer_cell_ptr(lv->layers[ob->f.layer], ob->f.cx, ob->f.cy);
+	if(ce != NULL && ce->ob == ob)
+		ce->ob = NULL;
+
+	// Remove from objects list
+	for(i = 0; i < lv->ocount; i++)
+	if(lv->objects[i] == ob)
+	{
+		memmove(lv->objects + i, lv->objects + (i+1), sizeof(obj_t *) * (lv->ocount-1-i));
+		lv->objects = realloc(lv->objects, sizeof(obj_t) * (lv->ocount-1));
+		lv->ocount--;
+		i--;
+		ctr++;
+	}
+
+	// Free
+	obj_free(ob);
+
+	// Return count
+	return ctr;
+
+}
+
+obj_t *level_obj_waiting(level_t *lv)
+{
+	int i;
+
+	for(i = 0; i < lv->ocount; i++)
+		if(lv->objects[i]->please_wait)
+			return lv->objects[i];
+
+	return NULL;
+}
+
 
 static layer_t *level_load_layer(FILE *fp)
 {
@@ -267,6 +315,8 @@ level_t *level_load(const char *fname)
 		lv->objects[i] = obj_load(fp);
 		if(lv->objects[i] == NULL)
 			goto fail_delevel;
+
+		lv->objects[i]->level = lv;
 	}
 
 	// Return with success

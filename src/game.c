@@ -22,6 +22,7 @@ static void gameloop_start_turn(void)
 	int i;
 	obj_t *ob;
 	struct fd_player *fde;
+	int obcount = 0;
 
 	// Grant steps to all players of this team
 	for(i = 0; i < rootlv->ocount; i++)
@@ -32,14 +33,36 @@ static void gameloop_start_turn(void)
 		
 		// Do the compare
 		if(fde->team == game_curplayer)
+		{
+			obcount++;
 			ob->steps_left = STEPS_PER_TURN;
+			game_camx = ob->f.cx*32+16 - screen->w/2;
+			game_camy = ob->f.cy*24+12 - screen->h/2;
+
+		} else {
+			ob->steps_left = -1;
+
+		}
+	}
+
+	// Move to the next player if this fails
+	if(obcount == 0)
+	{
+		game_curplayer++;
+		if(game_curplayer >= game_player_count)
+			game_curplayer = 0;
+
+		gameloop_start_turn();
 	}
 }
 
-static void gameloop_next_turn(void)
+static int gameloop_next_turn(void)
 {
 	// Deselect object
 	game_selob = NULL;
+
+	// Take note of the current player
+	int oldcp = game_curplayer;
 
 	// Move to the next player
 	game_curplayer++;
@@ -48,12 +71,16 @@ static void gameloop_next_turn(void)
 	
 	// Start their turn
 	gameloop_start_turn();
+
+	// If it's the same player, they've won
+	return game_curplayer != oldcp;
 }
 
 void gameloop_draw(void)
 {
 	int x, y, i;
 	obj_t *ob;
+	cell_t *ce;
 
 	// Clear the screen
 	screen_clear(0);
@@ -114,7 +141,7 @@ void gameloop_draw(void)
 		int asendy = (game_mouse_y + game_camy)/24;
 
 		// Line trace
-		line_layer(rootlv->layers[0], &x, &y,
+		int canattack = line_layer(rootlv->layers[0], &x, &y,
 			game_selob->f.cx, game_selob->f.cy, asendx, asendy);
 		draw_border_d(screen,
 			x*32 - game_camx + 1,
@@ -123,13 +150,36 @@ void gameloop_draw(void)
 			22,
 			2);
 
+		// Draw attack icon if that would make sense
+		if(canattack)
+		{
+			ce = layer_cell_ptr(rootlv->layers[0], x, y);
+			if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
+				&& ((struct fd_player *)(ce->ob->f.fd))->team != game_curplayer)
+			{
+				if(game_selob->steps_left >= STEPS_ATTACK)
+				{
+					draw_img_trans_d_sd(screen, i_icons1,
+						x*32 - game_camx,
+						y*24 - game_camy,
+						32*1, 24*1, 32, 24, 0);
+				} else {
+					draw_img_trans_d_sd(screen, i_icons1,
+						x*32 - game_camx,
+						y*24 - game_camy,
+						32*4, 24*0, 32, 24, 0);
+
+				}
+			}
+		}
+
 		// Do A* trace
 		int dirlist[1024];
 		int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
 			game_selob->f.cx, game_selob->f.cy, asendx, asendy);
 
 		// Trace
-		if(dirlen != -1)
+		if(dirlen >= 1)
 		{
 			// Get start pos
 			x = game_selob->f.cx;
@@ -142,49 +192,46 @@ void gameloop_draw(void)
 				int dy = face_dir[dirlist[i]][1];
 
 				// Draw line
-				switch(dirlist[i])
-				{
-					case DIR_SOUTH:
-						draw_vline_d(screen,
-							x*32+16 - game_camx,
-							y*24+12 - game_camy,
-							24, (i < game_selob->steps_left ? 2 : 1));
-						break;
-
-					case DIR_NORTH:
-						draw_vline_d(screen,
-							x*32+16 - game_camx,
-							y*24-12 - game_camy,
-							24, (i < game_selob->steps_left ? 2 : 1));
-						break;
-
-					case DIR_EAST:
-						draw_hline_d(screen,
-							x*32+16 - game_camx,
-							y*24+12 - game_camy,
-							32, (i < game_selob->steps_left ? 2 : 1));
-						break;
-
-					case DIR_WEST:
-						draw_hline_d(screen,
-							x*32-16 - game_camx,
-							y*24+12 - game_camy,
-							32, (i < game_selob->steps_left ? 2 : 1));
-						break;
-
-				}
+				if(i == game_selob->steps_left)
+					draw_img_trans_d_sd(screen, i_icons1,
+						x*32 - game_camx,
+						y*24 - game_camy,
+						32*0, 24*1, 32, 24, 0);
+				else if(i < game_selob->steps_left)
+					draw_img_trans_d_sd(screen, i_icons1,
+						x*32 - game_camx,
+						y*24 - game_camy,
+						32*dirlist[i], 24*0, 32, 24, 0);
+				else
+					draw_img_trans_d_sd(screen, i_icons1,
+						x*32 - game_camx,
+						y*24 - game_camy,
+						32*4, 24*0, 32, 24, 0);
 
 				// Move
 				x += dx;
 				y += dy;
 
 			}
+
+			// Show position
+			if(dirlen <= game_selob->steps_left)
+				draw_img_trans_d_sd(screen, i_icons1,
+					x*32 - game_camx,
+					y*24 - game_camy,
+					32*0, 24*1, 32, 24, 0);
+			else
+				draw_img_trans_d_sd(screen, i_icons1,
+					x*32 - game_camx,
+					y*24 - game_camy,
+					32*4, 24*0, 32, 24, 0);
+
 		}
 	}
 
 	// Draw HUD
 	for(i = 6; i >= 0; i--)
-		draw_img_trans_cmap_d_sd(screen, ob->img,
+		draw_img_trans_cmap_d_sd(screen, i_player,
 			0,
 			0,
 			0*32, i*48, 32, 48,
@@ -199,7 +246,7 @@ void gameloop_draw(void)
 
 	// Flip
 	screen_flip();
-	SDL_Delay(10);
+	SDL_Delay(20);
 
 }
 
@@ -223,16 +270,19 @@ int gameloop_tick(void)
 		if(ob == NULL) continue;
 
 		if(ob->f_tick != NULL) ob->f_tick(ob);
+
+		if(ob->freeme)
+			i -= level_obj_free(rootlv, ob);
 	}
 
 	// Update UI
-	if(game_mouse_x < (screen->w>>2)) game_camx -= 4;
-	if(game_mouse_y < (screen->h>>2)) game_camy -= 4;
-	if(game_mouse_x >= ((screen->w*3)>>2)) game_camx += 4;
-	if(game_mouse_y >= ((screen->h*3)>>2)) game_camy += 4;
+	if(game_mouse_x < (screen->w>>3)) game_camx -= 4;
+	if(game_mouse_y < (screen->h>>3)) game_camy -= 4;
+	if(game_mouse_x >= ((screen->w*7)>>3)) game_camx += 4;
+	if(game_mouse_y >= ((screen->h*7)>>3)) game_camy += 4;
 
 	// Block input if waiting for object
-	if(game_selob != NULL && game_selob->please_wait)
+	if(level_obj_waiting(rootlv) != NULL)
 		return 0;
 
 	// INPUT STARTS HERE
@@ -243,11 +293,17 @@ int gameloop_tick(void)
 	{
 		case SDLK_RETURN | 0x8000:
 			// Next turn!
-			gameloop_next_turn();
+			if(!gameloop_next_turn())
+			{
+				//gameloop_win();
+				return 2;
+			}
+
 			break;
 	}
 
 	// Object select
+	
 	if((mouse_b & ~mouse_ob) & 1)
 	{
 
@@ -264,7 +320,7 @@ int gameloop_tick(void)
 		}
 	}
 
-	// Object move
+	// Object move / attack
 	if((mouse_b & ~mouse_ob) & 4)
 	{
 		// Check if we have an object selected
@@ -294,6 +350,9 @@ int gameloop_tick(void)
 
 int gameloop(const char *fname, int player_count)
 {
+	int i;
+	obj_t *ob;
+
 	// Initialise
 	game_camx = 0;
 	game_camy = 0;
@@ -303,6 +362,21 @@ int gameloop(const char *fname, int player_count)
 	// Load level
 	rootlv = level_load(fname);
 	assert(rootlv != NULL); // TODO: Be more graceful
+
+	// Remove excess players
+	for(i = 0; i < rootlv->ocount; i++)
+	{
+		if(i < 0) continue;
+
+		ob = rootlv->objects[i];
+
+		if(ob->f.otyp == OBJ_PLAYER
+			&& ((struct fd_player *)(ob->f.fd))->team >= player_count)
+		{
+			i -= level_obj_free(rootlv, ob);
+		}
+	}
+
 
 	// Start turn
 	gameloop_start_turn();

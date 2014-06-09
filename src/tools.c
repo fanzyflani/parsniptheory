@@ -295,6 +295,7 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 	int gx, gy;
 	int dx, dy;
 	int cx, cy;
+	int lcx, lcy;
 	cell_t *ce;
 
 	// Shove some dummies in
@@ -310,8 +311,8 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 	// Get distance to edge
 	dx = 1<<8;
 	dy = 1<<8;
-	cx = x1;
-	cy = y1;
+	lcx = cx = x1;
+	lcy = cy = y1;
 
 	// Trace
 	while(cx != x2 || cy != y2)
@@ -324,7 +325,11 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 		//if(ce->ob != NULL) break;
 		if(ce->f.ctyp == CELL_OOB) break;
 		if(ce->f.ctyp == CELL_SOLID) break;
-		if(ce->f.ctyp == CELL_BACKWALL) break;
+		//if(ce->f.ctyp == CELL_BACKWALL) break;
+
+		// Store last
+		lcx = cx;
+		lcy = cy;
 
 		// Advance
 		//if(dx/vx < dy/vy) // What's actually happening.
@@ -347,10 +352,11 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 	}
 
 	// Return
-	*rx = cx;
-	*ry = cy;
+	int ret = (cx == x2 && cy == y2);
+	*rx = (ret ? cx : lcx);
+	*ry = (ret ? cy : lcy);
 
-	return (cx == x2 && cy == y2);
+	return ret;
 
 }
 

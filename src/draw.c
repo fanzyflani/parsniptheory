@@ -118,6 +118,52 @@ void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c)
 	draw_vline_d(dst, x+w, y+1, h-1, c);
 }
 
+void draw_num1_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ...)
+{
+	va_list va;
+	char buf[1024];
+	img_t *font = i_fontnum1;
+	const int fwidth = 6;
+	const int fheight = 8;
+	const int fwstep = 4;
+
+	// Firstly, make sure we actually *have* a font.
+	if(font == NULL) return;
+
+	// Secondly, make sure dx, dy are in range.
+	//if(dx + fsize > screen->w || dy + fsize > screen->h || dy < 0) return;
+
+	// Now format the string.
+	va_start(va, fmt);
+	vsnprintf(buf, 1023, fmt, va);
+	buf[1023] = '\x00';
+
+	// Finally, start drawing it.
+	// TODO: Support multiple colours! (i.e. use cmap)
+	uint8_t *cp = (uint8_t *)buf;
+	for(; *cp != '\x00' /*&& dx + fsize <= screen->w*/; cp++, dx += fwstep)
+	{
+		// Check if X in range
+		//if(dx < 0) continue;
+
+		// Get source char position
+		int sx = 0;
+		int sy = 0;
+
+		if((*cp) == '.') sx = 0;
+		else if((*cp) >= '0' && (*cp) <= '9') sx = (*cp) - '0' + 1;
+		else if((*cp) == '-') sx = 11;
+		else continue;
+
+		sx *= fwidth;
+		sy *= fheight;
+
+		// Draw
+		draw_img_trans_d_sd(dst, font, dx, dy, sx, sy, fwidth, fheight, 0);
+	}
+}
+
+
 void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, const char *fmt, ...)
 {
 	va_list va;

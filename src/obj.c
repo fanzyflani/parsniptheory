@@ -25,7 +25,7 @@ int obj_player_f_init(obj_t *ob)
 	ob->tx = ob->f.cx;
 	ob->ty = ob->f.cy;
 
-	ob->health = 100;
+	ob->health = PLAYER_HEALTH;
 
 	return 1;
 }
@@ -75,9 +75,18 @@ void obj_player_f_tick(obj_t *ob)
 	struct fd_player *fde = (struct fd_player *)ob->f.fd;
 
 	// Enforce cell association
+	obj_t *pob;
 	cell_t *cs = layer_cell_ptr(rootlv->layers[ob->f.layer], ob->f.cx, ob->f.cy);
+	cell_t *ce;
 	assert(cs != NULL);
 	cs->ob = ob;
+
+	// Check if we're not "forfeited"
+	if(ob->health <= 0)
+	{
+		ob->freeme = 1;
+		return;
+	}
 
 	// Check if we have steps left
 	if(ob->steps_left == 0)
@@ -97,6 +106,44 @@ void obj_player_f_tick(obj_t *ob)
 	// Check if walking
 	if(ob->f.ox == 0 && ob->f.oy == 0) do
 	{
+		// If we're attacking something, attack it (if possible)
+		ce = layer_cell_ptr(rootlv->layers[ob->f.layer], ob->tx, ob->ty);
+
+		if(ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER)
+		if(((struct fd_player *)(ce->ob->f.fd))->team != fde->team)
+		{
+			// Step check
+			if(ob->steps_left >= STEPS_ATTACK)
+			{
+				// Drop steps
+				ob->steps_left -= STEPS_ATTACK;
+
+				// Do a line trace
+				line_layer(ob->level->layers[ob->f.layer], &cx, &cy,
+					ob->f.cx, ob->f.cy, ob->tx, ob->ty);
+
+				// Add a tomato object
+				pob = level_obj_add(ob->level, OBJ_FOOD_TOMATO, 0, cx, cy, ob->f.layer);
+				pob->tx = 32*(ob->f.cx - cx);
+				pob->ty = 24*(ob->f.cy - cy);
+				int dist = sqrt(pob->tx*pob->tx + pob->ty*pob->ty);
+				pob->tx <<= 8;
+				pob->ty <<= 8;
+				pob->vx = (pob->tx*10)/dist;
+				pob->vy = (pob->ty*10)/dist;
+				pob->time = dist/10;
+			}
+
+			// Clear target and stuff
+			ob->tx = ob->f.cx;
+			ob->ty = ob->f.cy;
+			ob->please_wait = 0;
+
+			// Don't bother with the rest of this block
+			break;
+
+		}
+		
 		// If A* works, follow
 		if(ob->asdir != NULL) do
 		{
@@ -121,7 +168,7 @@ void obj_player_f_tick(obj_t *ob)
 			cy = ob->f.cy + dy;
 
 			// Check cell
-			cell_t *ce = layer_cell_ptr(rootlv->layers[ob->f.layer], cx, cy);
+			ce = layer_cell_ptr(rootlv->layers[ob->f.layer], cx, cy);
 			if(ce == NULL || ce->f.ctyp != CELL_FLOOR || ce->ob != NULL)
 			{
 				// Destroy the path and try again
@@ -201,6 +248,21 @@ void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 			camy + ob->f.cy*24 + ob->f.oy - 21,
 			(fde->face&3)*32, i*48, 32, 48,
 			0, ob->cmap);
+
+	// TEST: Draw tomato
+	/*
+	draw_img_trans_cmap_d_sd(dst, i_food1,
+		camx + ob->f.cx*32 + ob->f.ox,
+		camy + ob->f.cy*24 + ob->f.oy - 4,
+		(fde->face&3)*32, 0*32, 32, 32,
+		0, cm_food1);
+	*/
+
+	// Draw health
+	draw_num1_printf(dst,
+		camx + 32*ob->f.cx + ob->f.ox,
+		camy + 24*ob->f.cy + ob->f.oy - 24,
+		1, "%i", ob->health);
 }
 
 void obj_player_f_free(obj_t *ob)
@@ -229,6 +291,8 @@ int obj_food_tomato_f_init(obj_t *ob)
 
 	ob->tx = ob->f.cx;
 	ob->ty = ob->f.cy;
+
+	ob->please_wait = 1;
 
 	return 1;
 }
@@ -274,6 +338,38 @@ void obj_food_tomato_f_reset(obj_t *ob)
 void obj_food_tomato_f_tick(obj_t *ob)
 {
 	//struct fd_food *fde = (struct fd_food *)ob->f.fd;
+	cell_t *ce;
+	
+	// Advance
+	ob->tx -= ob->vx;
+	ob->ty -= ob->vy;
+	ob->time--;
+
+	if(ob->time == 0)
+	{
+		// Stop waiting
+		ob->please_wait = 0;
+
+		// Do damage
+		ce = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->f.cx, ob->f.cy);
+		ce->splatters[FOOD_TOMATO] |= 1<<((rand()>>12)&3);
+		if(ce->ob && ce->ob->f.otyp == OBJ_PLAYER)
+		{
+			//printf("DAMAGED\n");
+			ce->ob->health -= 10;
+		}
+
+		// Dampen
+		ob->vx >>= 2;
+		ob->vy >>= 2;
+
+	}
+
+	if(ob->time <= -15)
+	{
+		// Free
+		ob->freeme = 1;
+	}
 
 	// TODO!
 
@@ -282,11 +378,21 @@ void obj_food_tomato_f_tick(obj_t *ob)
 void obj_food_tomato_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 {
 	struct fd_food *fde = (struct fd_food *)ob->f.fd;
+	int sx, sy;
+
+	sx = fde->face & 3;
+	sy = 0;
+
+	if(ob->time < 0)
+	{
+		sy = 1;
+		sx = (-ob->time)/4;
+	}
 
 	draw_img_trans_cmap_d_sd(dst, ob->img,
-		camx + ob->f.cx*32 + ob->f.ox - 8,
-		camy + ob->f.cy*24 + ob->f.oy - 8,
-		(fde->face&3)*32, 0, 32, 32,
+		camx + ob->f.cx*32 + (ob->tx>>8),
+		camy + ob->f.cy*24 + (ob->ty>>8) - 4,
+		sx*32, sy*32, 32, 32,
 		0, ob->cmap);
 
 }
@@ -422,9 +528,16 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	ob->health = 1;
 	ob->tx = 0;
 	ob->ty = 0;
+	ob->vx = 0;
+	ob->vy = 0;
 	ob->asdir = NULL;
 	ob->aslen = 0;
 	ob->asidx = 0;
+	ob->time = 0;
+
+	ob->level = NULL;
+
+	ob->freeme = 0;
 
 	// Return
 	return ob;

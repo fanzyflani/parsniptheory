@@ -34,7 +34,9 @@ level_t *rootlv = NULL;
 img_t *i_player = NULL;
 img_t *i_tiles1 = NULL;
 img_t *i_food1 = NULL;
+img_t *i_icons1 = NULL;
 img_t *i_font16 = NULL;
+img_t *i_fontnum1 = NULL;
 
 // Colourmaps
 uint8_t *cm_player = NULL;
@@ -70,8 +72,10 @@ int main(int argc, char *argv[])
 	// TODO: png support (and hence the dat/ directory)
 	i_player = img_load_tga("tga/player.tga"); 
 	i_tiles1 = img_load_tga("tga/tiles1.tga"); 
-	i_font16 = img_load_tga("tga/font16.tga"); 
 	i_food1 = img_load_tga("tga/food1.tga"); 
+	i_icons1 = img_load_tga("tga/icons1.tga"); 
+	i_font16 = img_load_tga("tga/font16.tga"); 
+	i_fontnum1 = img_load_tga("tga/fontnum1.tga"); 
 	cm_player = cmaps[i_player->cmidx].data;
 	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
 	cm_food1 = cmaps[i_food1->cmidx].data;
@@ -84,7 +88,7 @@ int main(int argc, char *argv[])
 	// TODO: Actually have a menu loop.
 	// We'll just use one of these two loops.
 	//editloop();
-	gameloop("dat/genesis.psl", 4);
+	gameloop("dat/genesis.psl", 2);
 
 	// Clean up
 	
