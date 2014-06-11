@@ -4,6 +4,9 @@
 # final binaries
 parsniptheory
 parsniptheory.exe
+parsniptheory-windows-i386.exe
+parsnipserver
+parsnipserver-windows-i386.exe
 
 # other stuff
 tga/pixra

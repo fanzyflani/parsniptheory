@@ -5,47 +5,6 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
-// Constants
-const int face_dir[4][2] = {
-	{ 0, 1},
-	{ 1, 0},
-	{ 0,-1},
-	{-1, 0},
-};
-
-// Screen
-SDL_Surface *screen_surface = NULL;
-img_t *screen = NULL;
-int screen_bpp = 32;
-int screen_scale = 2;
-int screen_ofx = 0;
-int screen_ofy = 0;
-
-// Palette
-uint8_t pal_src[256][4];
-cmap_t *cmaps = NULL;
-uint8_t pal_main[256][4];
-uint16_t pal_dither[256][2][2]; // For 16bpp modes
-
-// Level
-level_t *rootlv = NULL;
-
-// Images
-img_t *i_player = NULL;
-img_t *i_tiles1 = NULL;
-img_t *i_food1 = NULL;
-img_t *i_icons1 = NULL;
-img_t *i_font16 = NULL;
-img_t *i_fontnum1 = NULL;
-
-// Colourmaps
-uint8_t *cm_player = NULL;
-uint8_t *cm_tiles1 = NULL;
-uint8_t *cm_food1 = NULL;
-
-// Teams
-team_t *teams[TEAM_MAX];
-
 static void menu_draw_player(int x, int y, int team, int face)
 {
 	int i;
@@ -58,9 +17,12 @@ static void menu_draw_player(int x, int y, int team, int face)
 			0, teams[team]->cm_player);
 }
 
-int menuloop(void)
+int menuloop(int menuid)
 {
 	int i;
+
+	// Ensure our clicks don't cut through twice
+	input_poll();
 
 	for(;;)
 	{
@@ -100,31 +62,57 @@ int menuloop(void)
 		draw_rect_d(screen, 10, screen->h/2 + 10, screen->w/2-20, screen->h/2-20, 64 + (sel==2 ? 0 : 2) + 8*2);
 		draw_rect_d(screen, screen->w/2 + 10, screen->h/2 + 10, screen->w/2-20, screen->h/2-20, 64 + (sel==3 ? 0 : 2) + 8*3);
 
-		// Draw backgrounds
-		for(i = 0; i < 2; i++)
-			menu_draw_player(screen->w/2 - 10 - 32 - 28*1 + 28*i, screen->h/2 - 10 - 44, i, 0);
-		for(i = 0; i < 3; i++)
-			menu_draw_player(screen->w - 10 - 32 - 28*2 + 28*i, screen->h/2 - 10 - 44, i, 0);
-		for(i = 0; i < 4; i++)
-			menu_draw_player(screen->w/2 - 10 - 32 - 28*3 + 28*i, screen->h - 10 - 44, i, 0);
+		if(menuid == 0)
+		{
+			// Draw backgrounds
 
-		draw_img_trans_cmap_d_sd(screen, i_tiles1,
-			screen->w - 10 - 10 - 36*3, screen->h - 10 - 10 - 24,
-			32*1, 24*0, 32, 24, 0, cm_tiles1);
-		draw_img_trans_cmap_d_sd(screen, i_tiles1,
-			screen->w - 10 - 10 - 36*2, screen->h - 10 - 10 - 24,
-			32*5, 24*0, 32, 24, 0, cm_tiles1);
-		draw_img_trans_cmap_d_sd(screen, i_tiles1,
-			screen->w - 10 - 10 - 36*1, screen->h - 10 - 10 - 24,
-			32*12, 24*0, 32, 24, 0, cm_tiles1);
+			draw_img_trans_cmap_d_sd(screen, i_tiles1,
+				screen->w/2 - 10 - 10 - 36*3, screen->h - 10 - 10 - 24,
+				32*1, 24*0, 32, 24, 0, cm_tiles1);
+			draw_img_trans_cmap_d_sd(screen, i_tiles1,
+				screen->w/2 - 10 - 10 - 36*2, screen->h - 10 - 10 - 24,
+				32*5, 24*0, 32, 24, 0, cm_tiles1);
+			draw_img_trans_cmap_d_sd(screen, i_tiles1,
+				screen->w/2 - 10 - 10 - 36*1, screen->h - 10 - 10 - 24,
+				32*12, 24*0, 32, 24, 0, cm_tiles1);
 
-		// Draw texts
-		draw_printf(screen, i_font16, 16, 15, 20, 1, "2 PLAYER");
-		draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "3 PLAYER");
-		draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "4 PLAYER");
-		draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "LVL EDIT");
-		draw_printf(screen, i_font16, 16, screen->w/2 - 8*(7+1+6), screen->h/2 - 8, 1,
-			"PARSNIP THEORY");
+			// Draw texts
+			draw_printf(screen, i_font16, 16, 15, 20, 1, "HOT SEAT");
+			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "NETWORK");
+			draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "LVL EDIT");
+			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "QUIT");
+			draw_printf(screen, i_font16, 16, screen->w/2 - 8*(7+1+6+1), screen->h/2 - 8, 1,
+				"PARSNIP THEORY");
+		
+		} else if(menuid == 1) {
+			// Draw backgrounds
+			for(i = 0; i < 2; i++)
+				menu_draw_player(screen->w/2 - 10 - 32 - 28*1 + 28*i, screen->h/2 - 10 - 44, i, 0);
+			for(i = 0; i < 3; i++)
+				menu_draw_player(screen->w - 10 - 32 - 28*2 + 28*i, screen->h/2 - 10 - 44, i, 0);
+			for(i = 0; i < 4; i++)
+				menu_draw_player(screen->w/2 - 10 - 32 - 28*3 + 28*i, screen->h - 10 - 44, i, 0);
+
+			// Draw texts
+			draw_printf(screen, i_font16, 16, 15, 20, 1, "2 PLAYER");
+			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "3 PLAYER");
+			draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "4 PLAYER");
+			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "GO BACK");
+			draw_printf(screen, i_font16, 16, screen->w/2 - 8*(3+1+4-1), screen->h/2 - 8, 1,
+				"HOT SEAT");
+
+		} else if(menuid == 2) {
+			// Draw backgrounds
+
+			// Draw texts
+			draw_printf(screen, i_font16, 16, 15, 20, 1, "CONNECT");
+			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "CREATE");
+			draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "SETUP");
+			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "GO BACK");
+			draw_printf(screen, i_font16, 16, screen->w/2 - 8*(7+1+4+3), screen->h/2 - 8, 1,
+				"NETWORK GAME");
+
+		}
 
 		// Flip
 		screen_flip();
@@ -135,13 +123,22 @@ int menuloop(void)
 		switch(sel)
 		{
 			case 0:
-				return 2;
+				if(menuid == 0) return menuloop(1);
+				if(menuid == 1) return 2;
+				break;
 			case 1:
-				return 3;
+				if(menuid == 0) return menuloop(2);
+				if(menuid == 1) return 3;
+				break;
 			case 2:
-				return 4;
+				if(menuid == 0) return 0xED17;
+				if(menuid == 1) return 4;
+				break;
 			case 3:
-				return 0xED17;
+				if(menuid == 0) return -1;
+				if(menuid == 1) return 0;
+				if(menuid == 2) return 0;
+				break;
 
 		}
 
@@ -152,12 +149,36 @@ int menuloop(void)
 
 }
 
+void loadicon(const char *fname)
+{
+	int x, y;
+	Uint8 mask[32*4];
+
+	SDL_Surface *s = SDL_LoadBMP("dat/icon.bmp");
+
+	SDL_LockSurface(s);
+
+	memset(mask, 0, 32*4);
+
+	for(y = 0; y < 32; y++)
+	for(x = 0; x < 32; x++)
+		if(((uint8_t *)(s->pixels))[x + y*s->pitch] != 5)
+			mask[y*4 + (x>>3)] |= 128>>(x&7);
+
+	SDL_UnlockSurface(s);
+
+	//SDL_SetColorKey(s, SDL_SRCCOLORKEY, 5+8);
+
+	SDL_WM_SetIcon(s, mask);
+}
+
 int main(int argc, char *argv[])
 {
 	int i;
 
 	// General SDL setup
 	SDL_Init(SDL_INIT_VIDEO);
+	SDLNet_Init();
 #ifndef WIN32
 	signal(SIGINT,  SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
@@ -166,7 +187,8 @@ int main(int argc, char *argv[])
 
 	// Set up basic video mode
 	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 1)", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 2)", NULL);
+	loadicon("dat/icon.tga");
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, 0);
 	screen = img_new(320, 200);
 
@@ -192,18 +214,18 @@ int main(int argc, char *argv[])
 
 	// Enter menu loop
 	for(;;)
-	switch(menuloop())
+	switch(menuloop(0))
 	{
 		case 2:
-			gameloop("dat/level.psl", 2);
+			gameloop("dat/level.psl", NET_LOCAL, 2);
 			break;
 
 		case 3:
-			gameloop("dat/level.psl", 3);
+			gameloop("dat/level.psl", NET_LOCAL, 3);
 			break;
 
 		case 4:
-			gameloop("dat/level.psl", 4);
+			gameloop("dat/level.psl", NET_LOCAL, 4);
 			break;
 
 		case 0xED17:

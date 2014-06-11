@@ -15,6 +15,7 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include <zlib.h>
 #include <SDL.h>
+#include <SDL_net.h>
 
 #include <assert.h>
 
@@ -25,10 +26,15 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 // Limits
 #define TEAM_MAX 128
+#define ABUF_SIZE 8192
 #define STEPS_PER_TURN 7
 #define STEPS_ATTACK 2
 #define TOMATO_SPEED 1
 #define PLAYER_HEALTH 100
+
+// Versions
+#define MAP_FVERSION 1
+#define NET_VERSION 1
 
 enum
 {
@@ -190,15 +196,97 @@ struct level
 
 #define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
 
+enum
+{
+	NET_INVALID = 0,
+
+	NET_LOCAL,
+	NET_SERVER,
+	NET_CLIENT,
+};
+
+enum
+{
+	// NOTE: pstr is a u8 followed by that many bytes
+	ACT_NOP = 0, // BIDI ()
+
+	ACT_VERSION, // BIDI (u8 version)
+	ACT_QUIT, // BIDI (pstr reason)
+	ACT_TEXT, // BIDI (pstr data)
+	ACT_MAPBEG, // S->C ()
+	ACT_MAPDATA, // S->C (u16 len, u8 data[len])
+	ACT_MAPEND, // S->C ()
+
+	ACT_LOCK, // S->C ()
+	ACT_UNLOCK, // S->C ()
+
+	ACT_NEWTURN, // BIDI (u8 player (ignored C->S), u16 steps_added (ignored C->S))
+	ACT_MOVE, // BIDI (s16 sx, s16 sy, s16 dx, s16 dy, u16 steps_used, u16 steps_remain)
+	ACT_ATTACK, // BIDI (s16 sx, s16 sy, s16 dx, s16 dy, u16 steps_used, u16 steps_remain)
+
+	ACT_SELECT, // BIDI (s16 sx, s16 sy)
+	ACT_DESELECT, // BIDI ()
+	ACT_HOVER, // BIDI (s16 mx, s16 my, s16 camx, s16 camy)
+
+	ACT_COUNT
+};
+
+enum
+{
+	STATE_DEAD = 0,
+
+	STATE_GIVEVER,
+	STATE_WAITVER,
+
+	STATE_LOCKED,
+	STATE_UNLOCKED,
+};
+
+typedef struct abuf abuf_t;
+struct abuf
+{
+	TCPsocket sock;
+	int state;
+	abuf_t *loc_chain;
+	void (*f_cont)(abuf_t *ab, void *ud);
+
+	int rsize;
+	int wsize;
+	uint8_t rdata[ABUF_SIZE];
+	uint8_t wdata[ABUF_SIZE];
+};
+
 // other includes
 #include "obj.h"
+
+// action.c
+abuf_t *ab_local;
+abuf_t *ab_teams[TEAM_MAX];
+
+void abuf_free(abuf_t *ab);
+abuf_t *abuf_new(void);
+int abuf_get_rsize(abuf_t *ab);
+int abuf_get_rspace(abuf_t *ab);
+int abuf_get_wsize(abuf_t *ab);
+int abuf_get_wspace(abuf_t *ab);
+uint8_t abuf_read_u8(abuf_t *ab);
+int8_t abuf_read_s8(abuf_t *ab);
+uint16_t abuf_read_u16(abuf_t *ab);
+int16_t abuf_read_s16(abuf_t *ab);
+void abuf_read_block(void *buf, int len, abuf_t *ab);
+void abuf_write_u8(uint8_t v, abuf_t *ab);
+void abuf_write_s8(int8_t v, abuf_t *ab);
+void abuf_write_u16(uint16_t v, abuf_t *ab);
+void abuf_write_s16(int16_t v, abuf_t *ab);
+void abuf_write_block(const void *buf, int len, abuf_t *ab);
+void abuf_poll_write(abuf_t *ab);
+void abuf_poll_read(abuf_t *ab);
+void abuf_poll(abuf_t *ab);
 
 // cdefs.c
 extern cell_file_t *ce_defaults[];
 
 // cell.c
-#define MAP_FVERSION 1
-
 void cell_reprep(cell_t *ce, int tset, int tidx);
 
 cell_t *layer_cell_ptr(layer_t *ar, int x, int y);
@@ -237,7 +325,7 @@ int editloop(void);
 // game.c
 extern int game_camx;
 extern int game_camy;
-int gameloop(const char *fname, int player_count);
+int gameloop(const char *fname, int net_mode, int player_count);
 
 // img.c
 uint16_t io_get2le(FILE *fp);
@@ -278,7 +366,7 @@ int smod(int n, int d);
 int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2, int y2);
 int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2);
 
-// main.c
+// shared.c
 extern const int face_dir[4][2];
 
 extern SDL_Surface *screen_surface;
@@ -287,7 +375,6 @@ extern int screen_bpp;
 extern int screen_scale;
 extern int screen_ofx;
 extern int screen_ofy;
-
 
 extern level_t *rootlv;
 extern img_t *i_player;
