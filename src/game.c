@@ -16,6 +16,67 @@ obj_t *game_selob = NULL;
 
 int game_player_count = 0;
 int game_curplayer = 0;
+int game_over = 0;
+
+static void gameloop_start_turn(void)
+{
+	int i;
+	obj_t *ob;
+	struct fd_player *fde;
+	int obcount = 0;
+
+	// Grant steps to all players of this team
+	for(i = 0; i < rootlv->ocount; i++)
+	{
+		// Get object
+		ob = rootlv->objects[i];
+		fde = (struct fd_player *)(ob->f.fd);
+		
+		// Do the compare
+		if(fde->team == game_curplayer)
+		{
+			obcount++;
+			ob->steps_left = STEPS_PER_TURN;
+			game_camx = ob->f.cx*32+16 - screen->w/2;
+			game_camy = ob->f.cy*24+12 - screen->h/2;
+
+		} else {
+			ob->steps_left = -1;
+
+		}
+	}
+
+	// Move to the next player if this fails
+	if(obcount == 0)
+	{
+		game_curplayer++;
+		if(game_curplayer >= game_player_count)
+			game_curplayer = 0;
+
+		gameloop_start_turn();
+	}
+}
+
+static int gameloop_next_turn(void)
+{
+	// Deselect object
+	game_selob = NULL;
+
+	// Take note of the current player
+	int oldcp = game_curplayer;
+
+	// Move to the next player
+	game_curplayer++;
+	if(game_curplayer >= game_player_count)
+		game_curplayer = 0;
+	
+	// Start their turn
+	gameloop_start_turn();
+
+	// If it's the same player, they've won
+	return game_curplayer != oldcp;
+}
+
 
 void game_handle_version(abuf_t *ab, int typ, int ver)
 {
@@ -44,7 +105,33 @@ void game_handle_unlock(abuf_t *ab, int typ)
 
 void game_handle_newturn(abuf_t *ab, int typ, int tid, int steps_added)
 {
-	// TODO
+	int i;
+
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	if(typ == NET_C2S && ab == ab_teams[game_curplayer])
+	{
+
+	} else if(typ == NET_S2C) {
+
+	} else return;
+
+	// Next player
+	if(!gameloop_next_turn())
+	{
+		game_over = 1;
+	}
+
+	// Broadcast
+	if(typ == NET_C2S)
+	for(i = 0; i < TEAM_MAX; i++)
+	if(ab_teams[i] != NULL)
+	{
+		abuf_write_u8(ACT_NEWTURN, ab_teams[i]);
+		abuf_write_u8(tid, ab_teams[i]);
+		abuf_write_s16(steps_added, ab_teams[i]);
+	}
+
 }
 
 void game_handle_move(abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int steps_used, int steps_left)
@@ -233,6 +320,15 @@ void game_push_end_turn(abuf_t *ab)
 void game_push_hover(abuf_t *ab, int mx, int my, int camx, int camy)
 {
 	// TODO!
+}
+
+void game_push_newturn(abuf_t *ab, int tid, int steps_added)
+{
+	// Next turn!
+	abuf_write_u8(ACT_NEWTURN, ab);
+	abuf_write_u8(tid, ab);
+	abuf_write_u16(steps_added, ab);
+
 }
 
 void game_push_click(abuf_t *ab, int rmx, int rmy, int camx, int camy, int button)
@@ -440,65 +536,6 @@ int game_parse_actions(abuf_t *ab, int typ)
 
 }
 
-static void gameloop_start_turn(void)
-{
-	int i;
-	obj_t *ob;
-	struct fd_player *fde;
-	int obcount = 0;
-
-	// Grant steps to all players of this team
-	for(i = 0; i < rootlv->ocount; i++)
-	{
-		// Get object
-		ob = rootlv->objects[i];
-		fde = (struct fd_player *)(ob->f.fd);
-		
-		// Do the compare
-		if(fde->team == game_curplayer)
-		{
-			obcount++;
-			ob->steps_left = STEPS_PER_TURN;
-			game_camx = ob->f.cx*32+16 - screen->w/2;
-			game_camy = ob->f.cy*24+12 - screen->h/2;
-
-		} else {
-			ob->steps_left = -1;
-
-		}
-	}
-
-	// Move to the next player if this fails
-	if(obcount == 0)
-	{
-		game_curplayer++;
-		if(game_curplayer >= game_player_count)
-			game_curplayer = 0;
-
-		gameloop_start_turn();
-	}
-}
-
-static int gameloop_next_turn(void)
-{
-	// Deselect object
-	game_selob = NULL;
-
-	// Take note of the current player
-	int oldcp = game_curplayer;
-
-	// Move to the next player
-	game_curplayer++;
-	if(game_curplayer >= game_player_count)
-		game_curplayer = 0;
-	
-	// Start their turn
-	gameloop_start_turn();
-
-	// If it's the same player, they've won
-	return game_curplayer != oldcp;
-}
-
 void gameloop_draw(void)
 {
 	int x, y, i;
@@ -680,6 +717,10 @@ int gameloop_tick(void)
 	obj_t *ob;
 	cell_t *ce;
 
+	// Check if game over
+	if(game_over)
+		return 2;
+
 	// Get coordinates
 	mx = (game_mouse_x + game_camx)/32;
 	my = (game_mouse_y + game_camy)/24;
@@ -716,11 +757,7 @@ int gameloop_tick(void)
 	{
 		case SDLK_RETURN | 0x8000:
 			// Next turn!
-			if(!gameloop_next_turn())
-			{
-				//gameloop_win();
-				return 2;
-			}
+			game_push_newturn(ab_local, 0, STEPS_PER_TURN); // TODO: Calculate next turn player
 
 			break;
 	}
@@ -763,6 +800,7 @@ int gameloop(const char *fname, int net_mode, int player_count)
 	game_camy = 0;
 	game_player_count = player_count;
 	game_curplayer = 0;
+	game_over = 0;
 
 	// Load level
 	rootlv = level_load(fname);
