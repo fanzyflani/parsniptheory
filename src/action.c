@@ -148,11 +148,13 @@ void abuf_poll_write(abuf_t *ab)
 
 		} else if(ab->wsize + ab->loc_chain->rsize <= ABUF_SIZE) {
 			memmove(ab->loc_chain->rdata + ab->loc_chain->rsize, ab->wdata, ab->wsize);
+			ab->loc_chain->rsize += ab->wsize;
 			ab->wsize = 0;
 
 		} else {
 			len = ABUF_SIZE - ab->loc_chain->rsize;
 			memmove(ab->loc_chain->rdata + ab->loc_chain->rsize, ab->wdata, len);
+			ab->loc_chain->rsize += ab->wsize;
 			ab->wsize -= len;
 			memmove(ab->wdata, ab->wdata + len, ab->wsize);
 
@@ -218,6 +220,7 @@ void abuf_poll_read(abuf_t *ab)
 
 void abuf_poll(abuf_t *ab)
 {
-
+	abuf_poll_write(ab);
+	abuf_poll_read(ab);
 }
 

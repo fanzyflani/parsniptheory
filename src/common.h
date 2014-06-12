@@ -203,6 +203,9 @@ enum
 	NET_LOCAL,
 	NET_SERVER,
 	NET_CLIENT,
+
+	NET_C2S,
+	NET_S2C,
 };
 
 enum
@@ -221,8 +224,8 @@ enum
 	ACT_UNLOCK, // S->C ()
 
 	ACT_NEWTURN, // BIDI (u8 player (ignored C->S), u16 steps_added (ignored C->S))
-	ACT_MOVE, // BIDI (s16 sx, s16 sy, s16 dx, s16 dy, u16 steps_used, u16 steps_remain)
-	ACT_ATTACK, // BIDI (s16 sx, s16 sy, s16 dx, s16 dy, u16 steps_used, u16 steps_remain)
+	ACT_MOVE, // BIDI (s16 sx, s16 sy, s16 dx, s16 dy, u16 steps_used, u16 steps_left)
+	ACT_ATTACK, // BIDI (s16 sx, s16 sy, s16 dx, s16 dy, u16 steps_used, u16 steps_left)
 
 	ACT_SELECT, // BIDI (s16 sx, s16 sy)
 	ACT_DESELECT, // BIDI ()
