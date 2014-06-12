@@ -109,7 +109,7 @@ void game_handle_newturn(abuf_t *ab, int typ, int tid, int steps_added)
 
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	if(typ == NET_C2S && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
 	{
 
 	} else if(typ == NET_S2C) {
@@ -144,7 +144,7 @@ void game_handle_move(abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int s
 	ce = layer_cell_ptr(rootlv->layers[0], sx, sy);
 	dce = layer_cell_ptr(rootlv->layers[0], dx, dy);
 
-	if(typ == NET_C2S && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
 	{
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
@@ -200,7 +200,7 @@ void game_handle_attack(abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int
 	ce = layer_cell_ptr(rootlv->layers[0], sx, sy);
 	dce = layer_cell_ptr(rootlv->layers[0], dx, dy);
 
-	if(typ == NET_C2S && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
 	{
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
@@ -254,7 +254,7 @@ void game_handle_select(abuf_t *ab, int typ, int cx, int cy)
 
 	ce = layer_cell_ptr(rootlv->layers[0], cx, cy);
 
-	if(typ == NET_C2S && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
 	{
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
@@ -286,7 +286,7 @@ void game_handle_deselect(abuf_t *ab, int typ)
 
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	if(typ == NET_C2S && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
 	{
 		//
 
@@ -418,6 +418,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 
 	int bsiz = abuf_get_rsize(ab);
 	if(bsiz < 1) return 0;
+	//printf("msg %02X\n", ab->rdata[0]);
 	bsiz--;
 
 	switch(ab->rdata[0])
@@ -471,7 +472,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 			return 1;
 
 		case ACT_NEWTURN:
-			if(bsiz < 2) return 0;
+			if(bsiz < 3) return 0;
 			abuf_read_u8(ab);
 			tid = abuf_read_u8(ab);
 			steps_added = abuf_read_u16(ab);
@@ -770,7 +771,7 @@ int gameloop_tick(void)
 	return 0;
 }
 
-int gameloop(const char *fname, int net_mode, int player_count)
+int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 {
 	int i;
 	obj_t *ob;
@@ -786,13 +787,28 @@ int gameloop(const char *fname, int net_mode, int player_count)
 		ab_local = abuf_new();
 
 		if(net_mode == NET_LOCAL)
+		{
 			ab_local->loc_chain = ab_local;
+
+		} else {
+			ab_local->sock = sock;
+			ab_local->sset = SDLNet_AllocSocketSet(1);
+			SDLNet_AddSocket(ab_local->sset, (void *)ab_local->sock);
+
+		}
 	}
 
 	if(net_mode == NET_SERVER)
-	for(i = 0; i < player_count; i++)
 	{
-		ab_teams[i] = abuf_new();
+		ab_local = abuf_new();
+		ab_local->sock = sock;
+
+		/*
+		for(i = 0; i < player_count; i++)
+		{
+			ab_teams[i] = abuf_new();
+		}
+		*/
 	}
 
 	// Initialise
@@ -837,24 +853,48 @@ int gameloop(const char *fname, int net_mode, int player_count)
 		{
 			case NET_LOCAL:
 				abuf_poll(ab_local);
-				//ab_local->rsize = 0;
 				while(game_parse_actions(ab_local, NET_S2C));
 				break;
 
 			case NET_CLIENT:
 				abuf_poll(ab_local);
-				while(game_parse_actions(ab_local, NET_C2S));
+				while(game_parse_actions(ab_local, NET_S2C));
 				break;
 
-			case NET_SERVER:
+			case NET_SERVER: {
+				// Get client stuff
+				TCPsocket nfd = SDLNet_TCP_Accept(ab_local->sock);
+				if(nfd != NULL)
+				{
+					// Find a free slot
+					for(i = 0; i < TEAM_MAX; i++)
+					if(ab_teams[i] == NULL)
+					{
+						// Accept it
+						ab_teams[i] = abuf_new();
+						ab_teams[i]->sset = SDLNet_AllocSocketSet(1);
+						ab_teams[i]->sock = nfd;
+						SDLNet_AddSocket(ab_teams[i]->sset, (void *)ab_teams[i]->sock);
+						break;
+					}
+
+					if(i == TEAM_MAX)
+					{
+						// Cannot accept new client
+						SDLNet_TCP_Close(nfd);
+					}
+
+				}
+
+				// Poll
 				for(i = 0; i < TEAM_MAX; i++)
 				if(ab_teams[i] != NULL)
 				{
 					abuf_poll(ab_teams[i]);
-					while(game_parse_actions(ab_local, NET_S2C));
+					while(game_parse_actions(ab_teams[i], NET_C2S));
 				}
 
-				break;
+			} break;
 
 		}
 

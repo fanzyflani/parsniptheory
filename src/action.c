@@ -24,6 +24,7 @@ abuf_t *abuf_new(void)
 
 	// Fill in
 	ab->sock = NULL;
+	ab->sset = NULL;
 	ab->loc_chain = NULL;
 	ab->f_cont = NULL;
 	ab->rsize = 0;
@@ -161,14 +162,15 @@ void abuf_poll_write(abuf_t *ab)
 		}
 
 	} else if(ab->sock != NULL) {
-		// TODO: nonblocking mode
 		len = SDLNet_TCP_Send(ab->sock, ab->wdata, ab->wsize);
 
 		if(len == 0)
 		{
+			/*
 			printf("FIXME: handle socket EOF\n");
 			fflush(stdout);
 			abort();
+			*/
 
 		} else if(len < 0) {
 			printf("FIXME: handle socket send error\n");
@@ -196,14 +198,17 @@ void abuf_poll_read(abuf_t *ab)
 		abuf_poll_write(ab->loc_chain);
 
 	} else if(ab->sock != NULL) {
-		// TODO: nonblocking mode
+		SDLNet_CheckSockets(ab->sset, 0);
+		if(!SDLNet_SocketReady(ab->sock)) return;
 		len = SDLNet_TCP_Recv(ab->sock, ab->rdata + ab->rsize, ABUF_SIZE - ab->rsize);
 
 		if(len == 0)
 		{
+			/*
 			printf("FIXME: handle socket EOF\n");
 			fflush(stdout);
 			abort();
+			*/
 
 		} else if(len < 0) {
 			printf("FIXME: handle socket recv error\n");

@@ -36,6 +36,9 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #define MAP_FVERSION 1
 #define NET_VERSION 1
 
+// Other things
+#define NET_PORT 2014
+
 enum
 {
 	DIR_SOUTH = 0,
@@ -249,6 +252,7 @@ typedef struct abuf abuf_t;
 struct abuf
 {
 	TCPsocket sock;
+	SDLNet_SocketSet sset;
 	int state;
 	abuf_t *loc_chain;
 	void (*f_cont)(abuf_t *ab, void *ud);
@@ -328,7 +332,7 @@ int editloop(void);
 // game.c
 extern int game_camx;
 extern int game_camy;
-int gameloop(const char *fname, int net_mode, int player_count);
+int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock);
 
 // img.c
 uint16_t io_get2le(FILE *fp);
@@ -370,6 +374,8 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2);
 
 // shared.c
+char *text_dialogue(const char *title, const char *def);
+
 extern const int face_dir[4][2];
 
 extern SDL_Surface *screen_surface;

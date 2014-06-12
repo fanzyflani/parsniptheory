@@ -5,6 +5,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
+char *net_connect_host = NULL;
+
 static void menu_draw_player(int x, int y, int team, int face)
 {
 	int i;
@@ -125,6 +127,7 @@ int menuloop(int menuid)
 			case 0:
 				if(menuid == 0) return menuloop(1);
 				if(menuid == 1) return 2;
+				if(menuid == 2) return 0x10C;
 				break;
 			case 1:
 				if(menuid == 0) return menuloop(2);
@@ -217,21 +220,49 @@ int main(int argc, char *argv[])
 	switch(menuloop(0))
 	{
 		case 2:
-			gameloop("dat/level.psl", NET_LOCAL, 2);
+			gameloop("dat/level.psl", NET_LOCAL, 2, NULL);
 			break;
 
 		case 3:
-			gameloop("dat/level.psl", NET_LOCAL, 3);
+			gameloop("dat/level.psl", NET_LOCAL, 3, NULL);
 			break;
 
 		case 4:
-			gameloop("dat/level.psl", NET_LOCAL, 4);
+			gameloop("dat/level.psl", NET_LOCAL, 4, NULL);
 			break;
+
+		case 0x105: {
+			IPaddress server_ip;
+			TCPsocket server_sockfd;
+			if(SDLNet_ResolveHost(&server_ip, NULL, NET_PORT)==-1) return 1;
+			server_sockfd = SDLNet_TCP_Open(&server_ip);
+			if(server_sockfd == NULL) return 1;
+			gameloop("dat/level.psl", NET_SERVER, 2, server_sockfd);
+		} break;
+
+		case 0x10C: {
+			net_connect_host = text_dialogue("ENTER HOSTNAME OR IP", "");
+			if(net_connect_host == NULL)
+				break;
+
+			IPaddress client_ip;
+			TCPsocket client_sockfd;
+			if(SDLNet_ResolveHost(&client_ip, (net_connect_host == NULL
+				? "localhost"
+				: net_connect_host), NET_PORT)==-1) return 1;
+			client_sockfd = SDLNet_TCP_Open(&client_ip);
+			if(client_sockfd == NULL) return 1;
+
+			free(net_connect_host);
+			net_connect_host = NULL;
+
+			gameloop("dat/level.psl", NET_CLIENT, 2, client_sockfd);
+		} break;
 
 		case 0xED17:
 			editloop();
 			break;
-		
+
 		case -1:
 			// Clean up
 			
