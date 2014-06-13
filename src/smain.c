@@ -9,6 +9,9 @@ int main(int argc, char *argv[])
 {
 	int i;
 
+	// chdir
+	chdir_to_exe(argv[0]);
+
 	// General SDL setup
 	SDL_Init(SDL_INIT_VIDEO);
 	SDLNet_Init();

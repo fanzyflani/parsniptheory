@@ -372,10 +372,10 @@ int sdiv(int n, int d);
 int smod(int n, int d);
 int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2, int y2);
 int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2);
+char *text_dialogue(const char *title, const char *def);
+void chdir_to_exe(const char *farg);
 
 // shared.c
-char *text_dialogue(const char *title, const char *def);
-
 extern const int face_dir[4][2];
 
 extern SDL_Surface *screen_surface;

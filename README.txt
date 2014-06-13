@@ -9,15 +9,20 @@ If you accidentally ruin your dat/level.psl file, rip it out of the .zip file ag
 
 ----
 
-Windows users: Double-click on RUN.BAT (might just say RUN) to run this. Yes, the thing with the cog on it. A nicer .exe file with a nice icon will come later.
+Windows users: Run "parsniptheory-windows-i386.exe".
 
-FreeBSD users: Run the "run.sh" file, and cross your fingers. i386 and amd64 builds are provided.
+FreeBSD users: You can work this one out. You'll want SDL installed, though.
 
 Linux users: Sorry, haven't got that toolchain sorted out yet! Run the Windows version in wine. run.sh will do that step for you.
 
 Mac OS X users: I have no plans for a native port to this platform. If you want there to be a port, I'll need you to test, and also help me set up a cross-compiler. Otherwise, use Wine.
 
 Raspberry Pi users: I haven't got a build for this yet. If you really want one, prod me on Twitter and I'll whip one up. Otherwise... use your other computer.
+
+----
+
+Network info:
+It's not secure, it's not well-synced, it only does 2 player at the moment, but at least the damn thing works.
 
 ----
 

@@ -1,5 +1,10 @@
 Changelog:
 
-alpha 1:
+Alpha 2:
+* Networking support!
+* Icons!
+* Can be run w/o having to use a bat file or any of that crap.
+
+Alpha 1:
 * First public release.
 

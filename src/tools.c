@@ -4,6 +4,9 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 */
 
 #include "common.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 int sdiv(int n, int d)
 {
@@ -357,6 +360,138 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 	*ry = (ret ? cy : lcy);
 
 	return ret;
+
+}
+
+// Dialogue loop
+char *text_dialogue(const char *title, const char *def)
+{
+	const int tmax = 256;
+	char tbuf[256+1];
+	int tlen = 0;
+	int titlelen = strlen(title);
+
+	if(def == NULL) def = "";
+	strncpy(tbuf, def, tmax);
+	tbuf[tmax] = '\x00';
+	tlen = strlen(tbuf);
+	tbuf[tlen] = '\x00';
+
+	input_key_queue_flush();
+
+	for(;;)
+	{
+		// Draw text
+		screen_clear(0);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*titlelen, screen->h/2-18, 1, "%s", title);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*tlen, screen->h/2+2, 1, "%s", tbuf);
+
+		// Flip
+		screen_flip();
+		SDL_Delay(20);
+		
+		// Input
+		if(input_poll())
+			return NULL;
+
+		while(input_key_queue_peek() != 0)
+		{
+			int v = input_key_queue_pop();
+			if((v & 0x80000000) != 0) continue;
+
+			if(((v>>16)&0x7FFF) == SDLK_RETURN)
+			{
+				return strdup(tbuf);
+			} else if(((v>>16)&0x7FFF) == SDLK_ESCAPE) {
+				return NULL;
+			} else if(((v>>16)&0x7FFF) == SDLK_BACKSPACE) {
+				if(tlen > 0) {
+					tlen--;
+					tbuf[tlen] = '\x00';
+				}
+			} else if((v&255) >= 32 && (v&255) <= 126) {
+				if(tlen < tmax) {
+					tbuf[tlen] = v&255;
+					tlen++;
+					tbuf[tlen] = '\x00';
+				}
+			}
+		}
+
+	}
+
+}
+
+// Netloop
+void netloop(int net_mode)
+{
+	// TODO!
+	for(;;)
+	{
+		if(input_poll())
+			return;
+
+		screen_flip();
+		SDL_Delay(20);
+
+	}
+
+}
+
+// chdir to exe
+void chdir_to_exe(const char *farg)
+{
+	char fnbuf[2048] = "";
+#ifdef WIN32
+	GetModuleFileName(NULL, fnbuf, 2047);
+	fnbuf[2047] = '\x00';
+
+	// No, I'm not adding shlwapi.
+	char *fol = fnbuf + strlen(fnbuf);
+	for(; fol >= fnbuf; fol--)
+	if(*fol == '\\')
+	{
+		// Truncate
+		*fol = '\x00';
+		break;
+	}
+
+	chdir(fnbuf);
+
+#else
+	strncpy(fnbuf, farg, 2048);
+	fnbuf[2047] = '\x00';
+
+	// There are two possibilities here.
+	// 1. It was launched globally. Thus, we... OK, we just go with the current directory.
+	// 2. It was launched from some directory. Thus, we follow along.
+
+	// Why do we use this method? Because, well...
+	// - Linux has /proc/self/exe.
+	// - FreeBSD has /proc/curproc/file, but only if procfs is mounted.
+	// - NetBSD I think has /proc/self/exe but only if something's mounted.
+	//   I don't quite remember what I needed to do, it's been a while.
+
+	// Seeing as I'm devving on FreeBSD and Raspbian Linux,
+	// I don't want too much platform-specific crap *between* the two.
+	// But hey, Windows insists on making people do platform-specific crap.
+
+	// *sigh* I hate Windows.
+
+	char *fol = fnbuf + strlen(fnbuf);
+	for(; fol >= fnbuf; fol--)
+	if(*fol == '/')
+	{
+		// Truncate
+		*fol = '\x00';
+		break;
+	}
+
+	if(fol >= fnbuf)
+		chdir(fnbuf);
+	else
+		printf("WARNING: Launched globally - running from current dir!\n");
+#endif
 
 }
 

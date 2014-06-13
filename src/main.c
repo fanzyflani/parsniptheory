@@ -109,7 +109,8 @@ int menuloop(int menuid)
 			// Draw texts
 			draw_printf(screen, i_font16, 16, 15, 20, 1, "CONNECT");
 			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "CREATE");
-			draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "SETUP");
+			//draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "SETUP");
+			draw_printf(screen, i_font16, 16, 15, screen->h - 20 - 16, 1, "X");
 			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "GO BACK");
 			draw_printf(screen, i_font16, 16, screen->w/2 - 8*(7+1+4+3), screen->h/2 - 8, 1,
 				"NETWORK GAME");
@@ -132,6 +133,7 @@ int menuloop(int menuid)
 			case 1:
 				if(menuid == 0) return menuloop(2);
 				if(menuid == 1) return 3;
+				if(menuid == 2) return 0x105;
 				break;
 			case 2:
 				if(menuid == 0) return 0xED17;
@@ -178,6 +180,9 @@ void loadicon(const char *fname)
 int main(int argc, char *argv[])
 {
 	int i;
+
+	// chdir
+	chdir_to_exe(argv[0]);
 
 	// General SDL setup
 	SDL_Init(SDL_INIT_VIDEO);
