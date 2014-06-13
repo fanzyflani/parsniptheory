@@ -6,6 +6,7 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #ifndef _PARSNIP_COMMON_H_
 #define _PARSNIP_COMMON_H_
 #include <stdarg.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -15,7 +16,24 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include <zlib.h>
 #include <SDL.h>
+#ifndef NO_NET
 #include <SDL_net.h>
+#else
+typedef void *TCPsocket;
+typedef void *SDLNet_SocketSet;
+typedef void *IPaddress;
+#define SDLNet_Init(...) 0
+#define SDLNet_TCP_Send(...) 0
+#define SDLNet_TCP_Recv(...) 0
+#define SDLNet_TCP_Accept(...) 0
+#define SDLNet_TCP_Open(...) 0
+#define SDLNet_TCP_Close(...) 0
+#define SDLNet_CheckSockets(...) 0
+#define SDLNet_SocketReady(...) 0
+#define SDLNet_AllocSocketSet(...) NULL
+#define SDLNet_AddSocket(...) 0
+#define SDLNet_ResolveHost(...) -1
+#endif
 
 #include <assert.h>
 

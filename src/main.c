@@ -197,7 +197,8 @@ int main(int argc, char *argv[])
 	// TODO: Video mode selector
 	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 2)", NULL);
 	loadicon("dat/icon.tga");
-	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, 0);
+	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
+	printf("screen %p %i %i\n", screen_surface, screen_surface->w, screen_surface->h);
 	screen = img_new(320, 200);
 
 	// Load palette and colourmaps
@@ -221,8 +222,14 @@ int main(int argc, char *argv[])
 		teams[i] = team_new(i);
 
 	// Enter menu loop
+#ifdef __EMSCRIPTEN__
+	printf("forcing 2-player game\n");
+	// Force a 2-player game
+	switch(2)
+#else
 	for(;;)
 	switch(menuloop(0))
+#endif
 	{
 		case 2:
 			gameloop("dat/level.psl", NET_LOCAL, 2, NULL);
@@ -274,5 +281,9 @@ int main(int argc, char *argv[])
 			// That's all folks!
 			return 0;
 	}
+
+#ifdef __EMSCRIPTEN__
+	printf("woop woop, now we transfer\n");
+#endif
 }
 

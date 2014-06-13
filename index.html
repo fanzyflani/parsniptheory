@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en-us">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>Parsnip Theory HTML5 Hotseat Demo (Alpha 2.1)</title>
+		<style>
+			body {
+				font-family: arial;
+				margin: 0;
+				padding: none;
+			}
+
+			.emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+			div.emscripten { text-align: center; }			
+			/* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+			canvas.emscripten { border: 0px none; }
+
+			#output {
+				width: 100%;
+				height: 200px;
+				margin: 0 auto;
+				margin-top: 10px;
+				display: block;
+				background-color: black;
+				color: white;
+				font-family: 'Lucida Console', Monaco, monospace;
+				outline: none;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="emscripten_border">
+			<canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+		</div>
+
+		<div style="text-align: center">
+			<p>
+				Parsnip Theory Alpha 2 is now available on itch.io! Featuring 3- and 4-player gameplay and very experimental 2P network play!
+			</>
+			<p>
+			<a href="http://fanzyflani.itch.io/parsnip-theory">Download it today!</a>
+			</p>
+		</div>
+
+		<div>
+			<p>
+			Playing instructions:
+			<ul>
+			<li><b>Left click</b> selects a unit.</li>
+			<li><b>Right click</b> either moves your unit, or attempts to throw a tomato at an enemy player.</li>
+			<li><b>ENTER</b> ends your turn and moves onto the next player.</li>
+			<li>Your units get 7 "steps" each.<ul>
+			  <li>Moving by 1 tile  uses up 1 step.</li>
+			  <li>Throwing a tomato uses up 2 steps.</li>
+			</ul></li>
+			<li>Getting hit by a tomato takes 10 points off that unit's tolerance meter.</li>
+			<li>Once the tolerance meter hits 0, that unit is out!</li>
+			<li>When a player has no more units, they are out of the game!</li>
+			<li>Last remaining player wins!</li>
+			</ul>
+			</p>
+		</div>
+
+		<script type='text/javascript'>
+			var statusElement = document.getElementById('status');
+			var progressElement = document.getElementById('progress');
+
+			var Module = {
+				preRun: [],
+				postRun: [],
+				print: (function() {
+					var element = document.getElementById('output');
+					if (element) element.value = ''; // clear browser cache
+					return function(text) {
+						text = Array.prototype.slice.call(arguments).join(' ');
+						// These replacements are necessary if you render to raw HTML
+						//text = text.replace(/&/g, "&amp;");
+						//text = text.replace(/</g, "&lt;");
+						//text = text.replace(/>/g, "&gt;");
+						//text = text.replace('\n', '<br>', 'g');
+						console.log(text);
+						if (element) {
+							element.value += text + "\n";
+							element.scrollTop = element.scrollHeight; // focus on bottom
+						}
+					};
+				})(),
+				printErr: function(text) {
+					text = Array.prototype.slice.call(arguments).join(' ');
+					if (0) { // XXX disabled for safety typeof dump == 'function') {
+						dump(text + '\n'); // fast, straight to the real console
+					} else {
+						console.error(text);
+					}
+				},
+				canvas: document.getElementById('canvas'),
+				setStatus: function(text) {
+					if (!Module.setStatus.last) Module.setStatus.last = { time: Date.now(), text: '' };
+					if (text === Module.setStatus.text) return;
+					var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+					var now = Date.now();
+					if (m && now - Date.now() < 30) return; // if this is a progress update, skip it if too soon
+				},
+				totalDependencies: 0,
+				monitorRunDependencies: function(left) {
+					this.totalDependencies = Math.max(this.totalDependencies, left);
+					Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+				}
+			};
+			Module.setStatus('Downloading...');
+		</script>
+		<script async type="text/javascript" src="index.js"></script>
+	</body>
+</html>
+

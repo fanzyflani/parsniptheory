@@ -5,6 +5,10 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 int game_camx = 0;
 int game_camy = 0;
 int game_mouse_x = 0;
@@ -707,7 +711,9 @@ void gameloop_draw(void)
 
 	// Flip
 	screen_flip();
+#ifndef __EMSCRIPTEN__
 	SDL_Delay(20);
+#endif
 
 }
 
@@ -771,10 +777,99 @@ int gameloop_tick(void)
 	return 0;
 }
 
+int gameloop_core(int net_mode)
+{
+	int i;
+
+	// Draw
+	gameloop_draw();
+
+	// Process events
+	if(input_poll()) return 1;
+
+	// Parse actions
+	switch(net_mode)
+	{
+		case NET_LOCAL:
+			abuf_poll(ab_local);
+			while(game_parse_actions(ab_local, NET_S2C));
+			break;
+
+		case NET_CLIENT:
+			abuf_poll(ab_local);
+			while(game_parse_actions(ab_local, NET_S2C));
+			break;
+
+		case NET_SERVER: {
+			// Get client stuff
+			TCPsocket nfd = SDLNet_TCP_Accept(ab_local->sock);
+			if(nfd != NULL)
+			{
+				// Find a free slot
+				for(i = 0; i < TEAM_MAX; i++)
+				if(ab_teams[i] == NULL)
+				{
+					// Accept it
+					ab_teams[i] = abuf_new();
+					ab_teams[i]->sset = SDLNet_AllocSocketSet(1);
+					ab_teams[i]->sock = nfd;
+					SDLNet_AddSocket(ab_teams[i]->sset, (void *)ab_teams[i]->sock);
+					break;
+				}
+
+				if(i == TEAM_MAX)
+				{
+					// Cannot accept new client
+					SDLNet_TCP_Close(nfd);
+				}
+
+			}
+
+			// Poll
+			for(i = 0; i < TEAM_MAX; i++)
+			if(ab_teams[i] != NULL)
+			{
+				abuf_poll(ab_teams[i]);
+				while(game_parse_actions(ab_teams[i], NET_C2S));
+			}
+
+		} break;
+
+	}
+
+	// Update mouse stuff
+	game_mouse_x = mouse_x;
+	game_mouse_y = mouse_y;
+	game_mouse_ox = mouse_ox;
+	game_mouse_oy = mouse_oy;
+
+	// Process tick
+	// TODO: Time this nicely
+	if(gameloop_tick()) return 0;
+
+	return -1;
+}
+
+#ifdef __EMSCRIPTEN__
+void gameloop_core_cradle(void)
+{
+	const int net_mode = NET_LOCAL;
+
+	int ret = gameloop_core(net_mode);
+	//printf("cradle ret %i\n", ret);
+	if(ret == -1) return;
+	emscripten_cancel_main_loop();
+}
+#endif
+
 int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 {
 	int i;
 	obj_t *ob;
+
+#ifdef __EMSCRIPTEN__
+	printf("game beginning\n");
+#endif
 
 	// Free action buffers
 	if(ab_local != NULL) { abuf_free(ab_local); ab_local = NULL; }
@@ -819,7 +914,9 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 	game_over = 0;
 
 	// Load level
+	//printf("loading level\n");
 	rootlv = level_load(fname);
+	//printf("rootlv = %p\n", rootlv);
 	assert(rootlv != NULL); // TODO: Be more graceful
 
 	// Remove excess players
@@ -838,76 +935,21 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 
 
 	// Start turn
+	//printf("starting turn!\n");
 	gameloop_start_turn();
 
+#ifdef __EMSCRIPTEN__
+	//printf("inf loop begin\n");
+	emscripten_set_main_loop(gameloop_core_cradle, 100.0f, 0);
+	//printf("cradle set\n");
+#else
 	for(;;)
 	{
-		// Draw
-		gameloop_draw();
-
-		// Process events
-		if(input_poll()) return 1;
-
-		// Parse actions
-		switch(net_mode)
-		{
-			case NET_LOCAL:
-				abuf_poll(ab_local);
-				while(game_parse_actions(ab_local, NET_S2C));
-				break;
-
-			case NET_CLIENT:
-				abuf_poll(ab_local);
-				while(game_parse_actions(ab_local, NET_S2C));
-				break;
-
-			case NET_SERVER: {
-				// Get client stuff
-				TCPsocket nfd = SDLNet_TCP_Accept(ab_local->sock);
-				if(nfd != NULL)
-				{
-					// Find a free slot
-					for(i = 0; i < TEAM_MAX; i++)
-					if(ab_teams[i] == NULL)
-					{
-						// Accept it
-						ab_teams[i] = abuf_new();
-						ab_teams[i]->sset = SDLNet_AllocSocketSet(1);
-						ab_teams[i]->sock = nfd;
-						SDLNet_AddSocket(ab_teams[i]->sset, (void *)ab_teams[i]->sock);
-						break;
-					}
-
-					if(i == TEAM_MAX)
-					{
-						// Cannot accept new client
-						SDLNet_TCP_Close(nfd);
-					}
-
-				}
-
-				// Poll
-				for(i = 0; i < TEAM_MAX; i++)
-				if(ab_teams[i] != NULL)
-				{
-					abuf_poll(ab_teams[i]);
-					while(game_parse_actions(ab_teams[i], NET_C2S));
-				}
-
-			} break;
-
-		}
-
-		// Update mouse stuff
-		game_mouse_x = mouse_x;
-		game_mouse_y = mouse_y;
-		game_mouse_ox = mouse_ox;
-		game_mouse_oy = mouse_oy;
-
-		// Process tick
-		// TODO: Time this nicely
-		if(gameloop_tick()) return 0;
+		int ret = gameloop_core(net_mode);
+		if(ret == -1) continue;
+		return 0;
 	}
+#endif
 
 	return 0;
 }

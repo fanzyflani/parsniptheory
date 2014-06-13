@@ -446,6 +446,9 @@ void netloop(int net_mode)
 // chdir to exe
 void chdir_to_exe(const char *farg)
 {
+#ifdef __EMSCRIPTEN__
+	return;
+#else
 	char fnbuf[2048] = "";
 #ifdef WIN32
 	GetModuleFileName(NULL, fnbuf, 2047);
@@ -496,7 +499,8 @@ void chdir_to_exe(const char *farg)
 		chdir(fnbuf);
 	else
 		printf("WARNING: Launched globally - running from current dir!\n");
-#endif
 
+#endif
+#endif
 }
 
