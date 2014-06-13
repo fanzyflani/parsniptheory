@@ -397,12 +397,17 @@ char *text_dialogue(const char *title, const char *def)
 		while(input_key_queue_peek() != 0)
 		{
 			int v = input_key_queue_pop();
-			if((v & 0x80000000) != 0) continue;
-
-			if(((v>>16)&0x7FFF) == SDLK_RETURN)
+			if((v & 0x80000000) != 0)
 			{
-				return strdup(tbuf);
-			} else if(((v>>16)&0x7FFF) == SDLK_ESCAPE) {
+				if(((v>>16)&0x7FFF) == SDLK_RETURN)
+				{
+					return strdup(tbuf);
+				}
+
+				continue;
+			}
+
+			if(((v>>16)&0x7FFF) == SDLK_ESCAPE) {
 				return NULL;
 			} else if(((v>>16)&0x7FFF) == SDLK_BACKSPACE) {
 				if(tlen > 0) {
