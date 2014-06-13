@@ -11,9 +11,10 @@ If you accidentally ruin your dat/level.psl file, rip it out of the .zip file ag
 
 Windows users: Run "parsniptheory-windows-i386.exe".
 
-FreeBSD users: You can work this one out. You'll want SDL installed, though.
+Linux users: Run "./parsniptheory-linux.sh". Alternatively, if you just so happen to have all the right libs installed, you can try running "./parsniptheory-linux-i386".
+LET ME KNOW IF THIS IS MISSING ANY LIBRARIES! (They're from a version of Debian.)
 
-Linux users: Sorry, haven't got that toolchain sorted out yet! Run the Windows version in wine. run.sh will do that step for you.
+FreeBSD users: You can work this one out. Alternatively, you can try emulation.
 
 Mac OS X users: I have no plans for a native port to this platform. If you want there to be a port, I'll need you to test, and also help me set up a cross-compiler. Otherwise, use Wine.
 
@@ -23,6 +24,7 @@ Raspberry Pi users: I haven't got a build for this yet. If you really want one, 
 
 Network info:
 It's not secure, it's not well-synced, it only does 2 player at the moment, but at least the damn thing works.
+It uses TCP port 2014. Have fun.
 
 ----
 

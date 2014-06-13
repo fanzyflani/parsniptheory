@@ -3,10 +3,16 @@
 
 # final binaries
 parsniptheory
-parsniptheory.exe
+parsniptheory-linux-i386
+parsniptheory-freebsd-i386
+parsniptheory-freebsd-amd64
 parsniptheory-windows-i386.exe
 parsnipserver
+parsnipserver-linux-i386
+parsnipserver-freebsd-i386
+parsnipserver-freebsd-amd64
 parsnipserver-windows-i386.exe
+*.res
 
 # other stuff
 tga/pixra
