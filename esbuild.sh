@@ -12,6 +12,7 @@ export OBJS_COMMON="\
 	${SRCDIR}/draw.c \
 	${SRCDIR}/edit.c \
 	${SRCDIR}/game.c \
+	${SRCDIR}/gui.c \
 	${SRCDIR}/img.c \
 	${SRCDIR}/input.c \
 	${SRCDIR}/obj.c \

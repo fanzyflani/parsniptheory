@@ -82,6 +82,27 @@ typedef struct cmap
 	uint8_t data[256];
 } cmap_t;
 
+// Here's the GUI stuff.
+typedef struct widget widget_t;
+struct widget
+{
+	widget_t *parent, *fchild, *lchild;
+	widget_t *psib, *nsib;
+	int sx, sy;
+	int w, h;
+
+	void (*f_free)(widget_t *g);
+	void (*f_draw)(widget_t *g, int sx, int sy);
+	void (*f_mouse_b)(widget_t *g, int mx, int my, int mb, int db, int ds);
+	void (*f_mouse_m)(widget_t *g, int mx, int my, int mb, int dx, int dy);
+	int (*f_mouse_f)(widget_t *g, int mx, int my, int enter, int leave);
+
+	// This may resemble the Allegro 4 GUI.
+	// Hey, at least it works.
+	int i1;
+	void *v1;
+};
+
 // Here's the player/team stuff.
 typedef struct player
 {
@@ -351,6 +372,11 @@ int editloop(void);
 extern int game_camx;
 extern int game_camy;
 int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock);
+
+// gui.c
+void gui_reparent(widget_t *gp, widget_t *gc);
+void gui_free(widget_t *g);
+widget_t *gui_new(int (*f_init)(widget_t *g, void *ud), widget_t *parent, int w, int h, void *ud);
 
 // img.c
 uint16_t io_get2le(FILE *fp);

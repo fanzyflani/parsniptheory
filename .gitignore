@@ -13,6 +13,11 @@ parsnipserver-freebsd-i386
 parsnipserver-freebsd-amd64
 parsnipserver-windows-i386.exe
 *.res
+*.html
+*.js
+*.data
+libs/
+rel/
 
 # other stuff
 tga/pixra

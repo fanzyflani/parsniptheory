@@ -18,6 +18,7 @@ OBJS_COMMON = \
 	$(OBJDIR)/draw.o \
 	$(OBJDIR)/edit.o \
 	$(OBJDIR)/game.o \
+	$(OBJDIR)/gui.o \
 	$(OBJDIR)/img.o \
 	$(OBJDIR)/input.o \
 	$(OBJDIR)/obj.o \

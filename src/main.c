@@ -5,6 +5,11 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
+#define MAIN_MENU_DUMMY    0
+#define MAIN_MENU_ACTION   1
+#define MAIN_MENU_GOBACK   2
+#define MAIN_MENU_MOVETO   3
+
 char *net_connect_host = NULL;
 
 static void menu_draw_player(int x, int y, int team, int face)
@@ -19,9 +24,189 @@ static void menu_draw_player(int x, int y, int team, int face)
 			0, teams[team]->cm_player);
 }
 
+static void menu_draw_tile(int x, int y, int tidx, int a2)
+{
+	draw_img_trans_cmap_d_sd(screen, i_tiles1,
+		x, y,
+		32*(tidx&15), 24*(tidx>>4), 32, 24, 0, cm_tiles1);
+
+}
+
+struct menu_data
+{
+	const char *name;
+	int act, arg;
+	struct menu_pic {
+		void (*f_draw)(int x, int y, int a1, int a2);
+		int x, y, a1, a2;
+
+	} pics[4];
+
+} menu_gui_data[][4] = {
+
+	{
+		{
+			"HOT SEAT", MAIN_MENU_MOVETO, 1, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"NETWORK", MAIN_MENU_MOVETO, 2, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"LVL EDIT", MAIN_MENU_ACTION, 0xED17, {
+				{menu_draw_tile, -10 - 36*3, -34, 1, 0},
+				{menu_draw_tile, -10 - 36*2, -34, 5, 0},
+				{menu_draw_tile, -10 - 36*1, -34, 12, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"QUIT", MAIN_MENU_ACTION, -1, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+	},
+
+	{
+		{
+			"2 PLAYER", MAIN_MENU_ACTION, 2, {
+				{menu_draw_player, -32-28*1, -44, 0, 0},
+				{menu_draw_player, -32-28*0, -44, 1, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"3 PLAYER", MAIN_MENU_ACTION, 3, {
+				{menu_draw_player, -32-28*2, -44, 0, 0},
+				{menu_draw_player, -32-28*1, -44, 1, 0},
+				{menu_draw_player, -32-28*0, -44, 2, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"4 PLAYER", MAIN_MENU_ACTION, 4, {
+				{menu_draw_player, -32-28*3, -44, 0, 0},
+				{menu_draw_player, -32-28*2, -44, 1, 0},
+				{menu_draw_player, -32-28*1, -44, 2, 0},
+				{menu_draw_player, -32-28*0, -44, 3, 0},
+			}
+		},
+
+		{
+			"GO BACK", MAIN_MENU_GOBACK, 0, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+	},
+
+	{
+		{
+			"PLAY NOW", MAIN_MENU_DUMMY, 0, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"CONNECT", MAIN_MENU_ACTION, 0x10C, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"CREATE", MAIN_MENU_ACTION, 0x105, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"GO BACK", MAIN_MENU_GOBACK, 0, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+	},
+
+	{
+		{
+			"", MAIN_MENU_DUMMY, 0, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"", MAIN_MENU_DUMMY, 0, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"", MAIN_MENU_DUMMY, 0, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"", MAIN_MENU_DUMMY, 0, {
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+				{NULL, 0, 0, 0, 0},
+			}
+		},
+	},
+};
+
+const char *menu_names[] = {
+	"PARSNIP THEORY ",
+	" HOT SEAT",
+	"NETWORK GAME   ",
+};
+
 int menuloop(int menuid)
 {
-	int i;
+	int x, y, i, j;
+	int sx, sy;
 
 	// Ensure our clicks don't cut through twice
 	input_poll();
@@ -63,7 +248,38 @@ int menuloop(int menuid)
 		draw_rect_d(screen, screen->w/2 + 10, 10, screen->w/2-20, screen->h/2-20, 64 + (sel==1 ? 0 : 2) + 8*1);
 		draw_rect_d(screen, 10, screen->h/2 + 10, screen->w/2-20, screen->h/2-20, 64 + (sel==2 ? 0 : 2) + 8*2);
 		draw_rect_d(screen, screen->w/2 + 10, screen->h/2 + 10, screen->w/2-20, screen->h/2-20, 64 + (sel==3 ? 0 : 2) + 8*3);
+		
+		// Draw GUI contents
+		struct menu_data *md = menu_gui_data[menuid];
 
+		draw_printf(screen, i_font16, 16,
+			screen->w/2 - 8*strlen(menu_names[menuid]), screen->h/2 - 8,
+			1, menu_names[menuid]);
+
+		for(i = 0; i < 4; i++)
+		{
+			// Get top-left corner
+			sx = ((i&1) == 0 ? 0 : screen->w/2) + 10;
+			sy = ((i&2) == 0 ? 0 : screen->h/2) + 10;
+
+			// Draw background
+			for(j = 0; j < 4; j++)
+			{
+				if(md[i].pics[j].f_draw == NULL) continue;
+
+				x = md[i].pics[j].x;
+				y = md[i].pics[j].y;
+				if(x < 0) x += (screen->w/2-20);
+				if(y < 0) y += (screen->h/2-20);
+
+				md[i].pics[j].f_draw(sx + x, sy + y, md[i].pics[j].a1, md[i].pics[j].a2);
+			}
+
+			// Draw text
+			draw_printf(screen, i_font16, 16, sx + 5, sy + 10, 1, md[i].name);
+		}
+
+		/*
 		if(menuid == 0)
 		{
 			// Draw backgrounds
@@ -115,7 +331,7 @@ int menuloop(int menuid)
 			draw_printf(screen, i_font16, 16, screen->w/2 - 8*(7+1+4+3), screen->h/2 - 8, 1,
 				"NETWORK GAME");
 
-		}
+		}*/
 
 		// Flip
 		screen_flip();
@@ -123,28 +339,14 @@ int menuloop(int menuid)
 
 		// Check if clicked
 		if((mouse_ob & 1) && !(mouse_b & 1))
-		switch(sel)
+		switch(menu_gui_data[menuid][sel].act)
 		{
-			case 0:
-				if(menuid == 0) return menuloop(1);
-				if(menuid == 1) return 2;
-				if(menuid == 2) return 0x10C;
-				break;
-			case 1:
-				if(menuid == 0) return menuloop(2);
-				if(menuid == 1) return 3;
-				if(menuid == 2) return 0x105;
-				break;
-			case 2:
-				if(menuid == 0) return 0xED17;
-				if(menuid == 1) return 4;
-				break;
-			case 3:
-				if(menuid == 0) return -1;
-				if(menuid == 1) return 0;
-				if(menuid == 2) return 0;
-				break;
-
+			case MAIN_MENU_MOVETO:
+				return menuloop(menu_gui_data[menuid][sel].arg);
+			case MAIN_MENU_GOBACK:
+				return 0;
+			case MAIN_MENU_ACTION:
+				return menu_gui_data[menuid][sel].arg;
 		}
 
 		// Poll input
