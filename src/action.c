@@ -166,16 +166,18 @@ void abuf_poll_write(abuf_t *ab)
 
 		if(len == 0)
 		{
-			/*
-			printf("FIXME: handle socket EOF\n");
-			fflush(stdout);
-			abort();
-			*/
+			// Do nothing
 
 		} else if(len < 0) {
-			printf("FIXME: handle socket send error\n");
-			fflush(stdout);
-			abort();
+			printf("send failed with error, breaking\n");
+			ab->state = CLIENT_DEAD;
+
+			// Close socket if such thing exists
+			if(ab->sock != NULL)
+			{
+				SDLNet_TCP_Close(ab->sock);
+				ab->sock = NULL;
+			}
 
 		} else if(len == ab->wsize) {
 			ab->wsize = 0;
@@ -186,6 +188,11 @@ void abuf_poll_write(abuf_t *ab)
 			memmove(ab->wdata, ab->wdata + len, ab->wsize);
 
 		}
+
+	} else {
+		// Flush so we don't get a buffer overflow
+		ab->wsize = 0;
+
 	}
 }
 
@@ -202,24 +209,28 @@ void abuf_poll_read(abuf_t *ab)
 		if(!SDLNet_SocketReady(ab->sock)) return;
 		len = SDLNet_TCP_Recv(ab->sock, ab->rdata + ab->rsize, ABUF_SIZE - ab->rsize);
 
-		if(len == 0)
+		if(len <= 0)
 		{
-			/*
-			printf("FIXME: handle socket EOF\n");
-			fflush(stdout);
-			abort();
-			*/
+			printf("recv failed with error, breaking\n");
+			ab->state = CLIENT_DEAD;
 
-		} else if(len < 0) {
-			printf("FIXME: handle socket recv error\n");
-			fflush(stdout);
-			abort();
+			// Close socket if such thing exists
+			if(ab->sock != NULL)
+			{
+				SDLNet_TCP_Close(ab->sock);
+				ab->sock = NULL;
+			}
 
 		} else {
 			assert(len + ab->rsize <= ABUF_SIZE);
 			ab->rsize += len;
 
 		}
+
+	} else {
+		// Flush so we don't get a buffer overflow
+		ab->wsize = 0;
+
 	}
 }
 

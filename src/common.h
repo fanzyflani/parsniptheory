@@ -51,6 +51,7 @@ typedef void *IPaddress;
 #define TOMATO_SPEED 1
 #define PLAYER_HEALTH 100
 #define TIME_STEP_MS 20
+#define TIME_HOVER_MS 200
 
 // Versions
 #define MAP_FVERSION 1
@@ -358,6 +359,7 @@ struct game
 
 	int time_now;
 	int time_next;
+	int time_next_hover;
 	int tick_next_pulse;
 
 	abuf_t *ab_local;
@@ -481,6 +483,7 @@ void game_push_settings(game_t *game, abuf_t *ab, game_settings_t *settings);
 void game_push_claim(game_t *game, abuf_t *ab, int netid, int tid);
 void game_push_unclaim(game_t *game, abuf_t *ab, int netid, int tid);
 void game_push_startbutton(game_t *game, abuf_t *ab);
+void game_push_hover(game_t *game, abuf_t *ab, int mx, int my, int camx, int camy);
 void game_push_newturn(game_t *game, abuf_t *ab, int tid, int steps_added);
 void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int camy, int button);
 int game_parse_actions(game_t *game, abuf_t *ab, int typ);

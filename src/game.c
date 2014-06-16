@@ -24,7 +24,6 @@ static void game_draw_player(int x, int y, int team, int face)
 			0, teams[team]->cm_player);
 }
 
-
 game_t *game_m = NULL; // model (server)
 game_t *game_v = NULL; // view  (client)
 
@@ -67,7 +66,10 @@ game_t *game_new(int net_mode)
 	game->net_mode = net_mode;
 	game->curtick = 0;
 
-	game->time_now = game->time_next = SDL_GetTicks();
+	game->time_now
+		= game->time_next
+		= game->time_next_hover
+		= SDL_GetTicks();
 
 	game->selob = NULL;
 	game->lv = NULL;
@@ -347,7 +349,10 @@ void gameloop_draw_playing(game_t *game)
 			0*32, i*48, 32, 48,
 			0, teams[game->curplayer]->cm_player);
 		
-	draw_printf(screen, i_font16, 16, 32, 0, 1, "PLAYER %i TURN", game->curplayer+1);
+	if(game->claim_team[game->curplayer] == game->netid)
+		draw_printf(screen, i_font16, 16, 32, 0, 1, "* PLAYER %i TURN *", game->curplayer+1);
+	else
+		draw_printf(screen, i_font16, 16, 32, 0, 1, "PLAYER %i TURN", game->curplayer+1);
 
 	if(game->selob != NULL)
 		draw_printf(screen, i_font16, 16, 32, 16, 1, "STEPS %i", game->selob->steps_left);
@@ -497,7 +502,7 @@ int game_tick_playing(game_t *game)
 	}
 
 	// Update UI
-	if(game->net_mode != NET_SERVER )
+	//if(game->net_mode != NET_SERVER)
 	{
 		if(game->mx < (screen->w>>3)) game->camx -= 4;
 		if(game->my < (screen->h>>3)) game->camy -= 4;
@@ -648,13 +653,15 @@ int game_input_setup(game_t *game)
 int game_input_playing(game_t *game)
 {
 	// Block input if waiting for object
-	//if(game->ab_local->state != CLIENT_UNLOCKED)
-	//	return 0;
 	if(game->claim_team[game->curplayer] != game->netid)
+	{
+		input_key_queue_flush();
 		return 0;
+	}
+
 	if(level_obj_waiting(game->lv) != NULL)
 		return 0;
-	
+
 	// INPUT STARTS HERE
 
 	// Scan keys
@@ -743,9 +750,9 @@ int gameloop_core(game_t *game)
 			}
 
 			// Poll
+			abuf_poll(game->ab_local); // moved out so the write buffer can be emptied
 			if(game->ab_local->loc_chain != NULL)
 			{
-				abuf_poll(game->ab_local);
 				while(game_parse_actions(game, game->ab_local, NET_C2S));
 			}
 
@@ -763,11 +770,10 @@ int gameloop_core(game_t *game)
 	// Update mouse stuff (if not locked)
 	// TODO? Properly do the lock state stuff?
 	//if(game->ab_local->state == CLIENT_UNLOCKED)
+	if(game->main_state != GAME_PLAYING || game->claim_team[game->curplayer] == game->netid)
 	{
 		game->mx = mouse_x;
 		game->my = mouse_y;
-		game->mx = mouse_ox;
-		game->my = mouse_oy;
 	}
 
 	// Process ticks
@@ -776,6 +782,17 @@ int gameloop_core(game_t *game)
 	{
 		game->time_next += TIME_STEP_MS;
 		if(game_tick(game)) return 0;
+	}
+
+	// Send hover events if need be
+	if(game->time_now >= game->time_next_hover)
+	{
+		game->time_next_hover = game->time_now + TIME_HOVER_MS;
+		if(game->main_state == GAME_PLAYING && game->claim_team[game->curplayer] == game->netid
+			&& game->net_mode == NET_CLIENT)
+		{
+			game_push_hover(game, game->ab_local, game->mx, game->my, game->camx, game->camy);
+		}
 	}
 
 	return -1;

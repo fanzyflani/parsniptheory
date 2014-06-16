@@ -76,7 +76,12 @@ void game_push_startbutton(game_t *game, abuf_t *ab)
 
 void game_push_hover(game_t *game, abuf_t *ab, int mx, int my, int camx, int camy)
 {
-	// TODO!
+	abuf_write_u8(ACT_HOVER, ab);
+	abuf_write_s16(mx, ab);
+	abuf_write_s16(my, ab);
+	abuf_write_s16(camx, ab);
+	abuf_write_s16(camy, ab);
+
 }
 
 void game_push_newturn(game_t *game, abuf_t *ab, int tid, int steps_added)
@@ -404,7 +409,7 @@ void game_handle_newturn(game_t *game, abuf_t *ab, int typ, int tid, int steps_a
 {
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
+	if(typ == NET_C2S)
 	{
 		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
 		tid = -1;
@@ -448,8 +453,9 @@ void game_handle_move(game_t *game, abuf_t *ab, int typ, int sx, int sy, int dx,
 	ce = layer_cell_ptr(game->lv->layers[0], sx, sy);
 	dce = layer_cell_ptr(game->lv->layers[0], dx, dy);
 
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
+	if(typ == NET_C2S)
 	{
+		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
 		if(!(dce != NULL)) return;
@@ -551,8 +557,9 @@ void game_handle_select(game_t *game, abuf_t *ab, int typ, int cx, int cy)
 
 	ce = layer_cell_ptr(game->lv->layers[0], cx, cy);
 
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
+	if(typ == NET_C2S)
 	{
+		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
 
@@ -579,8 +586,9 @@ void game_handle_deselect(game_t *game, abuf_t *ab, int typ)
 {
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
+	if(typ == NET_C2S)
 	{
+		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
 		//
 
 	} else if(typ == NET_S2C) {
@@ -600,7 +608,33 @@ void game_handle_deselect(game_t *game, abuf_t *ab, int typ)
 
 void game_handle_hover(game_t *game, abuf_t *ab, int typ, int mx, int my, int camx, int camy)
 {
-	// TODO
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	if(typ == NET_C2S)
+	{
+		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
+
+	} else if(typ == NET_S2C) {
+		// Ignore hover events when we have focus
+		if(game->claim_team[game->curplayer] == game->netid) return;
+
+	} else return;
+
+	// Move mouse
+	game->mx = mx;
+	game->my = my;
+	game->camx = camx;
+	game->camy = camy;
+
+	// Broadcast
+	if(typ == NET_C2S)
+	{
+		abuf_bc_u8(ACT_HOVER, game);
+		abuf_bc_s16(mx, game);
+		abuf_bc_s16(my, game);
+		abuf_bc_s16(camx, game);
+		abuf_bc_s16(camy, game);
+	}
 }
 
 int game_parse_actions(game_t *game, abuf_t *ab, int typ)
