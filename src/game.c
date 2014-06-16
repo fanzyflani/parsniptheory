@@ -9,6 +9,9 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #include <emscripten.h>
 #endif
 
+#define SETUP_MOUSE(x,y,w,h) (mouse_x >= (x) && mouse_y >= (y) && mouse_x < (x)+(w) && mouse_y < (y)+(h) \
+	? 0 : 2)
+
 static void game_draw_player(int x, int y, int team, int face)
 {
 	int i;
@@ -319,13 +322,13 @@ void gameloop_draw_setup(game_t *game)
 		screen->w/2 - 8*10, 0, 1,
 		"GAME SETUP");
 
-	draw_rect_d(screen, 16*5, 20, 16, 16, 64+8*2);
+	draw_rect_d(screen, 16*5, 20, 16, 16, 64+8*2+SETUP_MOUSE(16*5, 20, 16, 16));
 	draw_printf(screen, i_font16, 16,
 		0, 20, 1,
 		"LVL: * %s", game->settings.map_name);
 
-	draw_rect_d(screen, 16*4, 40, 16, 16, 64+8*0);
-	draw_rect_d(screen, 16*5, 40, 16, 16, 64+8*1);
+	draw_rect_d(screen, 16*4, 40, 16, 16, 64+8*0+SETUP_MOUSE(16*4, 40, 16, 16));
+	draw_rect_d(screen, 16*5, 40, 16, 16, 64+8*1+SETUP_MOUSE(16*5, 40, 16, 16));
 	draw_printf(screen, i_font16, 16,
 		0, 40, 1,
 		"PLR:-+ %i", game->settings.player_count);
@@ -333,7 +336,10 @@ void gameloop_draw_setup(game_t *game)
 	// Admin check
 	if(game->claim_admin == game->netid)
 	{
-		// TODO: other things?
+		// Might as well add the "GO" button
+		draw_rect_d(screen, screen->w-16*4, screen->h-32, 16*4, 32,
+			64+8*1+SETUP_MOUSE(screen->w-16*4,screen->h-32, 16*4, 32));
+		draw_printf(screen, i_font16, 16, screen->w-4-16*3, screen->h-24, 1, "GO!");
 
 	} else {
 		draw_rect_d(screen, 16*4, 20, 32, 36, 0);
@@ -341,24 +347,27 @@ void gameloop_draw_setup(game_t *game)
 
 	if(game->netid != 0xFD && game->claim_admin == 0xFF)
 	{
-		draw_rect_d(screen, 20-1, 60-1, 16*11+2, 16+2, 64+8*5+2);
-		draw_printf(screen, i_font16, 16, 20, 60, 1, "CLAIM ADMIN");
+		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+8*5+SETUP_MOUSE(20-1,60-1,16*12+2,16+2));
+		draw_printf(screen, i_font16, 16, 20+8, 60, 1, "CLAIM ADMIN");
 	} else if(game->netid == game->claim_admin)
 	{
-		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+8*0+2);
+		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+8*0+SETUP_MOUSE(20-1,60-1,16*12+2,16+2));
 		draw_printf(screen, i_font16, 16, 20, 60, 1, "REVOKE ADMIN");
 	}
 
 	for(i = 0; i < game->settings.player_count; i++)
 	{
 		if(game->claim_team[i] == 0xFF)
-			draw_rect_d(screen, 4 + i*36, 80, 32, 48, 64+8*2+2);
+			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
+				64+8*2+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*40,32,42));
 		else if(game->claim_team[i] == game->netid)
-			draw_rect_d(screen, 4 + i*36, 80, 32, 48, 64+8*1+2);
+			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
+				64+8*1+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42));
 		else
-			draw_rect_d(screen, 4 + i*36, 80, 32, 48, 64+8*0+2);
+			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
+				64+8*0+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42));
 
-		game_draw_player(4 + i*36, 80, i, 0);
+		game_draw_player(4 + (i&7)*36, 80+(i>>3)*44, i, 0);
 	}
 }
 
@@ -459,6 +468,10 @@ int game_tick_playing(game_t *game)
 
 int game_tick(game_t *game)
 {
+	int i;
+	obj_t *ob;
+	char fname[512];
+
 	// Check if game over
 	if(game->main_state == GAME_OVER)
 		return 2;
@@ -467,6 +480,37 @@ int game_tick(game_t *game)
 	{
 		case GAME_LOGIN0:
 			return game_tick_login0(game);
+
+		case GAME_LOADING:
+			// TODO: Actually load this from the server
+			// Load level
+			//printf("loading level\n");
+			snprintf(fname, 511, "dat/%s.psl", game->settings.map_name);
+			game->lv = level_load(fname);
+			assert(game->lv != NULL); // TODO: Be more graceful
+			game->lv->game = game;
+
+			// Remove excess players
+			for(i = 0; i < game->lv->ocount; i++)
+			{
+				if(i < 0) continue;
+
+				ob = game->lv->objects[i];
+
+				if(ob->f.otyp == OBJ_PLAYER
+					&& (((struct fd_player *)(ob->f.fd))->team >= game->settings.player_count
+					|| game->claim_team[((struct fd_player *)(ob->f.fd))->team]==0xFF))
+				{
+					i -= level_obj_free(game->lv, ob);
+				}
+			}
+
+			// Start turn
+			printf("starting turn!\n");
+			gameloop_start_turn(game);
+			game->main_state = GAME_PLAYING;
+			break;
+
 
 		case GAME_WAIT_PLAY:
 		case GAME_PLAYING:
@@ -482,10 +526,88 @@ int game_tick(game_t *game)
 	return 0;
 }
 
-int game_input(game_t *game)
+int game_input_setup(game_t *game)
+{
+	int i;
+
+	// INPUT STARTS HERE
+
+	// Scan keys
+	while(input_key_queue_peek() != 0)
+	switch(input_key_queue_pop()>>16)
+	{
+		case SDLK_RETURN | 0x8000:
+			// TODO!
+			break;
+	}
+
+	if((mouse_ob & ~mouse_b) & 1)
+	{
+		if(0 == SETUP_MOUSE(16*5, 20, 16, 16))
+		{
+			// Map select
+			if(game->claim_admin == game->netid)
+			{
+				// TODO!
+
+			}
+
+		} else if(0 == SETUP_MOUSE(16*4, 40, 16, 16)) {
+			// Player count decrease
+			if(game->claim_admin == game->netid && game->settings.player_count > 2)
+			{
+				game->settings.player_count--;
+				game_push_settings(game, game->ab_local, &(game->settings));
+				game->settings.player_count++;
+			}
+
+		} else if(0 == SETUP_MOUSE(16*5, 40, 16, 16)) {
+			// Player count increase
+			if(game->claim_admin == game->netid && game->settings.player_count < TEAM_PRACTICAL_MAX)
+			{
+				game->settings.player_count++;
+				game_push_settings(game, game->ab_local, &(game->settings));
+				game->settings.player_count--;
+			}
+
+		} else if(0 == SETUP_MOUSE(20-1,60-1,16*12+2,16+2)) {
+			// Claim/revoke admin
+
+			if(game->claim_admin == 0xFF)
+				game_push_claim(game, game->ab_local, 0xFF, 0xFF);
+			else if(game->claim_admin == game->netid)
+				game_push_unclaim(game, game->ab_local, 0xFF, 0xFF);
+		} else if(0 == SETUP_MOUSE(screen->w-16*4,screen->h-32, 16*4, 32)) {
+			// GO!
+			if(game->claim_admin == game->netid)
+				game_push_startbutton(game, game->ab_local);
+
+		} else for(i = 0; i < game->settings.player_count; i++) {
+			// Claim/revoke players
+
+			if(0 == SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42))
+			{
+				if(game->claim_team[i] == 0xFF)
+					game_push_claim(game, game->ab_local, 0xFF, i);
+				else if(game->claim_team[i] == game->netid)
+					game_push_unclaim(game, game->ab_local, 0xFF, i);
+				
+
+			}
+		}
+
+	}
+
+	return 0;
+
+}
+
+int game_input_playing(game_t *game)
 {
 	// Block input if waiting for object
-	if(game->ab_local->state != CLIENT_UNLOCKED)
+	//if(game->ab_local->state != CLIENT_UNLOCKED)
+	//	return 0;
+	if(game->claim_team[game->curplayer] != game->netid)
 		return 0;
 	if(level_obj_waiting(game->lv) != NULL)
 		return 0;
@@ -507,6 +629,21 @@ int game_input(game_t *game)
 		game_push_click(game, game->ab_local, game->mx, game->my, game->camx, game->camy, 0);
 	else if((mouse_b & ~mouse_ob) & 4)
 		game_push_click(game, game->ab_local, game->mx, game->my, game->camx, game->camy, 2);
+
+	return 0;
+
+}
+
+int game_input(game_t *game)
+{
+	switch(game->main_state)
+	{
+		case GAME_SETUP:
+			return game_input_setup(game);
+
+		case GAME_PLAYING:
+			return game_input_playing(game);
+	}
 
 	return 0;
 }
@@ -682,32 +819,6 @@ int gameloop(int net_mode, TCPsocket sock)
 
 	if(game_m != NULL)
 	{
-		/*
-		// Load level
-		//printf("loading level\n");
-		game_m->lv = level_load(fname);
-		assert(game_m->lv != NULL); // TODO: Be more graceful
-		game_m->lv->game = game_m;
-
-		// Remove excess players
-		for(i = 0; i < game_m->lv->ocount; i++)
-		{
-			if(i < 0) continue;
-
-			ob = game_m->lv->objects[i];
-
-			if(ob->f.otyp == OBJ_PLAYER
-				&& ((struct fd_player *)(ob->f.fd))->team >= player_count)
-			{
-				i -= level_obj_free(game_m->lv, ob);
-			}
-		}
-
-		// Start turn
-		//printf("starting turn!\n");
-		gameloop_start_turn(game_m);
-		*/
-
 		game_m->main_state = GAME_SETUP;
 	}
 

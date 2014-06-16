@@ -44,6 +44,7 @@ typedef void *IPaddress;
 
 // Limits
 #define TEAM_MAX 128
+#define TEAM_PRACTICAL_MAX 16
 #define ABUF_SIZE 8192
 #define STEPS_PER_TURN 7
 #define STEPS_ATTACK 2
@@ -266,10 +267,11 @@ enum
 	ACT_TEXT, // BIDI (pstr data)
 
 	// BUT YOU CAN MOVE EVERYTHING ELSE LIKE THIS
-	ACT_NETID, // S->C (u8 netid);
+	ACT_NETID, // S->C (u8 netid)
 	ACT_SETTINGS, // see network.c's game_push_settings for more info.
 	ACT_CLAIM, // BIDI (u8 netid, u8 team (0xFF == actually claim admin status))
 	ACT_UNCLAIM, // BIDI (u8 netid, u8 team (0xFF == actually unclaim admin status))
+	ACT_STARTBUTTON, // BIDI ()
 
 	ACT_MAPBEG, // S->C ()
 	ACT_MAPDATA, // S->C (u16 len, u8 data[len])
@@ -442,8 +444,7 @@ int editloop(void);
 // game.c
 extern game_t *game_m;
 extern game_t *game_v;
-extern int game_camx;
-extern int game_camy;
+void game_free(game_t *game);
 void gameloop_start_turn(game_t *game);
 int gameloop_next_turn(game_t *game);
 int gameloop(int net_mode, TCPsocket sock);
@@ -475,6 +476,10 @@ int input_poll(void);
 
 // network.c
 void game_push_version(game_t *game, abuf_t *ab, int version);
+void game_push_settings(game_t *game, abuf_t *ab, game_settings_t *settings);
+void game_push_claim(game_t *game, abuf_t *ab, int netid, int tid);
+void game_push_unclaim(game_t *game, abuf_t *ab, int netid, int tid);
+void game_push_startbutton(game_t *game, abuf_t *ab);
 void game_push_newturn(game_t *game, abuf_t *ab, int tid, int steps_added);
 void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int camy, int button);
 int game_parse_actions(game_t *game, abuf_t *ab, int typ);

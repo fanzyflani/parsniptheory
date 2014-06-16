@@ -68,6 +68,12 @@ void game_push_unclaim(game_t *game, abuf_t *ab, int netid, int tid)
 
 }
 
+void game_push_startbutton(game_t *game, abuf_t *ab)
+{
+	abuf_write_u8(ACT_STARTBUTTON, ab);
+
+}
+
 void game_push_hover(game_t *game, abuf_t *ab, int mx, int my, int camx, int camy)
 {
 	// TODO!
@@ -169,6 +175,15 @@ void game_handle_version(game_t *game, abuf_t *ab, int typ, int ver)
 		game_push_quit(game, ab, "Version mismatch");
 
 	} else if(typ == NET_C2S) {
+		// Check if we're in the right state
+		if(game->main_state != GAME_SETUP)
+		{
+			// Nope. Kick!
+			game_push_quit(game, ab, "Game started");
+			return;
+
+		}
+
 		// Push the version back
 		game_push_version(game, ab, NET_VERSION);
 		game_push_text(game, ab, "Connected!");
@@ -212,12 +227,12 @@ void game_handle_claim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 
 	if(typ == NET_C2S)
 	{
-		netid = game->netid;
+		netid = ab->netid;
 		if(!((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF)) return;
 
 		// Check: To override things we have to be the admin
 		if(game->claim_admin != netid)
-			if(tid == 0xFF || game->claim_team[tid] != 0xFF)
+			if(tid == 0xFF ? game->claim_admin != 0xFF : game->claim_team[tid] != 0xFF)
 				return;
 
 	} else {
@@ -245,7 +260,7 @@ void game_handle_unclaim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 
 	if(typ == NET_C2S)
 	{
-		netid = game->netid;
+		netid = ab->netid;
 		if(!((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF)) return;
 
 		// Check: To override things we have to be the admin
@@ -272,9 +287,58 @@ void game_handle_unclaim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 
 }
 
+void game_handle_startbutton(game_t *game, abuf_t *ab, int typ)
+{
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	if(typ == NET_C2S)
+	{
+		if(!(game->main_state == GAME_SETUP)) return;
+
+		// Check: To begin, we have to be an admin
+		if(game->claim_admin != ab->netid)
+			return;
+
+	} else {
+		assert(game->main_state == GAME_SETUP);
+
+	}
+
+	printf("GAME COMMENCING!\n");
+	game->main_state = GAME_LOADING;
+
+	// Relay
+	if(typ == NET_C2S)
+	{
+		abuf_bc_u8(ACT_STARTBUTTON, game);
+	}
+
+}
+
 void game_handle_quit(game_t *game, abuf_t *ab, int typ, const char *msg)
 {
-	// TODO: handle disconnect
+	// Mark connection dead
+	ab->state = CLIENT_DEAD;
+
+	// Disconnect if possible
+	if(ab->sock != NULL)
+	{
+		SDLNet_TCP_Close(ab->sock);
+		ab->sock = NULL;
+	}
+
+	if(ab->loc_chain != NULL)
+	{
+		ab->loc_chain = NULL;
+	}
+
+	// Client-specific stuff
+	if(typ == NET_S2C)
+	{
+		// Mark game dead
+		game->main_state = GAME_OVER;
+		errorloop(msg);
+	}
 }
 
 void game_handle_text(game_t *game, abuf_t *ab, int typ, const char *msg)
@@ -302,7 +366,7 @@ void game_handle_settings(game_t *game, abuf_t *ab, int typ, int player_count, c
 	
 	if(typ == NET_C2S)
 	{
-		// TODO: admin check
+		if(ab->netid != game->claim_admin) return;
 		if(!(player_count >= 2 && player_count <= TEAM_MAX)) return;
 
 	} else {
@@ -609,6 +673,12 @@ int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 			netid = abuf_read_u8(ab);
 			tid = abuf_read_u8(ab);
 			game_handle_unclaim(game, ab, typ, netid, tid);
+			return 1;
+
+		case ACT_STARTBUTTON:
+			if(bsiz < 0) return 0;
+			abuf_read_u8(ab);
+			game_handle_startbutton(game, ab, typ);
 			return 1;
 
 		// ACT_MAPBEG

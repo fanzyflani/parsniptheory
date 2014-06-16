@@ -125,7 +125,7 @@ struct menu_data
 	// Network menu
 	{
 		{
-			"PLAY NOW", MAIN_MENU_ACTION, 0x101, {
+			"SERVERS", MAIN_MENU_ACTION, 0x101, {
 				{menu_draw_tile, -32-28*2, -31, 1, 0},
 				{menu_draw_player, -32-28*2, -31-21, 0, 0},
 				{NULL, 0, 0, 0, 0},
@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
 
 	// Set up basic video mode
 	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 2)", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 3)", NULL);
 	loadicon("dat/icon.tga");
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
 	printf("screen %p %i %i\n", screen_surface, screen_surface->w, screen_surface->h);
