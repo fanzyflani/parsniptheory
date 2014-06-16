@@ -231,7 +231,7 @@ int editloop(void)
 						// Load
 
 						printf("Loading...\n");
-						level_t *tlv = level_load("dat/level.psl");
+						level_t *tlv = level_load("lvl/level.psl");
 
 						if(tlv != NULL)
 						{
@@ -254,7 +254,7 @@ int editloop(void)
 						// Save
 
 						printf("Saving...\n");
-						level_save(rootlv, "dat/level.psl");
+						level_save(rootlv, "lvl/level.psl");
 					}
 
 					break;
