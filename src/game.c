@@ -532,7 +532,7 @@ int game_tick(game_t *game)
 			// TODO: Actually load this from the server
 			// Load level
 			//printf("loading level\n");
-			snprintf(fname, 511, "dat/%s.psl", game->settings.map_name);
+			snprintf(fname, 511, "lvl/%s.psl", game->settings.map_name);
 			game->lv = level_load(fname);
 			assert(game->lv != NULL); // TODO: Be more graceful
 			game->lv->game = game;
