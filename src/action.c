@@ -5,9 +5,6 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
-abuf_t *ab_local;
-abuf_t *ab_teams[TEAM_MAX];
-
 //
 // ALLOCATIONS
 //

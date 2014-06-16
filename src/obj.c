@@ -76,7 +76,7 @@ void obj_player_f_tick(obj_t *ob)
 
 	// Enforce cell association
 	obj_t *pob;
-	cell_t *cs = layer_cell_ptr(rootlv->layers[ob->f.layer], ob->f.cx, ob->f.cy);
+	cell_t *cs = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->f.cx, ob->f.cy);
 	cell_t *ce;
 	assert(cs != NULL);
 	cs->ob = ob;
@@ -107,7 +107,7 @@ void obj_player_f_tick(obj_t *ob)
 	if(ob->f.ox == 0 && ob->f.oy == 0) do
 	{
 		// If we're attacking something, attack it (if possible)
-		ce = layer_cell_ptr(rootlv->layers[ob->f.layer], ob->tx, ob->ty);
+		ce = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->tx, ob->ty);
 
 		if(ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER)
 		if(((struct fd_player *)(ce->ob->f.fd))->team != fde->team)
@@ -168,7 +168,7 @@ void obj_player_f_tick(obj_t *ob)
 			cy = ob->f.cy + dy;
 
 			// Check cell
-			ce = layer_cell_ptr(rootlv->layers[ob->f.layer], cx, cy);
+			ce = layer_cell_ptr(ob->level->layers[ob->f.layer], cx, cy);
 			if(ce == NULL || ce->f.ctyp != CELL_FLOOR || ce->ob != NULL)
 			{
 				// Destroy the path and try again
@@ -197,7 +197,7 @@ void obj_player_f_tick(obj_t *ob)
 		{
 			// Do A* trace
 			int dirlist[1024];
-			int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
+			int dirlen = astar_layer(ob->level->layers[0], dirlist, 1024,
 				ob->f.cx, ob->f.cy, ob->tx, ob->ty);
 
 			// If it works, produce a new list

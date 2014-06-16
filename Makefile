@@ -49,10 +49,11 @@ INCLUDES = src/common.h src/obj.h
 
 LIBS_DIRS = -L/usr/local/lib
 LIBS_SDL = `sdl-config --libs` -lSDL_net
+LIBS_ZLIB = -lz
 
 CFLAGS = -Wall -Wextra -Wno-unused-parameter -O2 -g -Isrc -I/usr/local/include `sdl-config --cflags`
-LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) -lm
-LDFLAGS_SERVER = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) -lm
+LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) -lm
+LDFLAGS_SERVER = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) -lm
 
 all: $(BINNAME) $(BINNAME_SERVER) dat/pal1.pal
 

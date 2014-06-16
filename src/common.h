@@ -49,10 +49,11 @@ typedef void *IPaddress;
 #define STEPS_ATTACK 2
 #define TOMATO_SPEED 1
 #define PLAYER_HEALTH 100
+#define TIME_STEP_MS 20
 
 // Versions
 #define MAP_FVERSION 1
-#define NET_VERSION 1
+#define NET_VERSION 2
 
 // Other things
 #define NET_PORT 2014
@@ -153,6 +154,7 @@ typedef struct cell cell_t;
 typedef struct obj obj_t;
 typedef struct layer layer_t;
 typedef struct level level_t;
+typedef struct game game_t;
 
 typedef struct cell_file
 {
@@ -232,6 +234,7 @@ struct level
 {
 	int lcount;
 	int ocount;
+	game_t *game;
 	layer_t **layers;
 	obj_t **objects;
 };
@@ -302,13 +305,44 @@ struct abuf
 	uint8_t wdata[ABUF_SIZE];
 };
 
+enum
+{
+	GAME_LOGIN0,
+
+	GAME_SETUP,
+	GAME_PLAYING,
+
+	GAME_OVER,
+};
+
+struct game
+{
+	int camx, camy;
+	int mx, my;
+	int cmx, cmy;
+
+	int player_count;
+	int curplayer;
+
+	int main_state;
+	int net_mode;
+	int curtick;
+	int locked;
+
+	int time_now;
+	int time_next;
+
+	abuf_t *ab_local;
+	abuf_t *ab_teams[TEAM_MAX];
+
+	obj_t *selob;
+	level_t *lv;
+};
+
 // other includes
 #include "obj.h"
 
 // action.c
-abuf_t *ab_local;
-abuf_t *ab_teams[TEAM_MAX];
-
 void abuf_free(abuf_t *ab);
 abuf_t *abuf_new(void);
 int abuf_get_rsize(abuf_t *ab);

@@ -121,6 +121,8 @@ level_t *level_new(int w, int h)
 {
 	level_t *lv = malloc(sizeof(level_t));
 
+	lv->game = NULL;
+
 	// Layers
 	if(w == 0 && h == 0)
 	{
@@ -206,7 +208,6 @@ obj_t *level_obj_waiting(level_t *lv)
 
 	return NULL;
 }
-
 
 static layer_t *level_load_layer(FILE *fp)
 {

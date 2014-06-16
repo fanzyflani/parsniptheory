@@ -9,20 +9,56 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #include <emscripten.h>
 #endif
 
-int game_camx = 0;
-int game_camy = 0;
-int game_mouse_x = 0;
-int game_mouse_y = 0;
-int game_mouse_ox = 0;
-int game_mouse_oy = 0;
+game_t *rootgame = NULL;
 
-obj_t *game_selob = NULL;
+void game_free(game_t *game)
+{
+	int i;
 
-int game_player_count = 0;
-int game_curplayer = 0;
-int game_over = 0;
+	// Free structures
+	if(game->lv != NULL) free(game->lv);
 
-static void gameloop_start_turn(void)
+	// Free action buffers
+	if(game->ab_local == NULL)
+		free(game->ab_local);
+	for(i = 0; i < TEAM_MAX; i++)
+		if(game->ab_teams[i] != NULL)
+			free(game->ab_teams[i]);
+
+	// Free
+	free(game);
+}
+
+game_t *game_new(int net_mode)
+{
+	// Allocate
+	game_t *game = malloc(sizeof(game_t));
+
+	// Initialise
+	game->camx = 0;
+	game->camy = 0;
+	game->mx = 161;
+	game->my = 121;
+	game->cmx = 161/32;
+	game->cmy = 121/24;
+	game->player_count = 0;
+	game->curplayer = 0;
+	game->main_state = GAME_SETUP;
+	game->net_mode = net_mode;
+	game->curtick = 0;
+	game->locked = 1;
+
+	game->time_now = game->time_next = SDL_GetTicks();
+
+	game->selob = NULL;
+	game->lv = NULL;
+
+	// OK!
+	return game;
+
+}
+
+static void gameloop_start_turn(game_t *game)
 {
 	int i;
 	obj_t *ob;
@@ -30,19 +66,19 @@ static void gameloop_start_turn(void)
 	int obcount = 0;
 
 	// Grant steps to all players of this team
-	for(i = 0; i < rootlv->ocount; i++)
+	for(i = 0; i < game->lv->ocount; i++)
 	{
 		// Get object
-		ob = rootlv->objects[i];
+		ob = game->lv->objects[i];
 		fde = (struct fd_player *)(ob->f.fd);
 		
 		// Do the compare
-		if(fde->team == game_curplayer)
+		if(fde->team == game->curplayer)
 		{
 			obcount++;
 			ob->steps_left = STEPS_PER_TURN;
-			game_camx = ob->f.cx*32+16 - screen->w/2;
-			game_camy = ob->f.cy*24+12 - screen->h/2;
+			game->camx = ob->f.cx*32+16 - screen->w/2;
+			game->camy = ob->f.cy*24+12 - screen->h/2;
 
 		} else {
 			ob->steps_left = -1;
@@ -53,67 +89,66 @@ static void gameloop_start_turn(void)
 	// Move to the next player if this fails
 	if(obcount == 0)
 	{
-		game_curplayer++;
-		if(game_curplayer >= game_player_count)
-			game_curplayer = 0;
+		game->curplayer++;
+		if(game->curplayer >= game->player_count)
+			game->curplayer = 0;
 
-		gameloop_start_turn();
+		gameloop_start_turn(game);
 	}
 }
 
-static int gameloop_next_turn(void)
+static int gameloop_next_turn(game_t *game)
 {
 	// Deselect object
-	game_selob = NULL;
+	game->selob = NULL;
 
 	// Take note of the current player
-	int oldcp = game_curplayer;
+	int oldcp = game->curplayer;
 
 	// Move to the next player
-	game_curplayer++;
-	if(game_curplayer >= game_player_count)
-		game_curplayer = 0;
+	game->curplayer++;
+	if(game->curplayer >= game->player_count)
+		game->curplayer = 0;
 	
 	// Start their turn
-	gameloop_start_turn();
+	gameloop_start_turn(game);
 
 	// If it's the same player, they've won
-	return game_curplayer != oldcp;
+	return game->curplayer != oldcp;
 }
 
-
-void game_handle_version(abuf_t *ab, int typ, int ver)
+void game_handle_version(game_t *game, abuf_t *ab, int typ, int ver)
 {
 	// TODO
 }
 
-void game_handle_quit(abuf_t *ab, int typ)
+void game_handle_quit(game_t *game, abuf_t *ab, int typ)
 {
 	// TODO
 }
 
-void game_handle_text(abuf_t *ab, int typ, int len, char *buf)
+void game_handle_text(game_t *game, abuf_t *ab, int typ, int len, char *buf)
 {
 	// TODO
 }
 
-void game_handle_lock(abuf_t *ab, int typ)
+void game_handle_lock(game_t *game, abuf_t *ab, int typ)
 {
 	// TODO
 }
 
-void game_handle_unlock(abuf_t *ab, int typ)
+void game_handle_unlock(game_t *game, abuf_t *ab, int typ)
 {
 	// TODO
 }
 
-void game_handle_newturn(abuf_t *ab, int typ, int tid, int steps_added)
+void game_handle_newturn(game_t *game, abuf_t *ab, int typ, int tid, int steps_added)
 {
 	int i;
 
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
 	{
 
 	} else if(typ == NET_S2C) {
@@ -121,34 +156,34 @@ void game_handle_newturn(abuf_t *ab, int typ, int tid, int steps_added)
 	} else return;
 
 	// Next player
-	if(!gameloop_next_turn())
+	if(!gameloop_next_turn(game))
 	{
-		game_over = 1;
+		game->main_state = GAME_OVER;
 	}
 
 	// Broadcast
 	if(typ == NET_C2S)
 	for(i = 0; i < TEAM_MAX; i++)
-	if(ab_teams[i] != NULL)
+	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_NEWTURN, ab_teams[i]);
-		abuf_write_u8(tid, ab_teams[i]);
-		abuf_write_s16(steps_added, ab_teams[i]);
+		abuf_write_u8(ACT_NEWTURN, game->ab_teams[i]);
+		abuf_write_u8(tid, game->ab_teams[i]);
+		abuf_write_s16(steps_added, game->ab_teams[i]);
 	}
 
 }
 
-void game_handle_move(abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int steps_used, int steps_left)
+void game_handle_move(game_t *game, abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int steps_used, int steps_left)
 {
 	cell_t *ce, *dce;
 	int i;
 
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	ce = layer_cell_ptr(rootlv->layers[0], sx, sy);
-	dce = layer_cell_ptr(rootlv->layers[0], dx, dy);
+	ce = layer_cell_ptr(game->lv->layers[0], sx, sy);
+	dce = layer_cell_ptr(game->lv->layers[0], dx, dy);
 
-	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
 	{
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
@@ -180,31 +215,31 @@ void game_handle_move(abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int s
 	// Broadcast
 	if(typ == NET_C2S)
 	for(i = 0; i < TEAM_MAX; i++)
-	if(ab_teams[i] != NULL)
+	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_MOVE, ab_teams[i]);
-		abuf_write_s16(sx, ab_teams[i]);
-		abuf_write_s16(sy, ab_teams[i]);
-		abuf_write_s16(dx, ab_teams[i]);
-		abuf_write_s16(dy, ab_teams[i]);
-		abuf_write_u16(steps_used, ab_teams[i]);
-		abuf_write_u16(steps_left, ab_teams[i]);
+		abuf_write_u8(ACT_MOVE, game->ab_teams[i]);
+		abuf_write_s16(sx, game->ab_teams[i]);
+		abuf_write_s16(sy, game->ab_teams[i]);
+		abuf_write_s16(dx, game->ab_teams[i]);
+		abuf_write_s16(dy, game->ab_teams[i]);
+		abuf_write_u16(steps_used, game->ab_teams[i]);
+		abuf_write_u16(steps_left, game->ab_teams[i]);
 	}
 
 	// TODO: Lock this
 }
 
-void game_handle_attack(abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int steps_used, int steps_left)
+void game_handle_attack(game_t *game, abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int steps_used, int steps_left)
 {
 	int i;
 	cell_t *ce, *dce;
 
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	ce = layer_cell_ptr(rootlv->layers[0], sx, sy);
-	dce = layer_cell_ptr(rootlv->layers[0], dx, dy);
+	ce = layer_cell_ptr(game->lv->layers[0], sx, sy);
+	dce = layer_cell_ptr(game->lv->layers[0], dx, dy);
 
-	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
 	{
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
@@ -234,21 +269,21 @@ void game_handle_attack(abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int
 	// Broadcast
 	if(typ == NET_C2S)
 	for(i = 0; i < TEAM_MAX; i++)
-	if(ab_teams[i] != NULL)
+	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_ATTACK, ab_teams[i]);
-		abuf_write_s16(sx, ab_teams[i]);
-		abuf_write_s16(sy, ab_teams[i]);
-		abuf_write_s16(dx, ab_teams[i]);
-		abuf_write_s16(dy, ab_teams[i]);
-		abuf_write_u16(steps_used, ab_teams[i]);
-		abuf_write_u16(steps_left, ab_teams[i]);
+		abuf_write_u8(ACT_ATTACK, game->ab_teams[i]);
+		abuf_write_s16(sx, game->ab_teams[i]);
+		abuf_write_s16(sy, game->ab_teams[i]);
+		abuf_write_s16(dx, game->ab_teams[i]);
+		abuf_write_s16(dy, game->ab_teams[i]);
+		abuf_write_u16(steps_used, game->ab_teams[i]);
+		abuf_write_u16(steps_left, game->ab_teams[i]);
 	}
 
 	// TODO: Lock this
 }
 
-void game_handle_select(abuf_t *ab, int typ, int cx, int cy)
+void game_handle_select(game_t *game, abuf_t *ab, int typ, int cx, int cy)
 {
 	int i;
 
@@ -256,9 +291,9 @@ void game_handle_select(abuf_t *ab, int typ, int cx, int cy)
 
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	ce = layer_cell_ptr(rootlv->layers[0], cx, cy);
+	ce = layer_cell_ptr(game->lv->layers[0], cx, cy);
 
-	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
 	{
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
@@ -270,27 +305,27 @@ void game_handle_select(abuf_t *ab, int typ, int cx, int cy)
 	} else return;
 
 	// Select
-	game_selob = ce->ob;
+	game->selob = ce->ob;
 
 	// Broadcast
 	if(typ == NET_C2S)
 	for(i = 0; i < TEAM_MAX; i++)
-	if(ab_teams[i] != NULL)
+	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_SELECT, ab_teams[i]);
-		abuf_write_s16(cx, ab_teams[i]);
-		abuf_write_s16(cy, ab_teams[i]);
+		abuf_write_u8(ACT_SELECT, game->ab_teams[i]);
+		abuf_write_s16(cx, game->ab_teams[i]);
+		abuf_write_s16(cy, game->ab_teams[i]);
 	}
 
 }
 
-void game_handle_deselect(abuf_t *ab, int typ)
+void game_handle_deselect(game_t *game, abuf_t *ab, int typ)
 {
 	int i;
 
 	assert(typ == NET_C2S || typ == NET_S2C);
 
-	if(typ == NET_C2S)// && ab == ab_teams[game_curplayer])
+	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
 	{
 		//
 
@@ -300,33 +335,33 @@ void game_handle_deselect(abuf_t *ab, int typ)
 	} else return;
 
 	// Deselect
-	game_selob = NULL;
+	game->selob = NULL;
 
 	// Broadcast
 	if(typ == NET_C2S)
 	for(i = 0; i < TEAM_MAX; i++)
-	if(ab_teams[i] != NULL)
+	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_DESELECT, ab_teams[i]);
+		abuf_write_u8(ACT_DESELECT, game->ab_teams[i]);
 	}
 }
 
-void game_handle_hover(abuf_t *ab, int typ, int mx, int my, int camx, int camy)
+void game_handle_hover(game_t *game, abuf_t *ab, int typ, int mx, int my, int camx, int camy)
 {
 	// TODO
 }
 
-void game_push_end_turn(abuf_t *ab)
+void game_push_end_turn(game_t *game, abuf_t *ab)
 {
 	// TODO
 }
 
-void game_push_hover(abuf_t *ab, int mx, int my, int camx, int camy)
+void game_push_hover(game_t *game, abuf_t *ab, int mx, int my, int camx, int camy)
 {
 	// TODO!
 }
 
-void game_push_newturn(abuf_t *ab, int tid, int steps_added)
+void game_push_newturn(game_t *game, abuf_t *ab, int tid, int steps_added)
 {
 	// Next turn!
 	abuf_write_u8(ACT_NEWTURN, ab);
@@ -335,7 +370,7 @@ void game_push_newturn(abuf_t *ab, int tid, int steps_added)
 
 }
 
-void game_push_click(abuf_t *ab, int rmx, int rmy, int camx, int camy, int button)
+void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int camy, int button)
 {
 	cell_t *ce;
 	cell_t *dce;
@@ -344,13 +379,13 @@ void game_push_click(abuf_t *ab, int rmx, int rmy, int camx, int camy, int butto
 	// Get coordinates
 	mx = (rmx + camx)/32;
 	my = (rmy + camy)/24;
-	ce = layer_cell_ptr(rootlv->layers[0], mx, my);
+	ce = layer_cell_ptr(game->lv->layers[0], mx, my);
 
 	// Object select
 	if(button == 0)
 	{
 		if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
-			&& ((struct fd_player *)(ce->ob->f.fd))->team == game_curplayer)
+			&& ((struct fd_player *)(ce->ob->f.fd))->team == game->curplayer)
 		{
 			// Select object
 			abuf_write_u8(ACT_SELECT, ab);
@@ -361,7 +396,7 @@ void game_push_click(abuf_t *ab, int rmx, int rmy, int camx, int camy, int butto
 			// Deselect objects
 			// TODO: Send
 			abuf_write_u8(ACT_DESELECT, ab);
-			//game_handle_deselect(ab, NET_S2C);
+			//game_handle_deselect(game, ab, NET_S2C);
 
 		}
 	}
@@ -371,36 +406,36 @@ void game_push_click(abuf_t *ab, int rmx, int rmy, int camx, int camy, int butto
 	{
 		// Check if we have an object selected
 
-		if(game_selob != NULL)
+		if(game->selob != NULL)
 		{
 			// Check destination
-			dce = layer_cell_ptr(rootlv->layers[0], mx, my);
+			dce = layer_cell_ptr(game->lv->layers[0], mx, my);
 
 			if(dce != NULL && dce->ob == NULL)
 			{
 				// Move it
 				abuf_write_u8(ACT_MOVE, ab);
-				abuf_write_s16(game_selob->f.cx, ab);
-				abuf_write_s16(game_selob->f.cy, ab);
+				abuf_write_s16(game->selob->f.cx, ab);
+				abuf_write_s16(game->selob->f.cy, ab);
 				abuf_write_s16(mx, ab);
 				abuf_write_s16(my, ab);
 				abuf_write_u16(0, ab);
-				abuf_write_u16(game_selob->steps_left, ab);
+				abuf_write_u16(game->selob->steps_left, ab);
 				
-				//game_handle_move(ab, NET_S2C, game_selob->f.cx, game_selob->f.cy, mx, my,
-				//	0, game_selob->steps_left);
+				//game_handle_move(game, ab, NET_S2C, game->selob->f.cx, game->selob->f.cy, mx, my,
+				//	0, game->selob->steps_left);
 			} else if(dce != NULL) {
 				// Attack it
 				abuf_write_u8(ACT_ATTACK, ab);
-				abuf_write_s16(game_selob->f.cx, ab);
-				abuf_write_s16(game_selob->f.cy, ab);
+				abuf_write_s16(game->selob->f.cx, ab);
+				abuf_write_s16(game->selob->f.cy, ab);
 				abuf_write_s16(mx, ab);
 				abuf_write_s16(my, ab);
 				abuf_write_u16(0, ab);
-				abuf_write_u16(game_selob->steps_left, ab);
+				abuf_write_u16(game->selob->steps_left, ab);
 
-				//game_handle_attack(ab, NET_S2C, game_selob->f.cx, game_selob->f.cy, mx, my,
-				//	0, game_selob->steps_left);
+				//game_handle_attack(game, ab, NET_S2C, game->selob->f.cx, game->selob->f.cy, mx, my,
+				//	0, game->selob->steps_left);
 
 			}
 
@@ -409,7 +444,7 @@ void game_push_click(abuf_t *ab, int rmx, int rmy, int camx, int camy, int butto
 	}
 }
 
-int game_parse_actions(abuf_t *ab, int typ)
+int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 {
 	// Make sure we have a byte
 	char buf[257];
@@ -436,7 +471,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 			if(bsiz < 1) return 0;
 			abuf_read_u8(ab);
 			ver = abuf_read_u8(ab);
-			game_handle_version(ab, typ, ver);
+			game_handle_version(game, ab, typ, ver);
 			return 1;
 
 		case ACT_QUIT:
@@ -445,7 +480,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 			abuf_read_block(buf, (bsiz-1 < len ? bsiz-1 : len), ab);
 			buf[bsiz] = '\x00';
 			printf("QUIT received: \"%s\"\n", buf);
-			game_handle_quit(ab, typ);
+			game_handle_quit(game, ab, typ);
 			return 1;
 
 		case ACT_TEXT:
@@ -456,7 +491,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 			abuf_read_block(buf, len, ab);
 			buf[bsiz] = '\x00';
 			printf("text received: \"%s\"\n", buf);
-			game_handle_text(ab, typ, len, buf);
+			game_handle_text(game, ab, typ, len, buf);
 			return 1;
 
 		// ACT_MAPBEG
@@ -466,13 +501,13 @@ int game_parse_actions(abuf_t *ab, int typ)
 		case ACT_LOCK:
 			if(bsiz < 0) return 0;
 			abuf_read_u8(ab);
-			game_handle_lock(ab, typ);
+			game_handle_lock(game, ab, typ);
 			return 1;
 
 		case ACT_UNLOCK:
 			if(bsiz < 0) return 0;
 			abuf_read_u8(ab);
-			game_handle_unlock(ab, typ);
+			game_handle_unlock(game, ab, typ);
 			return 1;
 
 		case ACT_NEWTURN:
@@ -480,7 +515,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 			abuf_read_u8(ab);
 			tid = abuf_read_u8(ab);
 			steps_added = abuf_read_u16(ab);
-			game_handle_newturn(ab, typ, tid, steps_added);
+			game_handle_newturn(game, ab, typ, tid, steps_added);
 			return 1;
 
 		case ACT_MOVE:
@@ -492,7 +527,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 			dy = abuf_read_s16(ab);
 			steps_used = abuf_read_u16(ab);
 			steps_left = abuf_read_u16(ab);
-			game_handle_move(ab, typ, sx, sy, dx, dy, steps_used, steps_left);
+			game_handle_move(game, ab, typ, sx, sy, dx, dy, steps_used, steps_left);
 			return 1;
 
 		case ACT_ATTACK:
@@ -504,7 +539,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 			dy = abuf_read_s16(ab);
 			steps_used = abuf_read_u16(ab);
 			steps_left = abuf_read_u16(ab);
-			game_handle_attack(ab, typ, sx, sy, dx, dy, steps_used, steps_left);
+			game_handle_attack(game, ab, typ, sx, sy, dx, dy, steps_used, steps_left);
 			return 1;
 
 		case ACT_SELECT:
@@ -512,13 +547,13 @@ int game_parse_actions(abuf_t *ab, int typ)
 			abuf_read_u8(ab);
 			cx = abuf_read_s16(ab);
 			cy = abuf_read_s16(ab);
-			game_handle_select(ab, typ, cx, cy);
+			game_handle_select(game, ab, typ, cx, cy);
 			return 1;
 
 		case ACT_DESELECT:
 			if(bsiz < 0) return 0;
 			abuf_read_u8(ab);
-			game_handle_deselect(ab, typ);
+			game_handle_deselect(game, ab, typ);
 			return 1;
 
 		case ACT_HOVER:
@@ -528,7 +563,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 			my = abuf_read_s16(ab);
 			camx = abuf_read_s16(ab);
 			camy = abuf_read_s16(ab);
-			game_handle_hover(ab, typ, mx, my, camx, camy);
+			game_handle_hover(game, ab, typ, mx, my, camx, camy);
 			return 1;
 
 		default:
@@ -541,7 +576,7 @@ int game_parse_actions(abuf_t *ab, int typ)
 
 }
 
-void gameloop_draw(void)
+void gameloop_draw(game_t *game)
 {
 	int x, y, i;
 	obj_t *ob;
@@ -551,28 +586,28 @@ void gameloop_draw(void)
 	screen_clear(0);
 
 	// Draw level
-	draw_level(screen, rootlv, game_camx, game_camy, 0);
+	draw_level(screen, game->lv, game->camx, game->camy, 0);
 
 	// Draw overlays
-	for(i = 0; i < rootlv->ocount; i++)
+	for(i = 0; i < game->lv->ocount; i++)
 	{
-		ob = rootlv->objects[i];
+		ob = game->lv->objects[i];
 
 		if(ob == NULL) continue;
 
 		// Cell occupancy
 		draw_border_d(screen,
-			ob->f.cx*32 - game_camx,
-			ob->f.cy*24 - game_camy,
+			ob->f.cx*32 - game->camx,
+			ob->f.cy*24 - game->camy,
 			32,
 			24,
 			1);
 
 		// Bounding box
-		if(ob == game_selob)
+		if(ob == game->selob)
 		draw_border_d(screen,
-			ob->bx + ob->f.ox + ob->f.cx*32 - game_camx,
-			ob->by + ob->f.oy + ob->f.cy*24 - game_camy,
+			ob->bx + ob->f.ox + ob->f.cx*32 - game->camx,
+			ob->by + ob->f.oy + ob->f.cy*24 - game->camy,
 			ob->bw,
 			ob->bh,
 			2);
@@ -580,16 +615,16 @@ void gameloop_draw(void)
 
 	// TEST: Mark walkable paths
 	/*
-	for(y = 0; y < rootlv->layers[0]->w; y++)
-	for(x = 0; x < rootlv->layers[0]->h; x++)
+	for(y = 0; y < game->lv->layers[0]->w; y++)
+	for(x = 0; x < game->lv->layers[0]->h; x++)
 	{
-		cell_t *ce = layer_cell_ptr(rootlv->layers[0], x, y);
+		cell_t *ce = layer_cell_ptr(game->lv->layers[0], x, y);
 
 		if(ce != NULL && ce->f.ctyp == CELL_FLOOR)
 		{
 			draw_border_d(screen,
-				32*x + 8 - game_camx,
-				24*y + 6 - game_camy,
+				32*x + 8 - game->camx,
+				24*y + 6 - game->camy,
 				16,
 				12,
 				ce->ob == NULL ? 1 : 2);
@@ -599,18 +634,18 @@ void gameloop_draw(void)
 	*/
 
 	// Draw A* route for selected object
-	if(game_selob != NULL)
+	if(game->selob != NULL)
 	{
 		// Get coordinates
-		int asendx = (game_mouse_x + game_camx)/32;
-		int asendy = (game_mouse_y + game_camy)/24;
+		int asendx = (game->mx + game->camx)/32;
+		int asendy = (game->my + game->camy)/24;
 
 		// Line trace
-		int canattack = line_layer(rootlv->layers[0], &x, &y,
-			game_selob->f.cx, game_selob->f.cy, asendx, asendy);
+		int canattack = line_layer(game->lv->layers[0], &x, &y,
+			game->selob->f.cx, game->selob->f.cy, asendx, asendy);
 		draw_border_d(screen,
-			x*32 - game_camx + 1,
-			y*24 - game_camy + 1,
+			x*32 - game->camx + 1,
+			y*24 - game->camy + 1,
 			30,
 			22,
 			2);
@@ -618,20 +653,20 @@ void gameloop_draw(void)
 		// Draw attack icon if that would make sense
 		if(canattack)
 		{
-			ce = layer_cell_ptr(rootlv->layers[0], x, y);
+			ce = layer_cell_ptr(game->lv->layers[0], x, y);
 			if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
-				&& ((struct fd_player *)(ce->ob->f.fd))->team != game_curplayer)
+				&& ((struct fd_player *)(ce->ob->f.fd))->team != game->curplayer)
 			{
-				if(game_selob->steps_left >= STEPS_ATTACK)
+				if(game->selob->steps_left >= STEPS_ATTACK)
 				{
 					draw_img_trans_d_sd(screen, i_icons1,
-						x*32 - game_camx,
-						y*24 - game_camy,
+						x*32 - game->camx,
+						y*24 - game->camy,
 						32*1, 24*1, 32, 24, 0);
 				} else {
 					draw_img_trans_d_sd(screen, i_icons1,
-						x*32 - game_camx,
-						y*24 - game_camy,
+						x*32 - game->camx,
+						y*24 - game->camy,
 						32*4, 24*0, 32, 24, 0);
 
 				}
@@ -640,15 +675,15 @@ void gameloop_draw(void)
 
 		// Do A* trace
 		int dirlist[1024];
-		int dirlen = astar_layer(rootlv->layers[0], dirlist, 1024,
-			game_selob->f.cx, game_selob->f.cy, asendx, asendy);
+		int dirlen = astar_layer(game->lv->layers[0], dirlist, 1024,
+			game->selob->f.cx, game->selob->f.cy, asendx, asendy);
 
 		// Trace
 		if(dirlen >= 1)
 		{
 			// Get start pos
-			x = game_selob->f.cx;
-			y = game_selob->f.cy;
+			x = game->selob->f.cx;
+			y = game->selob->f.cy;
 
 			for(i = 0; i < dirlen; i++)
 			{
@@ -657,20 +692,20 @@ void gameloop_draw(void)
 				int dy = face_dir[dirlist[i]][1];
 
 				// Draw line
-				if(i == game_selob->steps_left)
+				if(i == game->selob->steps_left)
 					draw_img_trans_d_sd(screen, i_icons1,
-						x*32 - game_camx,
-						y*24 - game_camy,
+						x*32 - game->camx,
+						y*24 - game->camy,
 						32*0, 24*1, 32, 24, 0);
-				else if(i < game_selob->steps_left)
+				else if(i < game->selob->steps_left)
 					draw_img_trans_d_sd(screen, i_icons1,
-						x*32 - game_camx,
-						y*24 - game_camy,
+						x*32 - game->camx,
+						y*24 - game->camy,
 						32*dirlist[i], 24*0, 32, 24, 0);
 				else
 					draw_img_trans_d_sd(screen, i_icons1,
-						x*32 - game_camx,
-						y*24 - game_camy,
+						x*32 - game->camx,
+						y*24 - game->camy,
 						32*4, 24*0, 32, 24, 0);
 
 				// Move
@@ -680,15 +715,15 @@ void gameloop_draw(void)
 			}
 
 			// Show position
-			if(dirlen <= game_selob->steps_left)
+			if(dirlen <= game->selob->steps_left)
 				draw_img_trans_d_sd(screen, i_icons1,
-					x*32 - game_camx,
-					y*24 - game_camy,
+					x*32 - game->camx,
+					y*24 - game->camy,
 					32*0, 24*1, 32, 24, 0);
 			else
 				draw_img_trans_d_sd(screen, i_icons1,
-					x*32 - game_camx,
-					y*24 - game_camy,
+					x*32 - game->camx,
+					y*24 - game->camy,
 					32*4, 24*0, 32, 24, 0);
 
 		}
@@ -700,12 +735,12 @@ void gameloop_draw(void)
 			0,
 			0,
 			0*32, i*48, 32, 48,
-			0, teams[game_curplayer]->cm_player);
+			0, teams[game->curplayer]->cm_player);
 		
-	draw_printf(screen, i_font16, 16, 32, 0, 1, "PLAYER %i TURN", game_curplayer+1);
+	draw_printf(screen, i_font16, 16, 32, 0, 1, "PLAYER %i TURN", game->curplayer+1);
 
-	if(game_selob != NULL)
-		draw_printf(screen, i_font16, 16, 32, 16, 1, "STEPS %i", game_selob->steps_left);
+	if(game->selob != NULL)
+		draw_printf(screen, i_font16, 16, 32, 16, 1, "STEPS %i", game->selob->steps_left);
 
 	// TODO!
 
@@ -717,45 +752,48 @@ void gameloop_draw(void)
 
 }
 
-int gameloop_tick(void)
+int game_tick(game_t *game)
 {
 	int i;
-	int mx, my;
 	obj_t *ob;
-	cell_t *ce;
 
 	// Check if game over
-	if(game_over)
+	if(game->main_state == GAME_OVER)
 		return 2;
 
 	// Get coordinates
-	mx = (game_mouse_x + game_camx)/32;
-	my = (game_mouse_y + game_camy)/24;
-	ce = layer_cell_ptr(rootlv->layers[0], mx, my);
+	game->cmx = (game->mx + game->camx)/32;
+	game->cmy = (game->my + game->camy)/24;
+	//ce = layer_cell_ptr(game->lv->layers[0], mx, my);
 
 	// Tick objects
-	for(i = 0; i < rootlv->ocount; i++)
+	for(i = 0; i < game->lv->ocount; i++)
 	{
-		ob = rootlv->objects[i];
+		ob = game->lv->objects[i];
 
 		if(ob == NULL) continue;
 
 		if(ob->f_tick != NULL) ob->f_tick(ob);
 
 		if(ob->freeme)
-			i -= level_obj_free(rootlv, ob);
+			i -= level_obj_free(game->lv, ob);
 	}
 
 	// Update UI
-	if(game_mouse_x < (screen->w>>3)) game_camx -= 4;
-	if(game_mouse_y < (screen->h>>3)) game_camy -= 4;
-	if(game_mouse_x >= ((screen->w*7)>>3)) game_camx += 4;
-	if(game_mouse_y >= ((screen->h*7)>>3)) game_camy += 4;
+	if(game->mx < (screen->w>>3)) game->camx -= 4;
+	if(game->my < (screen->h>>3)) game->camy -= 4;
+	if(game->mx >= ((screen->w*7)>>3)) game->camx += 4;
+	if(game->my >= ((screen->h*7)>>3)) game->camy += 4;
 
+	return 0;
+}
+
+int game_input(game_t *game)
+{
 	// Block input if waiting for object
-	if(level_obj_waiting(rootlv) != NULL)
+	if(level_obj_waiting(game->lv) != NULL)
 		return 0;
-
+	
 	// INPUT STARTS HERE
 
 	// Scan keys
@@ -764,56 +802,56 @@ int gameloop_tick(void)
 	{
 		case SDLK_RETURN | 0x8000:
 			// Next turn!
-			game_push_newturn(ab_local, 0, STEPS_PER_TURN); // TODO: Calculate next turn player
+			game_push_newturn(game, game->ab_local, 0, STEPS_PER_TURN); // TODO: Calculate next turn player
 
 			break;
 	}
 
 	if((mouse_b & ~mouse_ob) & 1)
-		game_push_click(ab_local, game_mouse_x, game_mouse_y, game_camx, game_camy, 0);
+		game_push_click(game, game->ab_local, game->mx, game->my, game->camx, game->camy, 0);
 	else if((mouse_b & ~mouse_ob) & 4)
-		game_push_click(ab_local, game_mouse_x, game_mouse_y, game_camx, game_camy, 2);
+		game_push_click(game, game->ab_local, game->mx, game->my, game->camx, game->camy, 2);
 
 	return 0;
 }
 
-int gameloop_core(int net_mode)
+int gameloop_core(game_t *game)
 {
 	int i;
 
 	// Draw
-	gameloop_draw();
+	gameloop_draw(game);
 
 	// Process events
 	if(input_poll()) return 1;
 
 	// Parse actions
-	switch(net_mode)
+	switch(game->net_mode)
 	{
 		case NET_LOCAL:
-			abuf_poll(ab_local);
-			while(game_parse_actions(ab_local, NET_S2C));
+			abuf_poll(game->ab_local);
+			while(game_parse_actions(game, game->ab_local, NET_S2C));
 			break;
 
 		case NET_CLIENT:
-			abuf_poll(ab_local);
-			while(game_parse_actions(ab_local, NET_S2C));
+			abuf_poll(game->ab_local);
+			while(game_parse_actions(game, game->ab_local, NET_S2C));
 			break;
 
 		case NET_SERVER: {
 			// Get client stuff
-			TCPsocket nfd = SDLNet_TCP_Accept(ab_local->sock);
+			TCPsocket nfd = SDLNet_TCP_Accept(game->ab_local->sock);
 			if(nfd != NULL)
 			{
 				// Find a free slot
 				for(i = 0; i < TEAM_MAX; i++)
-				if(ab_teams[i] == NULL)
+				if(game->ab_teams[i] == NULL)
 				{
 					// Accept it
-					ab_teams[i] = abuf_new();
-					ab_teams[i]->sset = SDLNet_AllocSocketSet(1);
-					ab_teams[i]->sock = nfd;
-					SDLNet_AddSocket(ab_teams[i]->sset, (void *)ab_teams[i]->sock);
+					game->ab_teams[i] = abuf_new();
+					game->ab_teams[i]->sset = SDLNet_AllocSocketSet(1);
+					game->ab_teams[i]->sock = nfd;
+					SDLNet_AddSocket(game->ab_teams[i]->sset, (void *)game->ab_teams[i]->sock);
 					break;
 				}
 
@@ -827,10 +865,10 @@ int gameloop_core(int net_mode)
 
 			// Poll
 			for(i = 0; i < TEAM_MAX; i++)
-			if(ab_teams[i] != NULL)
+			if(game->ab_teams[i] != NULL)
 			{
-				abuf_poll(ab_teams[i]);
-				while(game_parse_actions(ab_teams[i], NET_C2S));
+				abuf_poll(game->ab_teams[i]);
+				while(game_parse_actions(game, game->ab_teams[i], NET_C2S));
 			}
 
 		} break;
@@ -838,14 +876,20 @@ int gameloop_core(int net_mode)
 	}
 
 	// Update mouse stuff
-	game_mouse_x = mouse_x;
-	game_mouse_y = mouse_y;
-	game_mouse_ox = mouse_ox;
-	game_mouse_oy = mouse_oy;
+	game->mx = mouse_x;
+	game->my = mouse_y;
+	game->mx = mouse_ox;
+	game->my = mouse_oy;
 
-	// Process tick
-	// TODO: Time this nicely
-	if(gameloop_tick()) return 0;
+	// Process ticks
+	game->time_now = SDL_GetTicks();
+	while(game->time_now > game->time_next)
+	{
+		game->time_next += TIME_STEP_MS;
+		if(game_tick(game)) return 0;
+	}
+
+	if(game_input(game)) return 0;
 
 	return -1;
 }
@@ -855,7 +899,7 @@ void gameloop_core_cradle(void)
 {
 	const int net_mode = NET_LOCAL;
 
-	int ret = gameloop_core(net_mode);
+	int ret = gameloop_core(rootgame);
 	//printf("cradle ret %i\n", ret);
 	if(ret == -1) return;
 	emscripten_cancel_main_loop();
@@ -871,72 +915,67 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 	printf("game beginning\n");
 #endif
 
-	// Free action buffers
-	if(ab_local != NULL) { abuf_free(ab_local); ab_local = NULL; }
-	for(i = 0; i < TEAM_MAX; i++)
-		if(ab_teams[i] != NULL) { abuf_free(ab_teams[i]); ab_teams[i] = NULL; }
+	// Create game
+	if(rootgame != NULL) { game_free(rootgame); rootgame = NULL; }
+	rootgame = game_new(net_mode);
+	rootgame->player_count = player_count;
 
 	// Prepare action buffer stuff
 	if(net_mode == NET_LOCAL || net_mode == NET_CLIENT)
 	{
-		ab_local = abuf_new();
+		rootgame->ab_local = abuf_new();
 
 		if(net_mode == NET_LOCAL)
 		{
-			ab_local->loc_chain = ab_local;
+			rootgame->ab_local->loc_chain = rootgame->ab_local;
 
 		} else {
-			ab_local->sock = sock;
-			ab_local->sset = SDLNet_AllocSocketSet(1);
-			SDLNet_AddSocket(ab_local->sset, (void *)ab_local->sock);
+			rootgame->ab_local->sock = sock;
+			rootgame->ab_local->sset = SDLNet_AllocSocketSet(1);
+			SDLNet_AddSocket(rootgame->ab_local->sset, (void *)rootgame->ab_local->sock);
 
 		}
 	}
 
 	if(net_mode == NET_SERVER)
 	{
-		ab_local = abuf_new();
-		ab_local->sock = sock;
+		rootgame->ab_local = abuf_new();
+		rootgame->ab_local->sock = sock;
 
 		/*
 		for(i = 0; i < player_count; i++)
 		{
-			ab_teams[i] = abuf_new();
+			rootgame->ab_teams[i] = abuf_new();
 		}
 		*/
 	}
 
-	// Initialise
-	game_camx = 0;
-	game_camy = 0;
-	game_player_count = player_count;
-	game_curplayer = 0;
-	game_over = 0;
-
 	// Load level
 	//printf("loading level\n");
-	rootlv = level_load(fname);
-	//printf("rootlv = %p\n", rootlv);
-	assert(rootlv != NULL); // TODO: Be more graceful
+	rootgame->lv = level_load(fname);
+	assert(rootgame->lv != NULL); // TODO: Be more graceful
+	rootgame->lv->game = rootgame;
 
 	// Remove excess players
-	for(i = 0; i < rootlv->ocount; i++)
+	for(i = 0; i < rootgame->lv->ocount; i++)
 	{
 		if(i < 0) continue;
 
-		ob = rootlv->objects[i];
+		ob = rootgame->lv->objects[i];
 
 		if(ob->f.otyp == OBJ_PLAYER
 			&& ((struct fd_player *)(ob->f.fd))->team >= player_count)
 		{
-			i -= level_obj_free(rootlv, ob);
+			i -= level_obj_free(rootgame->lv, ob);
 		}
 	}
 
+	// Set "playing" state
+	rootgame->main_state = GAME_PLAYING;
 
 	// Start turn
 	//printf("starting turn!\n");
-	gameloop_start_turn();
+	gameloop_start_turn(rootgame);
 
 #ifdef __EMSCRIPTEN__
 	//printf("inf loop begin\n");
@@ -945,7 +984,7 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 #else
 	for(;;)
 	{
-		int ret = gameloop_core(net_mode);
+		int ret = gameloop_core(rootgame);
 		if(ret == -1) continue;
 		return 0;
 	}

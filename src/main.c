@@ -47,10 +47,10 @@ struct menu_data
 	{
 		{
 			"HOT SEAT", MAIN_MENU_MOVETO, 1, {
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
+				{menu_draw_tile, -32-28*2, -31, 1, 0},
+				{menu_draw_player, -32-28*2-10, -31-23, 1, 0},
+				{menu_draw_player, -32-28*2+10, -31-23, 2, 0},
+				{menu_draw_player, -32-28*2+0, -31-18, 0, 0},
 			}
 		},
 
@@ -122,9 +122,9 @@ struct menu_data
 
 	{
 		{
-			"PLAY NOW", MAIN_MENU_DUMMY, 0, {
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
+			"PLAY NOW", MAIN_MENU_ACTION, 0x101, {
+				{menu_draw_tile, -32-28*2, -31, 1, 0},
+				{menu_draw_player, -32-28*2, -31-21, 0, 0},
 				{NULL, 0, 0, 0, 0},
 				{NULL, 0, 0, 0, 0},
 			}
@@ -132,8 +132,8 @@ struct menu_data
 
 		{
 			"CONNECT", MAIN_MENU_ACTION, 0x10C, {
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
+				{menu_draw_player, 20, -44, 0, 0},
+				{menu_draw_player, -20-32, -44, 1, 0},
 				{NULL, 0, 0, 0, 0},
 				{NULL, 0, 0, 0, 0},
 			}
