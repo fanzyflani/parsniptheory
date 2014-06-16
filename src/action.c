@@ -10,7 +10,11 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 //
 void abuf_free(abuf_t *ab)
 {
-	// TODO: Close socket!
+	// Close socket if such thing exists
+	if(ab->sock != NULL)
+		SDLNet_TCP_Close(ab->sock);
+
+	// Free
 	free(ab);
 }
 

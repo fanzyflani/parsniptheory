@@ -7,14 +7,14 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 void game_push_version(game_t *game, abuf_t *ab, int version)
 {
-	abuf_write_u8(ACT_VERSION, game->ab_local);
-	abuf_write_u8(version, game->ab_local);
+	abuf_write_u8(ACT_VERSION, ab);
+	abuf_write_u8(version, ab);
 }
 
 void game_push_quit(game_t *game, abuf_t *ab, const char *msg)
 {
 	// GOODBYE KIND SIR
-	int len = strlen(msg)+1;
+	int len = strlen(msg);
 	if(len > 255) len = 255;
 
 	abuf_write_u8(ACT_QUIT, ab);
@@ -26,7 +26,7 @@ void game_push_quit(game_t *game, abuf_t *ab, const char *msg)
 
 void game_push_text(game_t *game, abuf_t *ab, const char *msg)
 {
-	int len = strlen(msg)+1;
+	int len = strlen(msg);
 	if(len > 255) len = 255;
 
 	abuf_write_u8(ACT_TEXT, ab);
@@ -34,9 +34,38 @@ void game_push_text(game_t *game, abuf_t *ab, const char *msg)
 	abuf_write_block(msg, len, ab);
 }
 
-void game_push_end_turn(game_t *game, abuf_t *ab)
+void game_push_netid(game_t *game, abuf_t *ab, int netid)
 {
-	// TODO
+	abuf_write_u8(ACT_NETID, ab);
+	abuf_write_u8(netid, ab);
+
+}
+
+void game_push_settings(game_t *game, abuf_t *ab, game_settings_t *settings)
+{
+	int lmapname = strlen(settings->map_name);
+	if(lmapname > 255) lmapname = 255;
+
+	abuf_write_u8(ACT_SETTINGS, ab);
+	abuf_write_u8(settings->player_count, ab);
+	abuf_write_u8(lmapname, ab);
+	abuf_write_block(settings->map_name, lmapname, ab);
+}
+
+void game_push_claim(game_t *game, abuf_t *ab, int netid, int tid)
+{
+	abuf_write_u8(ACT_CLAIM, ab);
+	abuf_write_u8(netid, ab);
+	abuf_write_u8(tid, ab);
+
+}
+
+void game_push_unclaim(game_t *game, abuf_t *ab, int netid, int tid)
+{
+	abuf_write_u8(ACT_UNCLAIM, ab);
+	abuf_write_u8(netid, ab);
+	abuf_write_u8(tid, ab);
+
 }
 
 void game_push_hover(game_t *game, abuf_t *ab, int mx, int my, int camx, int camy)
@@ -129,6 +158,8 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 
 void game_handle_version(game_t *game, abuf_t *ab, int typ, int ver)
 {
+	int i;
+
 	printf("Version received: %i\n", ver);
 
 	assert(typ == NET_C2S || typ == NET_S2C);
@@ -140,8 +171,25 @@ void game_handle_version(game_t *game, abuf_t *ab, int typ, int ver)
 	} else if(typ == NET_C2S) {
 		// Push the version back
 		game_push_version(game, ab, NET_VERSION);
-		game_push_text(game, ab, "Welcome to the server");
-		game_push_text(game, ab, "You are running SHAREWARE version alpha 3");
+		game_push_text(game, ab, "Connected!");
+
+		// Push the settings
+		game_push_settings(game, ab, &(game->settings));
+
+		// Push the client's netid
+		game_push_netid(game, ab, ab->netid);
+
+		// Give admin if admin is unclaimed
+		if(game->claim_admin == 0xFF)
+			game->claim_admin = ab->netid;
+
+		// Push claims
+		for(i = 0; i < TEAM_MAX; i++)
+			if(game->claim_team[i] != 0xFF)
+				game_push_claim(game, ab, game->claim_team[i], i);
+
+		if(game->claim_admin != 0xFF)
+			game_push_claim(game, ab, game->claim_admin, 0xFF);
 
 		// Move to setup mode
 		// TODO: Push current setup state
@@ -158,14 +206,124 @@ void game_handle_version(game_t *game, abuf_t *ab, int typ, int ver)
 	}
 }
 
-void game_handle_quit(game_t *game, abuf_t *ab, int typ)
+void game_handle_claim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
+{
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	if(typ == NET_C2S)
+	{
+		netid = game->netid;
+		if(!((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF)) return;
+
+		// Check: To override things we have to be the admin
+		if(game->claim_admin != netid)
+			if(tid == 0xFF || game->claim_team[tid] != 0xFF)
+				return;
+
+	} else {
+		assert((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF);
+		assert((netid >= 0 && netid < TEAM_MAX) || netid == 0xFE);
+
+	}
+
+	if(tid == 0xFF) game->claim_admin = netid;
+	else game->claim_team[tid] = netid;
+
+	// Relay
+	if(typ == NET_C2S)
+	{
+		abuf_bc_u8(ACT_CLAIM, game);
+		abuf_bc_u8(netid, game);
+		abuf_bc_u8(tid, game);
+	}
+	
+}
+
+void game_handle_unclaim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
+{
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	if(typ == NET_C2S)
+	{
+		netid = game->netid;
+		if(!((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF)) return;
+
+		// Check: To override things we have to be the admin
+		if(game->claim_admin != netid)
+			if(tid == 0xFF || game->claim_team[tid] != netid)
+				return;
+
+	} else {
+		assert((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF);
+		assert((netid >= 0 && netid < TEAM_MAX) || netid == 0xFE);
+
+	}
+
+	if(tid == 0xFF) game->claim_admin = 0xFF;
+	else game->claim_team[tid] = 0xFF;
+
+	// Relay
+	if(typ == NET_C2S)
+	{
+		abuf_bc_u8(ACT_UNCLAIM, game);
+		abuf_bc_u8(netid, game);
+		abuf_bc_u8(tid, game);
+	}
+
+}
+
+void game_handle_quit(game_t *game, abuf_t *ab, int typ, const char *msg)
 {
 	// TODO: handle disconnect
 }
 
-void game_handle_text(game_t *game, abuf_t *ab, int typ, int len, char *buf)
+void game_handle_text(game_t *game, abuf_t *ab, int typ, const char *msg)
 {
 	// TODO
+}
+
+void game_handle_netid(game_t *game, abuf_t *ab, int typ, int netid)
+{
+	assert(typ == NET_C2S || typ == NET_S2C);
+	if(typ == NET_C2S) { game_push_quit(game, ab, "S->C packet only"); return; }
+
+	// Set netid
+	assert((netid >= 0 && netid < TEAM_MAX) || netid == 0xFE);
+	game->netid = netid;
+}
+
+void game_handle_settings(game_t *game, abuf_t *ab, int typ, int player_count, const char *map_name)
+{
+	int i;
+
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	printf("settings: players=%i, mapname=\"%s\"\n", player_count, map_name);
+	
+	if(typ == NET_C2S)
+	{
+		// TODO: admin check
+		if(!(player_count >= 2 && player_count <= TEAM_MAX)) return;
+
+	} else {
+		assert(player_count >= 2 && player_count <= TEAM_MAX);
+
+	}
+
+	game->settings.player_count = player_count;
+	strncpy(game->settings.map_name, map_name, 256);
+	game->settings.map_name[255] = '\x00';
+
+	if(typ == NET_C2S)
+	{
+		if(game->ab_local != NULL && game->ab_local->loc_chain != NULL)
+			game_push_settings(game, game->ab_local, &(game->settings));
+
+		for(i = 0; i < TEAM_MAX; i++)
+			if(game->ab_teams[i] != NULL)
+				game_push_settings(game, game->ab_teams[i], &(game->settings));
+	}
+
 }
 
 void game_handle_lock(game_t *game, abuf_t *ab, int typ)
@@ -372,6 +530,8 @@ int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 	// Make sure we have a byte
 	char buf[257];
 	int ver, len, tid;
+	int netid;
+	int player_count;
 	int steps_added;
 	int steps_used;
 	int steps_left;
@@ -403,7 +563,7 @@ int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 			abuf_read_block(buf, (bsiz-1 < len ? bsiz-1 : len), ab);
 			buf[bsiz] = '\x00';
 			printf("QUIT received: \"%s\"\n", buf);
-			game_handle_quit(game, ab, typ);
+			game_handle_quit(game, ab, typ, buf);
 			return 1;
 
 		case ACT_TEXT:
@@ -412,9 +572,43 @@ int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 			abuf_read_u8(ab);
 			len = abuf_read_u8(ab);
 			abuf_read_block(buf, len, ab);
-			buf[bsiz] = '\x00';
+			buf[len] = '\x00';
 			printf("text received: \"%s\"\n", buf);
-			game_handle_text(game, ab, typ, len, buf);
+			game_handle_text(game, ab, typ, buf);
+			return 1;
+
+		case ACT_NETID:
+			if(bsiz < 1) return 0;
+			abuf_read_u8(ab);
+			netid = abuf_read_u8(ab);
+			game_handle_netid(game, ab, typ, netid);
+			return 1;
+			
+		case ACT_SETTINGS:
+			if(bsiz < 2) return 0;
+			if(bsiz < 2+(int)(ab->rdata[2])) return 0;
+			abuf_read_u8(ab);
+			player_count = abuf_read_u8(ab);
+			len = abuf_read_u8(ab);
+			abuf_read_block(buf, len, ab);
+			buf[len] = '\x00';
+			game_handle_settings(game, ab, typ, player_count, buf);
+			return 1;
+
+		case ACT_CLAIM:
+			if(bsiz < 2) return 0;
+			abuf_read_u8(ab);
+			netid = abuf_read_u8(ab);
+			tid = abuf_read_u8(ab);
+			game_handle_claim(game, ab, typ, netid, tid);
+			return 1;
+
+		case ACT_UNCLAIM:
+			if(bsiz < 2) return 0;
+			abuf_read_u8(ab);
+			netid = abuf_read_u8(ab);
+			tid = abuf_read_u8(ab);
+			game_handle_unclaim(game, ab, typ, netid, tid);
 			return 1;
 
 		// ACT_MAPBEG

@@ -257,11 +257,20 @@ enum
 enum
 {
 	// NOTE: pstr is a u8 followed by that many bytes
+	// DO NOT MOVE THIS THING EVER
 	ACT_NOP = 0, // BIDI ()
 
+	// DO NOT MOVE THESE THREE THINGS EVER
 	ACT_VERSION, // BIDI (u8 version)
 	ACT_QUIT, // BIDI (pstr reason)
 	ACT_TEXT, // BIDI (pstr data)
+
+	// BUT YOU CAN MOVE EVERYTHING ELSE LIKE THIS
+	ACT_NETID, // S->C (u8 netid);
+	ACT_SETTINGS, // see network.c's game_push_settings for more info.
+	ACT_CLAIM, // BIDI (u8 netid, u8 team (0xFF == actually claim admin status))
+	ACT_UNCLAIM, // BIDI (u8 netid, u8 team (0xFF == actually unclaim admin status))
+
 	ACT_MAPBEG, // S->C ()
 	ACT_MAPDATA, // S->C (u16 len, u8 data[len])
 	ACT_MAPEND, // S->C ()
@@ -310,6 +319,7 @@ struct abuf
 	uint8_t wdata[ABUF_SIZE];
 
 	// Game control stuff
+	int netid;
 	int state;
 };
 
@@ -328,6 +338,7 @@ enum
 struct game_settings
 {
 	int player_count;
+	char map_name[256];
 };
 
 struct game
@@ -349,6 +360,11 @@ struct game
 
 	abuf_t *ab_local;
 	abuf_t *ab_teams[TEAM_MAX];
+
+	// 0xFF == unclaimed, 0xFE == ab_local
+	uint8_t claim_team[TEAM_MAX];
+	uint8_t claim_admin;
+	uint8_t netid;
 
 	obj_t *selob;
 	level_t *lv;
@@ -424,11 +440,13 @@ void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, 
 int editloop(void);
 
 // game.c
+extern game_t *game_m;
+extern game_t *game_v;
 extern int game_camx;
 extern int game_camy;
 void gameloop_start_turn(game_t *game);
 int gameloop_next_turn(game_t *game);
-int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock);
+int gameloop(int net_mode, TCPsocket sock);
 
 // gui.c
 void gui_reparent(widget_t *gp, widget_t *gc);
@@ -479,6 +497,7 @@ int sdiv(int n, int d);
 int smod(int n, int d);
 int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2, int y2);
 int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2);
+void errorloop(const char *error);
 char *text_dialogue(const char *title, const char *def);
 void chdir_to_exe(const char *farg);
 

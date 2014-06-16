@@ -44,22 +44,23 @@ struct menu_data
 
 } menu_gui_data[][4] = {
 
+	// Main menu
 	{
-		{
-			"HOT SEAT", MAIN_MENU_MOVETO, 1, {
-				{menu_draw_tile, -32-28*2, -31, 1, 0},
-				{menu_draw_player, -32-28*2-10, -31-23, 1, 0},
-				{menu_draw_player, -32-28*2+10, -31-23, 2, 0},
-				{menu_draw_player, -32-28*2+0, -31-18, 0, 0},
-			}
-		},
-
 		{
 			"NETWORK", MAIN_MENU_MOVETO, 2, {
 				{NULL, 0, 0, 0, 0},
 				{NULL, 0, 0, 0, 0},
 				{NULL, 0, 0, 0, 0},
 				{NULL, 0, 0, 0, 0},
+			}
+		},
+
+		{
+			"HOT SEAT", MAIN_MENU_ACTION, 2, {
+				{menu_draw_tile, -32-28*2, -31, 1, 0},
+				{menu_draw_player, -32-28*2-10, -31-23, 1, 0},
+				{menu_draw_player, -32-28*2+10, -31-23, 2, 0},
+				{menu_draw_player, -32-28*2+0, -31-18, 0, 0},
 			}
 		},
 
@@ -82,6 +83,7 @@ struct menu_data
 		},
 	},
 
+	// Hotseat menu (not used)
 	{
 		{
 			"2 PLAYER", MAIN_MENU_ACTION, 2, {
@@ -120,6 +122,7 @@ struct menu_data
 		},
 	},
 
+	// Network menu
 	{
 		{
 			"PLAY NOW", MAIN_MENU_ACTION, 0x101, {
@@ -210,6 +213,13 @@ int menuloop(int menuid)
 
 	// Ensure our clicks don't cut through twice
 	input_poll();
+
+	// Clean up past games if we still have any
+	if(menuid == 0)
+	{
+		if(game_v != NULL) { game_free(game_v); game_v = NULL; }
+		if(game_m != NULL) { game_free(game_m); game_m = NULL; }
+	}
 
 	for(;;)
 	{
@@ -434,24 +444,26 @@ int main(int argc, char *argv[])
 #endif
 	{
 		case 2:
-			gameloop("dat/level.psl", NET_LOCAL, 2, NULL);
-			break;
-
-		case 3:
-			gameloop("dat/level.psl", NET_LOCAL, 3, NULL);
-			break;
-
-		case 4:
-			gameloop("dat/level.psl", NET_LOCAL, 4, NULL);
+			gameloop(NET_LOCAL, NULL);
 			break;
 
 		case 0x105: {
 			IPaddress server_ip;
 			TCPsocket server_sockfd;
-			if(SDLNet_ResolveHost(&server_ip, NULL, NET_PORT)==-1) return 1;
+			if(SDLNet_ResolveHost(&server_ip, NULL, NET_PORT)==-1)
+			{
+				errorloop("Host lookup failed");
+				break;
+			}
+
 			server_sockfd = SDLNet_TCP_Open(&server_ip);
-			if(server_sockfd == NULL) return 1;
-			gameloop("dat/level.psl", NET_SERVER, 2, server_sockfd);
+			if(server_sockfd == NULL)
+			{
+				errorloop("Could not open port");
+				break;
+			}
+
+			gameloop(NET_SERVER, server_sockfd);
 		} break;
 
 		case 0x10C: {
@@ -463,14 +475,24 @@ int main(int argc, char *argv[])
 			TCPsocket client_sockfd;
 			if(SDLNet_ResolveHost(&client_ip, (net_connect_host == NULL
 				? "localhost"
-				: net_connect_host), NET_PORT)==-1) return 1;
+				: net_connect_host), NET_PORT)==-1)
+			{
+				errorloop("Host lookup failed");
+				break;
+			}
+
 			client_sockfd = SDLNet_TCP_Open(&client_ip);
-			if(client_sockfd == NULL) return 1;
+			//if(client_sockfd == NULL) return 1;
+			if(client_sockfd == NULL)
+			{
+				errorloop("Could not connect");
+				break;
+			}
 
 			free(net_connect_host);
 			net_connect_host = NULL;
 
-			gameloop("dat/level.psl", NET_CLIENT, 2, client_sockfd);
+			gameloop(NET_CLIENT, client_sockfd);
 		} break;
 
 		case 0xED17:

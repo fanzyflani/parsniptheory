@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 	if(SDLNet_ResolveHost(&server_ip, NULL, NET_PORT)==-1) return 1;
 	server_sockfd = SDLNet_TCP_Open(&server_ip);
 	if(server_sockfd == NULL) return 1;
-	gameloop("dat/level.psl", NET_SERVER, 2, server_sockfd);
+	gameloop(NET_SERVER, server_sockfd);
 
 	return 1;
 }

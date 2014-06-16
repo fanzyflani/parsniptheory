@@ -9,6 +9,19 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #include <emscripten.h>
 #endif
 
+static void game_draw_player(int x, int y, int team, int face)
+{
+	int i;
+
+	for(i = 6; i >= 0; i--)
+		draw_img_trans_cmap_d_sd(screen, i_player,
+			x,
+			y,
+			face*32, i*48, 32, 48,
+			0, teams[team]->cm_player);
+}
+
+
 game_t *game_m = NULL; // model (server)
 game_t *game_v = NULL; // view  (client)
 
@@ -32,6 +45,8 @@ void game_free(game_t *game)
 
 game_t *game_new(int net_mode)
 {
+	int i;
+
 	// Allocate
 	game_t *game = malloc(sizeof(game_t));
 
@@ -43,6 +58,7 @@ game_t *game_new(int net_mode)
 	game->cmx = 161/32;
 	game->cmy = 121/24;
 	game->settings.player_count = 0;
+	game->settings.map_name[0] = '\x00';
 	game->curplayer = 0;
 	game->main_state = GAME_SETUP;
 	game->net_mode = net_mode;
@@ -52,6 +68,17 @@ game_t *game_new(int net_mode)
 
 	game->selob = NULL;
 	game->lv = NULL;
+
+	// Clear action buffers
+	game->ab_local = NULL;
+	for(i = 0; i < TEAM_MAX; i++)
+		game->ab_teams[i] = NULL;
+
+	// Prep claims
+	game->netid = 0xFD;
+	game->claim_admin = 0xFF;
+	for(i = 0; i < TEAM_MAX; i++)
+		game->claim_team[i] = 0xFF;
 
 	// OK!
 	return game;
@@ -283,6 +310,58 @@ void gameloop_draw_playing(game_t *game)
 
 }
 
+void gameloop_draw_setup(game_t *game)
+{
+	int i;
+
+	// TODO: Get GUI framework working
+	draw_printf(screen, i_font16, 16,
+		screen->w/2 - 8*10, 0, 1,
+		"GAME SETUP");
+
+	draw_rect_d(screen, 16*5, 20, 16, 16, 64+8*2);
+	draw_printf(screen, i_font16, 16,
+		0, 20, 1,
+		"LVL: * %s", game->settings.map_name);
+
+	draw_rect_d(screen, 16*4, 40, 16, 16, 64+8*0);
+	draw_rect_d(screen, 16*5, 40, 16, 16, 64+8*1);
+	draw_printf(screen, i_font16, 16,
+		0, 40, 1,
+		"PLR:-+ %i", game->settings.player_count);
+
+	// Admin check
+	if(game->claim_admin == game->netid)
+	{
+		// TODO: other things?
+
+	} else {
+		draw_rect_d(screen, 16*4, 20, 32, 36, 0);
+	}
+
+	if(game->netid != 0xFD && game->claim_admin == 0xFF)
+	{
+		draw_rect_d(screen, 20-1, 60-1, 16*11+2, 16+2, 64+8*5+2);
+		draw_printf(screen, i_font16, 16, 20, 60, 1, "CLAIM ADMIN");
+	} else if(game->netid == game->claim_admin)
+	{
+		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+8*0+2);
+		draw_printf(screen, i_font16, 16, 20, 60, 1, "REVOKE ADMIN");
+	}
+
+	for(i = 0; i < game->settings.player_count; i++)
+	{
+		if(game->claim_team[i] == 0xFF)
+			draw_rect_d(screen, 4 + i*36, 80, 32, 48, 64+8*2+2);
+		else if(game->claim_team[i] == game->netid)
+			draw_rect_d(screen, 4 + i*36, 80, 32, 48, 64+8*1+2);
+		else
+			draw_rect_d(screen, 4 + i*36, 80, 32, 48, 64+8*0+2);
+
+		game_draw_player(4 + i*36, 80, i, 0);
+	}
+}
+
 void gameloop_draw(game_t *game)
 {
 	// Clear the screen
@@ -292,7 +371,6 @@ void gameloop_draw(game_t *game)
 	switch(game->main_state)
 	{
 		case GAME_LOGIN0:
-		case GAME_SETUP:
 			draw_printf(screen, i_font16, 16,
 				8*1, screen->h/2-32, 1,
 				"CHECKING IF THIS IS");
@@ -305,6 +383,10 @@ void gameloop_draw(game_t *game)
 			draw_printf(screen, i_font16, 16,
 				8*7, screen->h/2+16, 1,
 				"PLEASE WAIT...");
+			break;
+
+		case GAME_SETUP:
+			gameloop_draw_setup(game);
 			break;
 
 		case GAME_WAIT_PLAY:
@@ -433,6 +515,9 @@ int gameloop_core(game_t *game)
 {
 	int i;
 
+	// Ensure that we have a game object here
+	if(game == NULL) return -1;
+
 	// Parse actions
 	assert(game->net_mode != NET_LOCAL);
 
@@ -464,6 +549,7 @@ int gameloop_core(game_t *game)
 					game->ab_teams[i] = abuf_new();
 					game->ab_teams[i]->sset = SDLNet_AllocSocketSet(1);
 					game->ab_teams[i]->sock = nfd;
+					game->ab_teams[i]->netid = i;
 					SDLNet_AddSocket(game->ab_teams[i]->sset, (void *)game->ab_teams[i]->sock);
 					break;
 				}
@@ -477,8 +563,11 @@ int gameloop_core(game_t *game)
 			}
 
 			// Poll
-			abuf_poll(game->ab_local);
-			while(game_parse_actions(game, game->ab_local, NET_C2S));
+			if(game->ab_local->loc_chain != NULL)
+			{
+				abuf_poll(game->ab_local);
+				while(game_parse_actions(game, game->ab_local, NET_C2S));
+			}
 
 			for(i = 0; i < TEAM_MAX; i++)
 			if(game->ab_teams[i] != NULL)
@@ -530,11 +619,8 @@ void gameloop_core_cradle(void)
 }
 #endif
 
-int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
+int gameloop(int net_mode, TCPsocket sock)
 {
-	int i;
-	obj_t *ob;
-
 #ifdef __EMSCRIPTEN__
 	printf("game beginning\n");
 #endif
@@ -548,7 +634,10 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 	{
 		game_m = game_new(NET_SERVER);
 		assert(game_m != NULL);
-		game_m->settings.player_count = player_count;
+		game_m->settings.player_count = 4;
+
+		// TODO: pick random map
+		strcpy(game_m->settings.map_name, "genesis");
 	}
 
 	// Prepare view
@@ -557,7 +646,6 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 		game_v = game_new(NET_CLIENT);
 		assert(game_v != NULL);
 		// TODO: sync crap
-		game_v->settings.player_count = player_count;
 	}
 
 	// Prepare action buffer stuff
@@ -577,6 +665,7 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 	if(game_m != NULL)
 	{
 		game_m->ab_local = abuf_new();
+		game_m->ab_local->netid = 0xFE;
 
 		if(net_mode != NET_LOCAL)
 		{
@@ -593,6 +682,7 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 
 	if(game_m != NULL)
 	{
+		/*
 		// Load level
 		//printf("loading level\n");
 		game_m->lv = level_load(fname);
@@ -613,11 +703,12 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 			}
 		}
 
-		game_m->main_state = GAME_WAIT_PLAY;
-
 		// Start turn
 		//printf("starting turn!\n");
 		gameloop_start_turn(game_m);
+		*/
+
+		game_m->main_state = GAME_SETUP;
 	}
 
 	if(game_v != NULL)
@@ -634,13 +725,13 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 	for(;;)
 	{
 		// Draw
-		gameloop_draw(game_v);
+		gameloop_draw(game_v != NULL ? game_v : game_m);
 
 		// Process events
 		if(input_poll()) return 0;
 
 		// Process input
-		if(game_input(game_v)) return 0;
+		if(game_v != NULL && game_input(game_v)) return 0;
 
 		if(gameloop_core(game_m) != -1) return 0;
 		if(gameloop_core(game_v) != -1) return 0;

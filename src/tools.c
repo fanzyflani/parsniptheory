@@ -363,6 +363,49 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 
 }
 
+// Error message loop
+void errorloop(const char *error)
+{
+	input_key_queue_flush();
+
+	for(;;)
+	{
+		// Draw text
+		screen_clear(0);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*6, screen->h/2-24, 1, "ERROR:");
+		draw_printf(screen, i_font16, 16, screen->w/2-8*strlen(error), screen->h/2-8, 1, "%s", error);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*19, screen->h/2+8, 1,
+			"Click / Press ENTER");
+
+		// Flip
+		screen_flip();
+		SDL_Delay(20);
+		
+		// Input
+		if(input_poll())
+			return;
+
+		while(input_key_queue_peek() != 0)
+		{
+			int v = input_key_queue_pop();
+			if((v & 0x80000000) != 0)
+			{
+				if(((v>>16)&0x7FFF) == SDLK_RETURN)
+				{
+					return;
+				}
+
+				continue;
+			}
+		}
+
+		if((mouse_ob & ~mouse_b) != 0)
+			return;
+	}
+
+
+}
+
 // Dialogue loop
 char *text_dialogue(const char *title, const char *def)
 {
