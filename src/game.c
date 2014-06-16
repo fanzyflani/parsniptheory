@@ -291,6 +291,22 @@ void gameloop_draw(game_t *game)
 	// Check game mode
 	switch(game->main_state)
 	{
+		case GAME_LOGIN0:
+		case GAME_SETUP:
+			draw_printf(screen, i_font16, 16,
+				8*1, screen->h/2-32, 1,
+				"CHECKING IF THIS IS");
+			draw_printf(screen, i_font16, 16,
+				8*2, screen->h/2-16, 1,
+				"ACTUALLY A PARSNIP");
+			draw_printf(screen, i_font16, 16,
+				8*6, screen->h/2, 1,
+				"THEORY SERVER,");
+			draw_printf(screen, i_font16, 16,
+				8*7, screen->h/2+16, 1,
+				"PLEASE WAIT...");
+			break;
+
 		case GAME_WAIT_PLAY:
 		case GAME_PLAYING:
 			gameloop_draw_playing(game);
