@@ -226,3 +226,68 @@ void abuf_poll(abuf_t *ab)
 	abuf_poll_read(ab);
 }
 
+//
+// HELPERS
+//
+
+void abuf_bc_u8(uint8_t v, game_t *game)
+{
+	int i;
+
+	if(game->ab_local != NULL)
+		abuf_write_u8(v, game->ab_local);
+	for(i = 0; i < TEAM_MAX; i++)
+		if(game->ab_teams[i] != NULL)
+			abuf_write_u8(v, game->ab_teams[i]);
+
+}
+
+void abuf_bc_s8(int8_t v, game_t *game)
+{
+	abuf_bc_u8((uint8_t)v, game);
+}
+
+void abuf_bc_u16(uint16_t v, game_t *game)
+{
+	int i;
+
+	if(game->ab_local != NULL)
+		abuf_write_u16(v, game->ab_local);
+	for(i = 0; i < TEAM_MAX; i++)
+		if(game->ab_teams[i] != NULL)
+			abuf_write_u16(v, game->ab_teams[i]);
+
+}
+
+void abuf_bc_s16(int16_t v, game_t *game)
+{
+	abuf_bc_u16((uint16_t)v, game);
+}
+
+void abuf_bc_block(const void *buf, int len, game_t *game)
+{
+	int i;
+
+	if(game->ab_local != NULL)
+		abuf_write_block(buf, len, game->ab_local);
+	for(i = 0; i < TEAM_MAX; i++)
+		if(game->ab_teams[i] != NULL)
+			abuf_write_block(buf, len, game->ab_teams[i]);
+
+}
+
+int abuf_bc_get_wspace(game_t *game)
+{
+	int i;
+	int msize = 0;
+
+	if(game->ab_local != NULL)
+		msize = game->ab_local->wsize;
+	for(i = 0; i < TEAM_MAX; i++)
+		if(game->ab_teams[i] != NULL)
+			if(game->ab_teams[i]->wsize > msize)
+				msize = game->ab_teams[i]->wsize;
+
+	return ABUF_SIZE - msize;
+}
+

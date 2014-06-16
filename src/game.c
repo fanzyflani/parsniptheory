@@ -9,7 +9,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #include <emscripten.h>
 #endif
 
-game_t *rootgame = NULL;
+game_t *game_m = NULL; // model (server)
+game_t *game_v = NULL; // view  (client)
 
 void game_free(game_t *game)
 {
@@ -163,12 +164,10 @@ void game_handle_newturn(game_t *game, abuf_t *ab, int typ, int tid, int steps_a
 
 	// Broadcast
 	if(typ == NET_C2S)
-	for(i = 0; i < TEAM_MAX; i++)
-	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_NEWTURN, game->ab_teams[i]);
-		abuf_write_u8(tid, game->ab_teams[i]);
-		abuf_write_s16(steps_added, game->ab_teams[i]);
+		abuf_bc_u8(ACT_NEWTURN, game);
+		abuf_bc_u8(tid, game);
+		abuf_bc_s16(steps_added, game);
 	}
 
 }
@@ -214,16 +213,14 @@ void game_handle_move(game_t *game, abuf_t *ab, int typ, int sx, int sy, int dx,
 
 	// Broadcast
 	if(typ == NET_C2S)
-	for(i = 0; i < TEAM_MAX; i++)
-	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_MOVE, game->ab_teams[i]);
-		abuf_write_s16(sx, game->ab_teams[i]);
-		abuf_write_s16(sy, game->ab_teams[i]);
-		abuf_write_s16(dx, game->ab_teams[i]);
-		abuf_write_s16(dy, game->ab_teams[i]);
-		abuf_write_u16(steps_used, game->ab_teams[i]);
-		abuf_write_u16(steps_left, game->ab_teams[i]);
+		abuf_bc_u8(ACT_MOVE, game);
+		abuf_bc_s16(sx, game);
+		abuf_bc_s16(sy, game);
+		abuf_bc_s16(dx, game);
+		abuf_bc_s16(dy, game);
+		abuf_bc_u16(steps_used, game);
+		abuf_bc_u16(steps_left, game);
 	}
 
 	// TODO: Lock this
@@ -268,16 +265,14 @@ void game_handle_attack(game_t *game, abuf_t *ab, int typ, int sx, int sy, int d
 
 	// Broadcast
 	if(typ == NET_C2S)
-	for(i = 0; i < TEAM_MAX; i++)
-	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_ATTACK, game->ab_teams[i]);
-		abuf_write_s16(sx, game->ab_teams[i]);
-		abuf_write_s16(sy, game->ab_teams[i]);
-		abuf_write_s16(dx, game->ab_teams[i]);
-		abuf_write_s16(dy, game->ab_teams[i]);
-		abuf_write_u16(steps_used, game->ab_teams[i]);
-		abuf_write_u16(steps_left, game->ab_teams[i]);
+		abuf_bc_u8(ACT_ATTACK, game);
+		abuf_bc_s16(sx, game);
+		abuf_bc_s16(sy, game);
+		abuf_bc_s16(dx, game);
+		abuf_bc_s16(dy, game);
+		abuf_bc_u16(steps_used, game);
+		abuf_bc_u16(steps_left, game);
 	}
 
 	// TODO: Lock this
@@ -309,12 +304,10 @@ void game_handle_select(game_t *game, abuf_t *ab, int typ, int cx, int cy)
 
 	// Broadcast
 	if(typ == NET_C2S)
-	for(i = 0; i < TEAM_MAX; i++)
-	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_SELECT, game->ab_teams[i]);
-		abuf_write_s16(cx, game->ab_teams[i]);
-		abuf_write_s16(cy, game->ab_teams[i]);
+		abuf_bc_u8(ACT_SELECT, game);
+		abuf_bc_s16(cx, game);
+		abuf_bc_s16(cy, game);
 	}
 
 }
@@ -339,10 +332,8 @@ void game_handle_deselect(game_t *game, abuf_t *ab, int typ)
 
 	// Broadcast
 	if(typ == NET_C2S)
-	for(i = 0; i < TEAM_MAX; i++)
-	if(game->ab_teams[i] != NULL)
 	{
-		abuf_write_u8(ACT_DESELECT, game->ab_teams[i]);
+		abuf_bc_u8(ACT_DESELECT, game);
 	}
 }
 
@@ -819,13 +810,10 @@ int gameloop_core(game_t *game)
 {
 	int i;
 
-	// Draw
-	gameloop_draw(game);
-
-	// Process events
-	if(input_poll()) return 1;
 
 	// Parse actions
+	assert(game->net_mode != NET_LOCAL);
+
 	switch(game->net_mode)
 	{
 		case NET_LOCAL:
@@ -840,7 +828,10 @@ int gameloop_core(game_t *game)
 
 		case NET_SERVER: {
 			// Get client stuff
-			TCPsocket nfd = SDLNet_TCP_Accept(game->ab_local->sock);
+			TCPsocket nfd = (game->ab_local->sock == NULL
+				? NULL
+				: SDLNet_TCP_Accept(game->ab_local->sock));
+
 			if(nfd != NULL)
 			{
 				// Find a free slot
@@ -864,6 +855,9 @@ int gameloop_core(game_t *game)
 			}
 
 			// Poll
+			abuf_poll(game->ab_local);
+			while(game_parse_actions(game, game->ab_local, NET_C2S));
+
 			for(i = 0; i < TEAM_MAX; i++)
 			if(game->ab_teams[i] != NULL)
 			{
@@ -889,19 +883,24 @@ int gameloop_core(game_t *game)
 		if(game_tick(game)) return 0;
 	}
 
-	if(game_input(game)) return 0;
-
 	return -1;
 }
 
 #ifdef __EMSCRIPTEN__
 void gameloop_core_cradle(void)
 {
-	const int net_mode = NET_LOCAL;
+	// Draw
+	gameloop_draw(game_v);
 
-	int ret = gameloop_core(rootgame);
-	//printf("cradle ret %i\n", ret);
-	if(ret == -1) return;
+	// Process events
+	if(input_poll()) return;
+
+	// Process input
+	if(game_input(game_v)) return;
+
+	// Tick
+	if(gameloop_core(game_v) == -1 && gameloop_core(game_m) == -1) return;
+
 	emscripten_cancel_main_loop();
 }
 #endif
@@ -916,66 +915,113 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 #endif
 
 	// Create game
-	if(rootgame != NULL) { game_free(rootgame); rootgame = NULL; }
-	rootgame = game_new(net_mode);
-	rootgame->player_count = player_count;
+	if(game_v != NULL) { game_free(game_v); game_v = NULL; }
+	if(game_m != NULL) { game_free(game_m); game_m = NULL; }
 
-	// Prepare action buffer stuff
+	// Prepare model
+	if(net_mode == NET_LOCAL || net_mode == NET_SERVER)
+	{
+		game_m = game_new(NET_SERVER);
+		assert(game_m != NULL);
+		game_m->player_count = player_count;
+	}
+
+	// Prepare view
 	if(net_mode == NET_LOCAL || net_mode == NET_CLIENT)
 	{
-		rootgame->ab_local = abuf_new();
-
-		if(net_mode == NET_LOCAL)
-		{
-			rootgame->ab_local->loc_chain = rootgame->ab_local;
-
-		} else {
-			rootgame->ab_local->sock = sock;
-			rootgame->ab_local->sset = SDLNet_AllocSocketSet(1);
-			SDLNet_AddSocket(rootgame->ab_local->sset, (void *)rootgame->ab_local->sock);
-
-		}
+		game_v = game_new(NET_CLIENT);
+		assert(game_v != NULL);
+		// TODO: sync crap
+		game_v->player_count = player_count;
 	}
 
-	if(net_mode == NET_SERVER)
+	// Prepare action buffer stuff
+	if(game_v != NULL)
 	{
-		rootgame->ab_local = abuf_new();
-		rootgame->ab_local->sock = sock;
+		game_v->ab_local = abuf_new();
 
-		/*
-		for(i = 0; i < player_count; i++)
+		if(net_mode != NET_LOCAL)
 		{
-			rootgame->ab_teams[i] = abuf_new();
+			game_v->ab_local->sock = sock;
+			game_v->ab_local->sset = SDLNet_AllocSocketSet(1);
+			SDLNet_AddSocket(game_v->ab_local->sset, (void *)game_v->ab_local->sock);
+
 		}
-		*/
 	}
 
-	// Load level
-	//printf("loading level\n");
-	rootgame->lv = level_load(fname);
-	assert(rootgame->lv != NULL); // TODO: Be more graceful
-	rootgame->lv->game = rootgame;
-
-	// Remove excess players
-	for(i = 0; i < rootgame->lv->ocount; i++)
+	if(game_m != NULL)
 	{
-		if(i < 0) continue;
-
-		ob = rootgame->lv->objects[i];
-
-		if(ob->f.otyp == OBJ_PLAYER
-			&& ((struct fd_player *)(ob->f.fd))->team >= player_count)
+		game_m->ab_local = abuf_new();
+		if(net_mode != NET_LOCAL)
 		{
-			i -= level_obj_free(rootgame->lv, ob);
+			game_m->ab_local->sock = sock;
 		}
 	}
 
-	// Set "playing" state
-	rootgame->main_state = GAME_PLAYING;
+	if(net_mode == NET_LOCAL)
+	{
+		assert(game_v != NULL && game_m != NULL);
+		game_v->ab_local->loc_chain = game_m->ab_local;
+		game_m->ab_local->loc_chain = game_v->ab_local;
+	}
 
-	// Start turn
-	//printf("starting turn!\n");
-	gameloop_start_turn(rootgame);
+	if(game_m != NULL)
+	{
+		// Load level
+		//printf("loading level\n");
+		game_m->lv = level_load(fname);
+		assert(game_m->lv != NULL); // TODO: Be more graceful
+		game_m->lv->game = game_m;
+
+		// Remove excess players
+		for(i = 0; i < game_m->lv->ocount; i++)
+		{
+			if(i < 0) continue;
+
+			ob = game_m->lv->objects[i];
+
+			if(ob->f.otyp == OBJ_PLAYER
+				&& ((struct fd_player *)(ob->f.fd))->team >= player_count)
+			{
+				i -= level_obj_free(game_m->lv, ob);
+			}
+		}
+
+		game_m->main_state = GAME_PLAYING;
+
+		// Start turn
+		//printf("starting turn!\n");
+		gameloop_start_turn(game_m);
+	}
+
+	if(game_v != NULL)
+	{
+		// TODO: load this from the server
+		game_v->lv = level_load(fname);
+		assert(game_v->lv != NULL); // TODO: Be more graceful
+		game_v->lv->game = game_v;
+
+		// Remove excess players
+		for(i = 0; i < game_v->lv->ocount; i++)
+		{
+			if(i < 0) continue;
+
+			ob = game_v->lv->objects[i];
+
+			if(ob->f.otyp == OBJ_PLAYER
+				&& ((struct fd_player *)(ob->f.fd))->team >= player_count)
+			{
+				i -= level_obj_free(game_v->lv, ob);
+			}
+		}
+
+		// Set "playing" state
+		game_v->main_state = GAME_PLAYING;
+
+		// Start turn
+		//printf("starting turn!\n");
+		gameloop_start_turn(game_v);
+	}
 
 #ifdef __EMSCRIPTEN__
 	//printf("inf loop begin\n");
@@ -984,9 +1030,17 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 #else
 	for(;;)
 	{
-		int ret = gameloop_core(rootgame);
-		if(ret == -1) continue;
-		return 0;
+		// Draw
+		gameloop_draw(game_v);
+
+		// Process events
+		if(input_poll()) return 0;
+
+		// Process input
+		if(game_input(game_v)) return 0;
+
+		if(gameloop_core(game_m) != -1) return 0;
+		if(gameloop_core(game_v) != -1) return 0;
 	}
 #endif
 

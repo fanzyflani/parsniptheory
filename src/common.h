@@ -331,6 +331,7 @@ struct game
 
 	int time_now;
 	int time_next;
+	int tick_next_pulse;
 
 	abuf_t *ab_local;
 	abuf_t *ab_teams[TEAM_MAX];
@@ -362,6 +363,12 @@ void abuf_write_block(const void *buf, int len, abuf_t *ab);
 void abuf_poll_write(abuf_t *ab);
 void abuf_poll_read(abuf_t *ab);
 void abuf_poll(abuf_t *ab);
+void abuf_bc_u8(uint8_t v, game_t *game);
+void abuf_bc_s8(int8_t v, game_t *game);
+void abuf_bc_u16(uint16_t v, game_t *game);
+void abuf_bc_s16(int16_t v, game_t *game);
+void abuf_bc_block(const void *buf, int len, game_t *game);
+int abuf_bc_get_wspace(game_t *game);
 
 // cdefs.c
 extern cell_file_t *ce_defaults[];
