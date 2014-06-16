@@ -406,23 +406,37 @@ void game_handle_newturn(game_t *game, abuf_t *ab, int typ, int tid, int steps_a
 
 	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
 	{
+		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
+		tid = -1;
+		steps_added = STEPS_PER_TURN;
 
 	} else if(typ == NET_S2C) {
 
 	} else return;
 
 	// Next player
-	if(!gameloop_next_turn(game))
+	if(!gameloop_next_turn(game, tid, steps_added))
 	{
 		game->main_state = GAME_OVER;
-	}
+		printf("Game over!\n");
 
-	// Broadcast
-	if(typ == NET_C2S)
-	{
-		abuf_bc_u8(ACT_NEWTURN, game);
-		abuf_bc_u8(tid, game);
-		abuf_bc_s16(steps_added, game);
+		// Broadcast
+		if(typ == NET_C2S)
+		{
+			abuf_bc_u8(ACT_NEWTURN, game);
+			abuf_bc_u8(0xFF, game);
+			abuf_bc_s16(0, game);
+		}
+
+	} else {
+
+		// Broadcast
+		if(typ == NET_C2S)
+		{
+			abuf_bc_u8(ACT_NEWTURN, game);
+			abuf_bc_u8(game->curplayer, game);
+			abuf_bc_s16(steps_added, game);
+		}
 	}
 
 }

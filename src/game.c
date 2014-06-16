@@ -88,7 +88,30 @@ game_t *game_new(int net_mode)
 
 }
 
-void gameloop_start_turn(game_t *game)
+int gameloop_player_can_play(game_t *game, int tid)
+{
+	int i;
+	obj_t *ob;
+	struct fd_player *fde;
+	int obcount = 0;
+
+	// Check if there are any player objects
+	for(i = 0; i < game->lv->ocount; i++)
+	{
+		// Get object
+		ob = game->lv->objects[i];
+		fde = (struct fd_player *)(ob->f.fd);
+		
+		// Do the compare
+		if(fde->team == tid)
+			obcount++;
+	}
+
+	return obcount > 0;
+
+}
+
+void gameloop_start_turn(game_t *game, int steps_added)
 {
 	int i;
 	obj_t *ob;
@@ -106,7 +129,7 @@ void gameloop_start_turn(game_t *game)
 		if(fde->team == game->curplayer)
 		{
 			obcount++;
-			ob->steps_left = STEPS_PER_TURN;
+			ob->steps_left = steps_added;
 			game->camx = ob->f.cx*32+16 - screen->w/2;
 			game->camy = ob->f.cy*24+12 - screen->h/2;
 
@@ -116,18 +139,11 @@ void gameloop_start_turn(game_t *game)
 		}
 	}
 
-	// Move to the next player if this fails
-	if(obcount == 0)
-	{
-		game->curplayer++;
-		if(game->curplayer >= game->settings.player_count)
-			game->curplayer = 0;
-
-		gameloop_start_turn(game);
-	}
+	// Break if this fails
+	assert(obcount != 0);
 }
 
-int gameloop_next_turn(game_t *game)
+int gameloop_next_turn(game_t *game, int tid, int steps_added)
 {
 	// Deselect object
 	game->selob = NULL;
@@ -135,16 +151,42 @@ int gameloop_next_turn(game_t *game)
 	// Take note of the current player
 	int oldcp = game->curplayer;
 
-	// Move to the next player
-	game->curplayer++;
-	if(game->curplayer >= game->settings.player_count)
-		game->curplayer = 0;
-	
-	// Start their turn
-	gameloop_start_turn(game);
+	// Check tid
+	if(tid == -1)
+	{
+		// Loop through
+		for(;;)
+		{
+			// Move to the next player
+			game->curplayer++;
+			if(game->curplayer >= game->settings.player_count)
+				game->curplayer = 0;
 
-	// If it's the same player, they've won
-	return game->curplayer != oldcp;
+			// If it's the same player, they've won
+			if(game->curplayer == oldcp)
+				return 0;
+
+			// If we can play, break out of the loop
+			if(gameloop_player_can_play(game, game->curplayer))
+				break;
+
+		}
+
+	} else if(tid == 0xFF) {
+		// Game over!
+		return 0;
+
+	} else {
+		// Set player
+		game->curplayer = tid;
+
+	}
+
+	// Start their turn
+	gameloop_start_turn(game, steps_added);
+
+	// Return
+	return 1;
 }
 
 void gameloop_draw_playing(game_t *game)
@@ -507,7 +549,8 @@ int game_tick(game_t *game)
 
 			// Start turn
 			printf("starting turn!\n");
-			gameloop_start_turn(game);
+			game->curplayer = game->settings.player_count-1;
+			gameloop_next_turn(game, -1, STEPS_PER_TURN);
 			game->main_state = GAME_PLAYING;
 			break;
 
@@ -620,7 +663,7 @@ int game_input_playing(game_t *game)
 	{
 		case SDLK_RETURN | 0x8000:
 			// Next turn!
-			game_push_newturn(game, game->ab_local, 0, STEPS_PER_TURN); // TODO: Calculate next turn player
+			game_push_newturn(game, game->ab_local, 0, STEPS_PER_TURN);
 
 			break;
 	}
@@ -718,7 +761,8 @@ int gameloop_core(game_t *game)
 	}
 
 	// Update mouse stuff (if not locked)
-	if(game->ab_local->state == CLIENT_UNLOCKED)
+	// TODO? Properly do the lock state stuff?
+	//if(game->ab_local->state == CLIENT_UNLOCKED)
 	{
 		game->mx = mouse_x;
 		game->my = mouse_y;

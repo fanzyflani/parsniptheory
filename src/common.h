@@ -280,7 +280,7 @@ enum
 	ACT_LOCK, // S->C ()
 	ACT_UNLOCK, // S->C ()
 
-	ACT_NEWTURN, // BIDI (u8 player (ignored C->S), u16 steps_added (ignored C->S))
+	ACT_NEWTURN, // BIDI (u8 player (ignored C->S, 0xFF = game over)), u16 steps_added (ignored C->S))
 	ACT_MOVE, // BIDI (s16 sx, s16 sy, s16 dx, s16 dy, u16 steps_used, u16 steps_left)
 	ACT_ATTACK, // BIDI (s16 sx, s16 sy, s16 dx, s16 dy, u16 steps_used, u16 steps_left)
 
@@ -445,8 +445,9 @@ int editloop(void);
 extern game_t *game_m;
 extern game_t *game_v;
 void game_free(game_t *game);
-void gameloop_start_turn(game_t *game);
-int gameloop_next_turn(game_t *game);
+int gameloop_player_can_play(game_t *game, int tid);
+void gameloop_start_turn(game_t *game, int steps_added);
+int gameloop_next_turn(game_t *game, int tid, int steps_added);
 int gameloop(int net_mode, TCPsocket sock);
 
 // gui.c
