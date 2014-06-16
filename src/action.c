@@ -23,10 +23,9 @@ abuf_t *abuf_new(void)
 	ab->sock = NULL;
 	ab->sset = NULL;
 	ab->loc_chain = NULL;
-	ab->f_cont = NULL;
 	ab->rsize = 0;
 	ab->wsize = 0;
-	ab->state = STATE_GIVEVER;
+	ab->state = CLIENT_WAITVER;
 
 	// Return
 	return ab;

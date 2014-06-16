@@ -42,12 +42,11 @@ game_t *game_new(int net_mode)
 	game->my = 121;
 	game->cmx = 161/32;
 	game->cmy = 121/24;
-	game->player_count = 0;
+	game->settings.player_count = 0;
 	game->curplayer = 0;
 	game->main_state = GAME_SETUP;
 	game->net_mode = net_mode;
 	game->curtick = 0;
-	game->locked = 1;
 
 	game->time_now = game->time_next = SDL_GetTicks();
 
@@ -59,7 +58,7 @@ game_t *game_new(int net_mode)
 
 }
 
-static void gameloop_start_turn(game_t *game)
+void gameloop_start_turn(game_t *game)
 {
 	int i;
 	obj_t *ob;
@@ -91,14 +90,14 @@ static void gameloop_start_turn(game_t *game)
 	if(obcount == 0)
 	{
 		game->curplayer++;
-		if(game->curplayer >= game->player_count)
+		if(game->curplayer >= game->settings.player_count)
 			game->curplayer = 0;
 
 		gameloop_start_turn(game);
 	}
 }
 
-static int gameloop_next_turn(game_t *game)
+int gameloop_next_turn(game_t *game)
 {
 	// Deselect object
 	game->selob = NULL;
@@ -108,7 +107,7 @@ static int gameloop_next_turn(game_t *game)
 
 	// Move to the next player
 	game->curplayer++;
-	if(game->curplayer >= game->player_count)
+	if(game->curplayer >= game->settings.player_count)
 		game->curplayer = 0;
 	
 	// Start their turn
@@ -118,463 +117,11 @@ static int gameloop_next_turn(game_t *game)
 	return game->curplayer != oldcp;
 }
 
-void game_handle_version(game_t *game, abuf_t *ab, int typ, int ver)
-{
-	// TODO
-}
-
-void game_handle_quit(game_t *game, abuf_t *ab, int typ)
-{
-	// TODO
-}
-
-void game_handle_text(game_t *game, abuf_t *ab, int typ, int len, char *buf)
-{
-	// TODO
-}
-
-void game_handle_lock(game_t *game, abuf_t *ab, int typ)
-{
-	// TODO
-}
-
-void game_handle_unlock(game_t *game, abuf_t *ab, int typ)
-{
-	// TODO
-}
-
-void game_handle_newturn(game_t *game, abuf_t *ab, int typ, int tid, int steps_added)
-{
-	int i;
-
-	assert(typ == NET_C2S || typ == NET_S2C);
-
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
-	{
-
-	} else if(typ == NET_S2C) {
-
-	} else return;
-
-	// Next player
-	if(!gameloop_next_turn(game))
-	{
-		game->main_state = GAME_OVER;
-	}
-
-	// Broadcast
-	if(typ == NET_C2S)
-	{
-		abuf_bc_u8(ACT_NEWTURN, game);
-		abuf_bc_u8(tid, game);
-		abuf_bc_s16(steps_added, game);
-	}
-
-}
-
-void game_handle_move(game_t *game, abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int steps_used, int steps_left)
-{
-	cell_t *ce, *dce;
-	int i;
-
-	assert(typ == NET_C2S || typ == NET_S2C);
-
-	ce = layer_cell_ptr(game->lv->layers[0], sx, sy);
-	dce = layer_cell_ptr(game->lv->layers[0], dx, dy);
-
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
-	{
-		if(!(ce != NULL)) return;
-		if(!(ce->ob != NULL)) return;
-		if(!(dce != NULL)) return;
-		if(!(dce->ob == NULL)) return;
-
-	} else if(typ == NET_S2C) {
-		assert(ce != NULL);
-		assert(ce->ob != NULL);
-		assert(dce != NULL);
-		assert(dce->ob == NULL);
-
-	} else return;
-
-	// Move it
-	ce->ob->tx = dx;
-	ce->ob->ty = dy;
-
-	// Destroy the old list
-	if(ce->ob->asdir != NULL)
-	{
-		free(ce->ob->asdir);
-		ce->ob->asdir = NULL;
-	}
-
-	// Mark it as "please wait"
-	ce->ob->please_wait = 1;
-
-	// Broadcast
-	if(typ == NET_C2S)
-	{
-		abuf_bc_u8(ACT_MOVE, game);
-		abuf_bc_s16(sx, game);
-		abuf_bc_s16(sy, game);
-		abuf_bc_s16(dx, game);
-		abuf_bc_s16(dy, game);
-		abuf_bc_u16(steps_used, game);
-		abuf_bc_u16(steps_left, game);
-	}
-
-	// TODO: Lock this
-}
-
-void game_handle_attack(game_t *game, abuf_t *ab, int typ, int sx, int sy, int dx, int dy, int steps_used, int steps_left)
-{
-	int i;
-	cell_t *ce, *dce;
-
-	assert(typ == NET_C2S || typ == NET_S2C);
-
-	ce = layer_cell_ptr(game->lv->layers[0], sx, sy);
-	dce = layer_cell_ptr(game->lv->layers[0], dx, dy);
-
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
-	{
-		if(!(ce != NULL)) return;
-		if(!(ce->ob != NULL)) return;
-		if(!(dce != NULL)) return;
-
-	} else if(typ == NET_S2C) {
-		assert(ce != NULL);
-		assert(ce->ob != NULL);
-		assert(dce != NULL);
-
-	} else return;
-
-	// Fire an attack
-	ce->ob->tx = dx;
-	ce->ob->ty = dy;
-
-	// Destroy the old list
-	if(ce->ob->asdir != NULL)
-	{
-		free(ce->ob->asdir);
-		ce->ob->asdir = NULL;
-	}
-
-	// Mark it as "please wait"
-	ce->ob->please_wait = 1;
-
-	// Broadcast
-	if(typ == NET_C2S)
-	{
-		abuf_bc_u8(ACT_ATTACK, game);
-		abuf_bc_s16(sx, game);
-		abuf_bc_s16(sy, game);
-		abuf_bc_s16(dx, game);
-		abuf_bc_s16(dy, game);
-		abuf_bc_u16(steps_used, game);
-		abuf_bc_u16(steps_left, game);
-	}
-
-	// TODO: Lock this
-}
-
-void game_handle_select(game_t *game, abuf_t *ab, int typ, int cx, int cy)
-{
-	int i;
-
-	cell_t *ce;
-
-	assert(typ == NET_C2S || typ == NET_S2C);
-
-	ce = layer_cell_ptr(game->lv->layers[0], cx, cy);
-
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
-	{
-		if(!(ce != NULL)) return;
-		if(!(ce->ob != NULL)) return;
-
-	} else if(typ == NET_S2C) {
-		assert(ce != NULL);
-		assert(ce->ob != NULL);
-
-	} else return;
-
-	// Select
-	game->selob = ce->ob;
-
-	// Broadcast
-	if(typ == NET_C2S)
-	{
-		abuf_bc_u8(ACT_SELECT, game);
-		abuf_bc_s16(cx, game);
-		abuf_bc_s16(cy, game);
-	}
-
-}
-
-void game_handle_deselect(game_t *game, abuf_t *ab, int typ)
-{
-	int i;
-
-	assert(typ == NET_C2S || typ == NET_S2C);
-
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
-	{
-		//
-
-	} else if(typ == NET_S2C) {
-		//
-
-	} else return;
-
-	// Deselect
-	game->selob = NULL;
-
-	// Broadcast
-	if(typ == NET_C2S)
-	{
-		abuf_bc_u8(ACT_DESELECT, game);
-	}
-}
-
-void game_handle_hover(game_t *game, abuf_t *ab, int typ, int mx, int my, int camx, int camy)
-{
-	// TODO
-}
-
-void game_push_end_turn(game_t *game, abuf_t *ab)
-{
-	// TODO
-}
-
-void game_push_hover(game_t *game, abuf_t *ab, int mx, int my, int camx, int camy)
-{
-	// TODO!
-}
-
-void game_push_newturn(game_t *game, abuf_t *ab, int tid, int steps_added)
-{
-	// Next turn!
-	abuf_write_u8(ACT_NEWTURN, ab);
-	abuf_write_u8(tid, ab);
-	abuf_write_u16(steps_added, ab);
-
-}
-
-void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int camy, int button)
-{
-	cell_t *ce;
-	cell_t *dce;
-	int mx, my;
-
-	// Get coordinates
-	mx = (rmx + camx)/32;
-	my = (rmy + camy)/24;
-	ce = layer_cell_ptr(game->lv->layers[0], mx, my);
-
-	// Object select
-	if(button == 0)
-	{
-		if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
-			&& ((struct fd_player *)(ce->ob->f.fd))->team == game->curplayer)
-		{
-			// Select object
-			abuf_write_u8(ACT_SELECT, ab);
-			abuf_write_s16(mx, ab);
-			abuf_write_s16(my, ab);
-
-		} else {
-			// Deselect objects
-			// TODO: Send
-			abuf_write_u8(ACT_DESELECT, ab);
-			//game_handle_deselect(game, ab, NET_S2C);
-
-		}
-	}
-
-	// Object move / attack
-	else if(button == 2)
-	{
-		// Check if we have an object selected
-
-		if(game->selob != NULL)
-		{
-			// Check destination
-			dce = layer_cell_ptr(game->lv->layers[0], mx, my);
-
-			if(dce != NULL && dce->ob == NULL)
-			{
-				// Move it
-				abuf_write_u8(ACT_MOVE, ab);
-				abuf_write_s16(game->selob->f.cx, ab);
-				abuf_write_s16(game->selob->f.cy, ab);
-				abuf_write_s16(mx, ab);
-				abuf_write_s16(my, ab);
-				abuf_write_u16(0, ab);
-				abuf_write_u16(game->selob->steps_left, ab);
-				
-				//game_handle_move(game, ab, NET_S2C, game->selob->f.cx, game->selob->f.cy, mx, my,
-				//	0, game->selob->steps_left);
-			} else if(dce != NULL) {
-				// Attack it
-				abuf_write_u8(ACT_ATTACK, ab);
-				abuf_write_s16(game->selob->f.cx, ab);
-				abuf_write_s16(game->selob->f.cy, ab);
-				abuf_write_s16(mx, ab);
-				abuf_write_s16(my, ab);
-				abuf_write_u16(0, ab);
-				abuf_write_u16(game->selob->steps_left, ab);
-
-				//game_handle_attack(game, ab, NET_S2C, game->selob->f.cx, game->selob->f.cy, mx, my,
-				//	0, game->selob->steps_left);
-
-			}
-
-		}
-
-	}
-}
-
-int game_parse_actions(game_t *game, abuf_t *ab, int typ)
-{
-	// Make sure we have a byte
-	char buf[257];
-	int ver, len, tid;
-	int steps_added;
-	int steps_used;
-	int steps_left;
-	int sx, sy, dx, dy;
-	int cx, cy, mx, my, camx, camy;
-
-	int bsiz = abuf_get_rsize(ab);
-	if(bsiz < 1) return 0;
-	//printf("msg %02X\n", ab->rdata[0]);
-	bsiz--;
-
-	switch(ab->rdata[0])
-	{
-		case ACT_NOP:
-			if(bsiz < 0) return 0;
-			abuf_read_u8(ab);
-			return 1;
-
-		case ACT_VERSION:
-			if(bsiz < 1) return 0;
-			abuf_read_u8(ab);
-			ver = abuf_read_u8(ab);
-			game_handle_version(game, ab, typ, ver);
-			return 1;
-
-		case ACT_QUIT:
-			abuf_read_u8(ab);
-			len = (bsiz < 1 ? 0 : abuf_read_u8(ab));
-			abuf_read_block(buf, (bsiz-1 < len ? bsiz-1 : len), ab);
-			buf[bsiz] = '\x00';
-			printf("QUIT received: \"%s\"\n", buf);
-			game_handle_quit(game, ab, typ);
-			return 1;
-
-		case ACT_TEXT:
-			if(bsiz < 1) return 0;
-			if(bsiz < 1+(int)(ab->rdata[1])) return 0;
-			abuf_read_u8(ab);
-			len = abuf_read_u8(ab);
-			abuf_read_block(buf, len, ab);
-			buf[bsiz] = '\x00';
-			printf("text received: \"%s\"\n", buf);
-			game_handle_text(game, ab, typ, len, buf);
-			return 1;
-
-		// ACT_MAPBEG
-		// ACT_MAPDATA
-		// ACT_MAPEND
-
-		case ACT_LOCK:
-			if(bsiz < 0) return 0;
-			abuf_read_u8(ab);
-			game_handle_lock(game, ab, typ);
-			return 1;
-
-		case ACT_UNLOCK:
-			if(bsiz < 0) return 0;
-			abuf_read_u8(ab);
-			game_handle_unlock(game, ab, typ);
-			return 1;
-
-		case ACT_NEWTURN:
-			if(bsiz < 3) return 0;
-			abuf_read_u8(ab);
-			tid = abuf_read_u8(ab);
-			steps_added = abuf_read_u16(ab);
-			game_handle_newturn(game, ab, typ, tid, steps_added);
-			return 1;
-
-		case ACT_MOVE:
-			if(bsiz < 12) return 0;
-			abuf_read_u8(ab);
-			sx = abuf_read_s16(ab);
-			sy = abuf_read_s16(ab);
-			dx = abuf_read_s16(ab);
-			dy = abuf_read_s16(ab);
-			steps_used = abuf_read_u16(ab);
-			steps_left = abuf_read_u16(ab);
-			game_handle_move(game, ab, typ, sx, sy, dx, dy, steps_used, steps_left);
-			return 1;
-
-		case ACT_ATTACK:
-			if(bsiz < 12) return 0;
-			abuf_read_u8(ab);
-			sx = abuf_read_s16(ab);
-			sy = abuf_read_s16(ab);
-			dx = abuf_read_s16(ab);
-			dy = abuf_read_s16(ab);
-			steps_used = abuf_read_u16(ab);
-			steps_left = abuf_read_u16(ab);
-			game_handle_attack(game, ab, typ, sx, sy, dx, dy, steps_used, steps_left);
-			return 1;
-
-		case ACT_SELECT:
-			if(bsiz < 4) return 0;
-			abuf_read_u8(ab);
-			cx = abuf_read_s16(ab);
-			cy = abuf_read_s16(ab);
-			game_handle_select(game, ab, typ, cx, cy);
-			return 1;
-
-		case ACT_DESELECT:
-			if(bsiz < 0) return 0;
-			abuf_read_u8(ab);
-			game_handle_deselect(game, ab, typ);
-			return 1;
-
-		case ACT_HOVER:
-			if(bsiz < 8) return 0;
-			abuf_read_u8(ab);
-			mx = abuf_read_s16(ab);
-			my = abuf_read_s16(ab);
-			camx = abuf_read_s16(ab);
-			camy = abuf_read_s16(ab);
-			game_handle_hover(game, ab, typ, mx, my, camx, camy);
-			return 1;
-
-		default:
-			printf("FIXME: handle invalid packet %i\n", ab->rdata[0]);
-			fflush(stdout);
-			abort();
-			break;
-
-	}
-
-}
-
-void gameloop_draw(game_t *game)
+void gameloop_draw_playing(game_t *game)
 {
 	int x, y, i;
 	obj_t *ob;
 	cell_t *ce;
-
-	// Clear the screen
-	screen_clear(0);
 
 	// Draw level
 	draw_level(screen, game->lv, game->camx, game->camy, 0);
@@ -733,7 +280,28 @@ void gameloop_draw(game_t *game)
 	if(game->selob != NULL)
 		draw_printf(screen, i_font16, 16, 32, 16, 1, "STEPS %i", game->selob->steps_left);
 
-	// TODO!
+
+}
+
+void gameloop_draw(game_t *game)
+{
+	// Clear the screen
+	screen_clear(0);
+
+	// Check game mode
+	switch(game->main_state)
+	{
+		case GAME_WAIT_PLAY:
+		case GAME_PLAYING:
+			gameloop_draw_playing(game);
+			break;
+
+		default:
+			draw_printf(screen, i_font16, 16, 0, 0, 1, "STATE %i", game->main_state);
+			break;
+			
+	}
+	
 
 	// Flip
 	screen_flip();
@@ -743,14 +311,22 @@ void gameloop_draw(game_t *game)
 
 }
 
-int game_tick(game_t *game)
+int game_tick_login0(game_t *game)
+{
+	// Check to see if we've sent what we have to
+	if(game->ab_local->state == CLIENT_WAITVER)
+	{
+		game_push_version(game, game->ab_local, NET_VERSION);
+		game->ab_local->state = CLIENT_WAITVERREPLY;
+	}
+
+	return 0;
+}
+
+int game_tick_playing(game_t *game)
 {
 	int i;
 	obj_t *ob;
-
-	// Check if game over
-	if(game->main_state == GAME_OVER)
-		return 2;
 
 	// Get coordinates
 	game->cmx = (game->mx + game->camx)/32;
@@ -758,6 +334,7 @@ int game_tick(game_t *game)
 	//ce = layer_cell_ptr(game->lv->layers[0], mx, my);
 
 	// Tick objects
+	if(game->lv != NULL)
 	for(i = 0; i < game->lv->ocount; i++)
 	{
 		ob = game->lv->objects[i];
@@ -771,10 +348,38 @@ int game_tick(game_t *game)
 	}
 
 	// Update UI
-	if(game->mx < (screen->w>>3)) game->camx -= 4;
-	if(game->my < (screen->h>>3)) game->camy -= 4;
-	if(game->mx >= ((screen->w*7)>>3)) game->camx += 4;
-	if(game->my >= ((screen->h*7)>>3)) game->camy += 4;
+	if(game->net_mode != NET_SERVER )
+	{
+		if(game->mx < (screen->w>>3)) game->camx -= 4;
+		if(game->my < (screen->h>>3)) game->camy -= 4;
+		if(game->mx >= ((screen->w*7)>>3)) game->camx += 4;
+		if(game->my >= ((screen->h*7)>>3)) game->camy += 4;
+	}
+
+	return 0;
+}
+
+int game_tick(game_t *game)
+{
+	// Check if game over
+	if(game->main_state == GAME_OVER)
+		return 2;
+
+	switch(game->main_state)
+	{
+		case GAME_LOGIN0:
+			return game_tick_login0(game);
+
+		case GAME_WAIT_PLAY:
+		case GAME_PLAYING:
+			return game_tick_playing(game);
+			break;
+
+		default:
+			// TODO!
+			break;
+			
+	}
 
 	return 0;
 }
@@ -782,6 +387,8 @@ int game_tick(game_t *game)
 int game_input(game_t *game)
 {
 	// Block input if waiting for object
+	if(game->ab_local->state != CLIENT_UNLOCKED)
+		return 0;
 	if(level_obj_waiting(game->lv) != NULL)
 		return 0;
 	
@@ -809,7 +416,6 @@ int game_input(game_t *game)
 int gameloop_core(game_t *game)
 {
 	int i;
-
 
 	// Parse actions
 	assert(game->net_mode != NET_LOCAL);
@@ -869,11 +475,14 @@ int gameloop_core(game_t *game)
 
 	}
 
-	// Update mouse stuff
-	game->mx = mouse_x;
-	game->my = mouse_y;
-	game->mx = mouse_ox;
-	game->my = mouse_oy;
+	// Update mouse stuff (if not locked)
+	if(game->ab_local->state == CLIENT_UNLOCKED)
+	{
+		game->mx = mouse_x;
+		game->my = mouse_y;
+		game->mx = mouse_ox;
+		game->my = mouse_oy;
+	}
 
 	// Process ticks
 	game->time_now = SDL_GetTicks();
@@ -923,7 +532,7 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 	{
 		game_m = game_new(NET_SERVER);
 		assert(game_m != NULL);
-		game_m->player_count = player_count;
+		game_m->settings.player_count = player_count;
 	}
 
 	// Prepare view
@@ -932,7 +541,7 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 		game_v = game_new(NET_CLIENT);
 		assert(game_v != NULL);
 		// TODO: sync crap
-		game_v->player_count = player_count;
+		game_v->settings.player_count = player_count;
 	}
 
 	// Prepare action buffer stuff
@@ -952,6 +561,7 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 	if(game_m != NULL)
 	{
 		game_m->ab_local = abuf_new();
+
 		if(net_mode != NET_LOCAL)
 		{
 			game_m->ab_local->sock = sock;
@@ -987,7 +597,7 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 			}
 		}
 
-		game_m->main_state = GAME_PLAYING;
+		game_m->main_state = GAME_WAIT_PLAY;
 
 		// Start turn
 		//printf("starting turn!\n");
@@ -996,31 +606,8 @@ int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock)
 
 	if(game_v != NULL)
 	{
-		// TODO: load this from the server
-		game_v->lv = level_load(fname);
-		assert(game_v->lv != NULL); // TODO: Be more graceful
-		game_v->lv->game = game_v;
-
-		// Remove excess players
-		for(i = 0; i < game_v->lv->ocount; i++)
-		{
-			if(i < 0) continue;
-
-			ob = game_v->lv->objects[i];
-
-			if(ob->f.otyp == OBJ_PLAYER
-				&& ((struct fd_player *)(ob->f.fd))->team >= player_count)
-			{
-				i -= level_obj_free(game_v->lv, ob);
-			}
-		}
-
-		// Set "playing" state
-		game_v->main_state = GAME_PLAYING;
-
-		// Start turn
-		//printf("starting turn!\n");
-		gameloop_start_turn(game_v);
+		// Set "login" state
+		game_v->main_state = GAME_LOGIN0;
 	}
 
 #ifdef __EMSCRIPTEN__

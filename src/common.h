@@ -155,6 +155,7 @@ typedef struct obj obj_t;
 typedef struct layer layer_t;
 typedef struct level level_t;
 typedef struct game game_t;
+typedef struct game_settings game_settings_t;
 
 typedef struct cell_file
 {
@@ -281,28 +282,35 @@ enum
 
 enum
 {
-	STATE_DEAD = 0,
+	CLIENT_DEAD = 0,
 
-	STATE_GIVEVER,
-	STATE_WAITVER,
+	CLIENT_WAITVER,
+	CLIENT_WAITVERREPLY,
 
-	STATE_LOCKED,
-	STATE_UNLOCKED,
+	CLIENT_SETUP,
+
+	CLIENT_SENDMAP,
+
+	CLIENT_LOCKED,
+	CLIENT_UNLOCKED,
 };
 
 typedef struct abuf abuf_t;
 struct abuf
 {
+	// Connection stuff
 	TCPsocket sock;
 	SDLNet_SocketSet sset;
-	int state;
 	abuf_t *loc_chain;
-	void (*f_cont)(abuf_t *ab, void *ud);
 
+	// Buffer stuff
 	int rsize;
 	int wsize;
 	uint8_t rdata[ABUF_SIZE];
 	uint8_t wdata[ABUF_SIZE];
+
+	// Game control stuff
+	int state;
 };
 
 enum
@@ -310,9 +318,16 @@ enum
 	GAME_LOGIN0,
 
 	GAME_SETUP,
+	GAME_LOADING,
+	GAME_WAIT_PLAY,
 	GAME_PLAYING,
 
 	GAME_OVER,
+};
+
+struct game_settings
+{
+	int player_count;
 };
 
 struct game
@@ -321,13 +336,12 @@ struct game
 	int mx, my;
 	int cmx, cmy;
 
-	int player_count;
-	int curplayer;
+	game_settings_t settings;
 
+	int curplayer;
 	int main_state;
 	int net_mode;
 	int curtick;
-	int locked;
 
 	int time_now;
 	int time_next;
@@ -412,6 +426,8 @@ int editloop(void);
 // game.c
 extern int game_camx;
 extern int game_camy;
+void gameloop_start_turn(game_t *game);
+int gameloop_next_turn(game_t *game);
 int gameloop(const char *fname, int net_mode, int player_count, TCPsocket sock);
 
 // gui.c
@@ -438,6 +454,12 @@ void input_key_queue_push(uint32_t key);
 uint32_t input_key_queue_peek(void);
 uint32_t input_key_queue_pop(void);
 int input_poll(void);
+
+// network.c
+void game_push_version(game_t *game, abuf_t *ab, int version);
+void game_push_newturn(game_t *game, abuf_t *ab, int tid, int steps_added);
+void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int camy, int button);
+int game_parse_actions(game_t *game, abuf_t *ab, int typ);
 
 // obj.c
 void obj_free(obj_t *ob);

@@ -21,6 +21,7 @@ OBJS_COMMON = \
 	$(OBJDIR)/gui.o \
 	$(OBJDIR)/img.o \
 	$(OBJDIR)/input.o \
+	$(OBJDIR)/network.o \
 	$(OBJDIR)/obj.o \
 	$(OBJDIR)/screen.o \
 	$(OBJDIR)/server.o \
