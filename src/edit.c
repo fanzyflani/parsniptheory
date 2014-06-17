@@ -12,6 +12,8 @@ int edit_camx = 0;
 int edit_camy = 0;
 int edit_layer = 0;
 
+char edit_fname[512];
+
 void editloop_draw(void)
 {
 	int x, y;
@@ -148,6 +150,27 @@ int editloop(void)
 {
 	obj_t *ob;
 
+	// Get a filename
+	char *basename = text_dialogue("ENTER LEVEL NAME", NULL);
+	if(basename == NULL) return 0;
+	if(strlen(basename) <= 0)
+	{
+		free(basename);
+		errorloop("Type in a name!");
+		return 0;
+	}
+
+	if(strlen(basename) > 255)
+	{
+		free(basename);
+		errorloop("Level name too large");
+		return 0;
+	}
+
+	snprintf(edit_fname, 511, "lvl/%s.psl", basename);
+	free(basename);
+	edit_fname[511] = '\x00';
+
 	// Create level
 	rootlv = level_new(40, 40);
 
@@ -203,6 +226,10 @@ int editloop(void)
 				case SDLK_2:
 				case SDLK_3:
 				case SDLK_4:
+				case SDLK_5:
+				case SDLK_6:
+				case SDLK_7:
+				case SDLK_8:
 					ob = level_obj_add(rootlv, OBJ_PLAYER, 0,
 						sdiv(mouse_x + edit_camx, 32),
 						sdiv(mouse_y + edit_camy, 24),
@@ -231,7 +258,7 @@ int editloop(void)
 						// Load
 
 						printf("Loading...\n");
-						level_t *tlv = level_load("lvl/level.psl");
+						level_t *tlv = level_load(edit_fname);
 
 						if(tlv != NULL)
 						{
@@ -254,7 +281,7 @@ int editloop(void)
 						// Save
 
 						printf("Saving...\n");
-						level_save(rootlv, "lvl/level.psl");
+						level_save(rootlv, edit_fname);
 					}
 
 					break;

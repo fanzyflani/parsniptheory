@@ -447,6 +447,10 @@ int main(int argc, char *argv[])
 			gameloop(NET_LOCAL, NULL);
 			break;
 
+		case 0x101: {
+			errorloop("Not implemented yet!");
+		} break;
+
 		case 0x105: {
 			IPaddress server_ip;
 			TCPsocket server_sockfd;

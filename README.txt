@@ -23,8 +23,7 @@ Raspberry Pi users: I haven't got a build for this yet. If you really want one, 
 ----
 
 Network info:
-It's not secure, it's not well-synced, it only does 2 player at the moment, but at least the damn thing works.
-It uses TCP port 2014. Have fun.
+TCP port 2014. More robust than it was in Alpha 2. Let me know if you get any horrible desyncs. Thanks!
 
 ----
 
@@ -44,13 +43,10 @@ Editor reference:
 * Left-mouse: Set tile on level
 * Middle-mouse-drag: Scroll view
 * Right-mouse: Get tile from level
-* 1: Place player 1 spawn
-* 2: Place player 2 spawn
-* 3: Place player 3 spawn
-* 4: Place player 4 spawn
+* 1-8: Place player 1-8 spawn
 * G: Hold to show grid
 * T: Select a tile (press ESC to bail out of this)
 * Ctrl-N (Nuke): Clear ALL spawns! (Doesn't clear the tiles)
-* Ctrl-L: Load dat/level.psl
-* Ctrl-S: Save dat/level.psl
+* Ctrl-L: Load level
+* Ctrl-S: Save level
 

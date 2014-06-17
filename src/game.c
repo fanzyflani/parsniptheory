@@ -691,9 +691,13 @@ int gameloop_core(game_t *game)
 
 		case NET_SERVER: {
 			// Get client stuff
+#ifdef NO_NET
+			TCPsocket nfd = NULL;
+#else
 			TCPsocket nfd = (game->ab_local->sock == NULL
 				? NULL
 				: SDLNet_TCP_Accept(game->ab_local->sock));
+#endif
 
 			if(nfd != NULL)
 			{
@@ -754,6 +758,7 @@ int gameloop_core(game_t *game)
 	}
 
 	// Send hover events if need be
+#ifndef __EMSCRIPTEN__
 	if(game->time_now >= game->time_next_hover)
 	{
 		game->time_next_hover = game->time_now + TIME_HOVER_MS;
@@ -763,6 +768,7 @@ int gameloop_core(game_t *game)
 			game_push_hover(game, game->ab_local, game->mx, game->my, game->camx, game->camy);
 		}
 	}
+#endif
 
 	return -1;
 }
@@ -788,6 +794,8 @@ void gameloop_core_cradle(void)
 
 int gameloop(int net_mode, TCPsocket sock)
 {
+	int i;
+
 #ifdef __EMSCRIPTEN__
 	printf("game beginning\n");
 #endif
@@ -801,7 +809,9 @@ int gameloop(int net_mode, TCPsocket sock)
 	{
 		game_m = game_new(NET_SERVER);
 		assert(game_m != NULL);
-		game_m->settings.player_count = 4;
+		game_m->settings.player_count = (net_mode == NET_LOCAL
+			? 2
+			: 4);
 
 		// TODO: pick random map
 		strcpy(game_m->settings.map_name, "genesis");
@@ -843,9 +853,17 @@ int gameloop(int net_mode, TCPsocket sock)
 
 	if(net_mode == NET_LOCAL)
 	{
+		// Set up chains
 		assert(game_v != NULL && game_m != NULL);
 		game_v->ab_local->loc_chain = game_m->ab_local;
 		game_m->ab_local->loc_chain = game_v->ab_local;
+
+		// Pre-claim teams
+		for(i = 0; i < TEAM_MAX; i++)
+		{
+			game_v->claim_team[i] = 0xFE;
+			game_m->claim_team[i] = 0xFE;
+		}
 	}
 
 	if(game_m != NULL)

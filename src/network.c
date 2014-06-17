@@ -235,7 +235,8 @@ void game_handle_claim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 	if(typ == NET_C2S)
 	{
 		netid = ab->netid;
-		if(!((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF)) return;
+		//if(!((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF)) return;
+		if(!((tid >= 0 && tid < TEAM_MAX) || tid == 0xFF)) return;
 
 		// Check: To override things we have to be the admin
 		if(game->claim_admin != netid)
@@ -243,7 +244,8 @@ void game_handle_claim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 				return;
 
 	} else {
-		assert((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF);
+		//assert((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF);
+		assert((tid >= 0 && tid < TEAM_MAX) || tid == 0xFF);
 		assert((netid >= 0 && netid < TEAM_MAX) || netid == 0xFE);
 
 	}
