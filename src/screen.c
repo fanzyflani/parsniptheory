@@ -11,6 +11,17 @@ void screen_clear(uint8_t col)
 	memset(screen->data, col, screen->w * screen->h);
 }
 
+void screen_dim_halftone(void)
+{
+	int x, y;
+	uint8_t *dst;
+
+	for(y = 0; y < screen->h; y++)
+	for(dst = screen->data + screen->w*y + (y&1), x = (y&1); x < screen->w; x += 2, dst += 2)
+		*dst = 0;
+
+}
+
 static void screen_flip_32(void)
 {
 	int x, y;

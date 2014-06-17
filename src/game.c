@@ -12,6 +12,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #define SETUP_MOUSE(x,y,w,h) (mouse_x >= (x) && mouse_y >= (y) && mouse_x < (x)+(w) && mouse_y < (y)+(h) \
 	? 0 : 2)
 
+int game_pause = 0;
+
 static void game_draw_player(int x, int y, int team, int face)
 {
 	int i;
@@ -358,6 +360,13 @@ void gameloop_draw_playing(game_t *game)
 	if(game->selob != NULL)
 		draw_printf(screen, i_font16, 16, 32, 16, 1, "STEPS %i", game->selob->steps_left);
 
+	// Check if paused
+	if(game_pause)
+	{
+		screen_dim_halftone();
+		draw_printf(screen, i_font16, 16, screen->w/2-8*6, screen->h/2-8, 1, "PAUSED");
+
+	}
 
 }
 
@@ -504,6 +513,7 @@ int game_tick_playing(game_t *game)
 
 	// Update UI
 	//if(game->net_mode != NET_SERVER)
+	if(!game_pause)
 	{
 		if(game->mx < (screen->w>>3)) game->camx -= 4;
 		if(game->my < (screen->h>>3)) game->camy -= 4;
@@ -628,6 +638,21 @@ int game_input_playing(game_t *game)
 		return 0;
 	}
 
+	if(game_pause)
+	{
+		while(input_key_queue_peek() != 0)
+		switch(input_key_queue_pop()>>16)
+		{
+			case SDLK_ESCAPE | 0x8000:
+				// Unpause
+				game_pause = 0;
+
+				break;
+		}
+
+		return 0;
+	}
+
 	if(level_obj_waiting(game->lv) != NULL)
 		return 0;
 
@@ -637,6 +662,11 @@ int game_input_playing(game_t *game)
 	while(input_key_queue_peek() != 0)
 	switch(input_key_queue_pop()>>16)
 	{
+		case SDLK_ESCAPE | 0x8000:
+			// Pause
+			game_pause = 1;
+			return 0;
+
 		case SDLK_RETURN | 0x8000:
 			// Next turn!
 			game_push_newturn(game, game->ab_local, 0, STEPS_PER_TURN);
@@ -744,6 +774,7 @@ int gameloop_core(game_t *game)
 	// TODO? Properly do the lock state stuff?
 	//if(game->ab_local->state == CLIENT_UNLOCKED)
 	if(game->main_state != GAME_PLAYING || game->claim_team[game->curplayer] == game->netid)
+	if(!game_pause)
 	{
 		game->mx = mouse_x;
 		game->my = mouse_y;
@@ -803,6 +834,7 @@ int gameloop(int net_mode, TCPsocket sock)
 	// Create game
 	if(game_v != NULL) { game_free(game_v); game_v = NULL; }
 	if(game_m != NULL) { game_free(game_m); game_m = NULL; }
+	game_pause = 0;
 
 	// Prepare model
 	if(net_mode == NET_LOCAL || net_mode == NET_SERVER)

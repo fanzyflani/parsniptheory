@@ -502,6 +502,7 @@ int obj_save(FILE *fp, obj_t *ob);
 
 // screen.c
 void screen_clear(uint8_t col);
+void screen_dim_halftone(void);
 void screen_flip(void);
 
 // team.c
