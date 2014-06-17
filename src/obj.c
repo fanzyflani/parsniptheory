@@ -232,7 +232,9 @@ void obj_player_f_tick(obj_t *ob)
 
 		// Decrease steps at end
 		if(ob->f.ox == 0 && ob->f.oy == 0)
+		{
 			ob->steps_left--;
+		}
 	}
 }
 

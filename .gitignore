@@ -24,6 +24,8 @@ tga/pixra
 tga/dat/font8.tga
 crap/
 *.tmp
+svr-psl.*
+cli-psl.*
 
 # admission that i'm not actually perfect
 *.core

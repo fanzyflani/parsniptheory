@@ -5,6 +5,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
+char cli_psl_fname[2048];
+
 void game_push_version(game_t *game, abuf_t *ab, int version)
 {
 	abuf_write_u8(ACT_VERSION, ab);
@@ -351,16 +353,35 @@ void game_handle_startbutton(game_t *game, abuf_t *ab, int typ)
 		}
 
 		// Save the map to a temporary file
-		level_save(game->lv, "svr-psl.tmp");
+		//
+		// getpid(2) states:
+		// Though the ID is guaranteed to be unique, it should NOT be used for con‐
+		// structing temporary file names, for security reasons; see mkstemp(3)
+		// instead.
+		//
+		// But because Windows is a thing, I have no choice.
+#ifdef WIN32
+		sprintf(buf, "svr-psl.%i", getpid());
+#else
+		strcpy(buf, "/tmp/svr-psl.XXXXXX");
+		mktemp(buf);
+#endif
+		printf("fname \"%s\"\n", buf);
+		if(!level_save(game->lv, buf))
+		{
+			// TODO: Be more graceful
+			printf("LEVEL FAILED TO SAVE - ABORTING.\n");
+			abort();
+		}
 
 		// Reload the map
 		level_free(game->lv);
-		game->lv = level_load("svr-psl.tmp");
+		game->lv = level_load(buf);
 		assert(game->lv != NULL); // TODO: Be more graceful
 		game->lv->game = game;
 
 		// Load it as a file
-		fp = fopen("svr-psl.tmp", "rb");
+		fp = fopen(buf, "rb");
 		buf_offs = 0;
 		for(;;)
 		{
@@ -401,6 +422,11 @@ void game_handle_startbutton(game_t *game, abuf_t *ab, int typ)
 		// Free and end
 		free(mbuf);
 		abuf_bc_u8(ACT_MAPEND, game);
+
+		// Start turn
+		printf("starting turn!\n");
+		game->curplayer = game->settings.player_count-1;
+		gameloop_next_turn(game, -1, STEPS_PER_TURN);
 
 		// All sorted! Now move on.
 		game->main_state = GAME_PLAYING;
@@ -497,7 +523,13 @@ void game_handle_mapbeg(game_t *game, abuf_t *ab, int typ, int len)
 	}
 
 	// Write to temporary file
-	game->mapfp = fopen("cli-psl.tmp", "wb");
+#ifdef WIN32
+	sprintf(cli_psl_fname, "cli-psl.%i", getpid());
+#else
+	strcpy(cli_psl_fname, "/tmp/cli-psl.XXXXXX");
+	mktemp(cli_psl_fname);
+#endif
+	game->mapfp = fopen(cli_psl_fname, "wb");
 	assert(game->mapfp != NULL);
 
 }
@@ -538,8 +570,9 @@ void game_handle_mapend(game_t *game, abuf_t *ab, int typ)
 	game->mapfp = NULL;
 
 	// Load map data
-	game->lv = level_load("cli-psl.tmp");
+	game->lv = level_load(cli_psl_fname);
 	assert(game->lv != NULL); // TODO: Be more graceful
+	game->lv->game = game;
 
 	// Start turn
 	printf("starting turn!\n");
@@ -660,16 +693,19 @@ void game_handle_attack(game_t *game, abuf_t *ab, int typ, int sx, int sy, int d
 	ce = layer_cell_ptr(game->lv->layers[0], sx, sy);
 	dce = layer_cell_ptr(game->lv->layers[0], dx, dy);
 
-	if(typ == NET_C2S)// && ab == game->ab_teams[game->curplayer])
+	if(typ == NET_C2S)
 	{
+		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
 		if(!(dce != NULL)) return;
+		if(!(dce->ob != NULL)) return;
 
 	} else if(typ == NET_S2C) {
 		assert(ce != NULL);
 		assert(ce->ob != NULL);
 		assert(dce != NULL);
+		assert(dce->ob != NULL);
 
 	} else return;
 
