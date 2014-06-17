@@ -73,6 +73,7 @@ game_t *game_new(int net_mode)
 
 	game->selob = NULL;
 	game->lv = NULL;
+	game->mapfp = NULL;
 
 	// Clear action buffers
 	game->ab_local = NULL;
@@ -515,9 +516,6 @@ int game_tick_playing(game_t *game)
 
 int game_tick(game_t *game)
 {
-	int i;
-	obj_t *ob;
-	char fname[512];
 
 	// Check if game over
 	if(game->main_state == GAME_OVER)
@@ -529,36 +527,7 @@ int game_tick(game_t *game)
 			return game_tick_login0(game);
 
 		case GAME_LOADING:
-			// TODO: Actually load this from the server
-			// Load level
-			//printf("loading level\n");
-			snprintf(fname, 511, "lvl/%s.psl", game->settings.map_name);
-			game->lv = level_load(fname);
-			assert(game->lv != NULL); // TODO: Be more graceful
-			game->lv->game = game;
-
-			// Remove excess players
-			for(i = 0; i < game->lv->ocount; i++)
-			{
-				if(i < 0) continue;
-
-				ob = game->lv->objects[i];
-
-				if(ob->f.otyp == OBJ_PLAYER
-					&& (((struct fd_player *)(ob->f.fd))->team >= game->settings.player_count
-					|| game->claim_team[((struct fd_player *)(ob->f.fd))->team]==0xFF))
-				{
-					i -= level_obj_free(game->lv, ob);
-				}
-			}
-
-			// Start turn
-			printf("starting turn!\n");
-			game->curplayer = game->settings.player_count-1;
-			gameloop_next_turn(game, -1, STEPS_PER_TURN);
-			game->main_state = GAME_PLAYING;
 			break;
-
 
 		case GAME_WAIT_PLAY:
 		case GAME_PLAYING:
@@ -864,6 +833,7 @@ int gameloop(int net_mode, TCPsocket sock)
 	{
 		game_m->ab_local = abuf_new();
 		game_m->ab_local->netid = 0xFE;
+		game_m->ab_local->state = CLIENT_PORTBIND;
 
 		if(net_mode != NET_LOCAL)
 		{

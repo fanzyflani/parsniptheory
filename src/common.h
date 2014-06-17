@@ -45,13 +45,16 @@ typedef void *IPaddress;
 // Limits
 #define TEAM_MAX 128
 #define TEAM_PRACTICAL_MAX 16
-#define ABUF_SIZE 8192
+// 512KB for abuf just because we have to send maps
+#define ABUF_SIZE (1<<19)
 #define STEPS_PER_TURN 7
 #define STEPS_ATTACK 2
 #define TOMATO_SPEED 1
 #define PLAYER_HEALTH 100
 #define TIME_STEP_MS 20
 #define TIME_HOVER_MS 200
+#define MAP_BUFFER_SIZE 2048
+#define MAP_BUFFER_SEND 2048
 
 // Versions
 #define MAP_FVERSION 1
@@ -274,7 +277,7 @@ enum
 	ACT_UNCLAIM, // BIDI (u8 netid, u8 team (0xFF == actually unclaim admin status))
 	ACT_STARTBUTTON, // BIDI ()
 
-	ACT_MAPBEG, // S->C ()
+	ACT_MAPBEG, // S->C (u16 len_lo, u8 len_hi (len = len_lo + (len_hi<<16)))
 	ACT_MAPDATA, // S->C (u16 len, u8 data[len])
 	ACT_MAPEND, // S->C ()
 
@@ -295,6 +298,8 @@ enum
 enum
 {
 	CLIENT_DEAD = 0,
+
+	CLIENT_PORTBIND,
 
 	CLIENT_WAITVER,
 	CLIENT_WAITVERREPLY,
@@ -372,6 +377,7 @@ struct game
 
 	obj_t *selob;
 	level_t *lv;
+	FILE *mapfp;
 };
 
 // other includes

@@ -23,9 +23,11 @@ rel/
 tga/pixra
 tga/dat/font8.tga
 crap/
+*.tmp
 
 # admission that i'm not actually perfect
 *.core
+vgcore.*
 
 # windows build crap
 winlibs/

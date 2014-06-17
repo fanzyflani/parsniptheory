@@ -294,6 +294,14 @@ void game_handle_unclaim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 
 void game_handle_startbutton(game_t *game, abuf_t *ab, int typ)
 {
+	char buf[MAP_BUFFER_SIZE];
+	char *mbuf = NULL;
+	int buf_offs;
+	int i;
+	int len;
+	FILE *fp;
+	obj_t *ob;
+
 	assert(typ == NET_C2S || typ == NET_S2C);
 
 	if(typ == NET_C2S)
@@ -316,6 +324,86 @@ void game_handle_startbutton(game_t *game, abuf_t *ab, int typ)
 	if(typ == NET_C2S)
 	{
 		abuf_bc_u8(ACT_STARTBUTTON, game);
+
+		// Also relay the map stuff
+		// But first we have to load it!
+
+		// Load level
+		//printf("loading level\n");
+		snprintf(buf, 511, "lvl/%s.psl", game->settings.map_name);
+		game->lv = level_load(buf);
+		assert(game->lv != NULL); // TODO: Be more graceful
+		game->lv->game = game;
+
+		// Remove excess players
+		for(i = 0; i < game->lv->ocount; i++)
+		{
+			if(i < 0) continue;
+
+			ob = game->lv->objects[i];
+
+			if(ob->f.otyp == OBJ_PLAYER
+				&& (((struct fd_player *)(ob->f.fd))->team >= game->settings.player_count
+				|| game->claim_team[((struct fd_player *)(ob->f.fd))->team]==0xFF))
+			{
+				i -= level_obj_free(game->lv, ob);
+			}
+		}
+
+		// Save the map to a temporary file
+		level_save(game->lv, "svr-psl.tmp");
+
+		// Reload the map
+		level_free(game->lv);
+		game->lv = level_load("svr-psl.tmp");
+		assert(game->lv != NULL); // TODO: Be more graceful
+		game->lv->game = game;
+
+		// Load it as a file
+		fp = fopen("svr-psl.tmp", "rb");
+		buf_offs = 0;
+		for(;;)
+		{
+			len = fread(buf, 1, MAP_BUFFER_SEND, fp);
+			assert(len >= 0); // TODO: Be more graceful
+			if(len == 0) break;
+			mbuf = realloc(mbuf, buf_offs + len);
+			memcpy(mbuf + buf_offs, buf, len);
+			buf_offs += len;
+		}
+		fclose(fp);
+
+		// Now send the map
+		len = buf_offs;
+		assert(len <= 0xFFFFFF);
+		abuf_bc_u8(ACT_MAPBEG, game);
+		abuf_bc_u16(len & 0xFFFF, game);
+		abuf_bc_u8((len>>16) & 0xFFFF, game);
+
+		buf_offs = 0;
+		while(buf_offs < len)
+		{
+			abuf_bc_u8(ACT_MAPDATA, game);
+			if(len - buf_offs >= MAP_BUFFER_SEND)
+			{
+				abuf_bc_u16(MAP_BUFFER_SEND, game);
+				abuf_bc_block(mbuf + buf_offs, MAP_BUFFER_SEND, game);
+				buf_offs += MAP_BUFFER_SEND;
+
+			} else {
+				abuf_bc_u16(len - buf_offs, game);
+				abuf_bc_block(mbuf + buf_offs, len - buf_offs, game);
+				break;
+
+			}
+		}
+
+		// Free and end
+		free(mbuf);
+		abuf_bc_u8(ACT_MAPEND, game);
+
+		// All sorted! Now move on.
+		game->main_state = GAME_PLAYING;
 	}
 
 }
@@ -393,6 +481,71 @@ void game_handle_settings(game_t *game, abuf_t *ab, int typ, int player_count, c
 				game_push_settings(game, game->ab_teams[i], &(game->settings));
 	}
 
+}
+
+void game_handle_mapbeg(game_t *game, abuf_t *ab, int typ, int len)
+{
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	if(typ == NET_C2S)
+	{
+		return;
+
+	} else {
+		assert(game->mapfp == NULL);
+
+	}
+
+	// Write to temporary file
+	game->mapfp = fopen("cli-psl.tmp", "wb");
+	assert(game->mapfp != NULL);
+
+}
+
+void game_handle_mapdata(game_t *game, abuf_t *ab, int typ, int len, const char *data)
+{
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	if(typ == NET_C2S)
+	{
+		return;
+
+	} else {
+		assert(game->mapfp != NULL);
+
+	}
+
+	// Write data
+	int wlen = fwrite(data, len, 1, game->mapfp);
+	assert(wlen == 1);
+}
+
+void game_handle_mapend(game_t *game, abuf_t *ab, int typ)
+{
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	if(typ == NET_C2S)
+	{
+		return;
+
+	} else {
+		assert(game->mapfp != NULL);
+
+	}
+
+	// Close mapfp
+	fclose(game->mapfp);
+	game->mapfp = NULL;
+
+	// Load map data
+	game->lv = level_load("cli-psl.tmp");
+	assert(game->lv != NULL); // TODO: Be more graceful
+
+	// Start turn
+	printf("starting turn!\n");
+	game->curplayer = game->settings.player_count-1;
+	gameloop_next_turn(game, -1, STEPS_PER_TURN);
+	game->main_state = GAME_PLAYING;
 }
 
 void game_handle_lock(game_t *game, abuf_t *ab, int typ)
@@ -640,7 +793,7 @@ void game_handle_hover(game_t *game, abuf_t *ab, int typ, int mx, int my, int ca
 int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 {
 	// Make sure we have a byte
-	char buf[257];
+	char buf[MAP_BUFFER_SIZE+1];
 	int ver, len, tid;
 	int netid;
 	int player_count;
@@ -729,9 +882,29 @@ int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 			game_handle_startbutton(game, ab, typ);
 			return 1;
 
-		// ACT_MAPBEG
-		// ACT_MAPDATA
-		// ACT_MAPEND
+		case ACT_MAPBEG:
+			if(bsiz < 3) return 0;
+			abuf_read_u8(ab);
+			len = abuf_read_u16(ab);
+			len += ((int)abuf_read_u8(ab))<<16;
+			game_handle_mapbeg(game, ab, typ, len);
+			return 1;
+
+		case ACT_MAPDATA:
+			if(bsiz < 2) return 0;
+			if(bsiz < 2+((int)ab->rdata[1])+(256*(int)ab->rdata[2])) return 0;
+			abuf_read_u8(ab);
+			len = abuf_read_u16(ab);
+			assert(len <= MAP_BUFFER_SIZE);
+			abuf_read_block(buf, len, ab);
+			game_handle_mapdata(game, ab, typ, len, buf);
+			return 1;
+
+		case ACT_MAPEND:
+			if(bsiz < 0) return 0;
+			abuf_read_u8(ab);
+			game_handle_mapend(game, ab, typ);
+			return 1;
 
 		case ACT_LOCK:
 			if(bsiz < 0) return 0;
