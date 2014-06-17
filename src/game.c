@@ -575,7 +575,29 @@ int game_input_setup(game_t *game)
 			// Map select
 			if(game->claim_admin == game->netid)
 			{
-				// TODO!
+				// Get a filename
+				char *basename = text_dialogue("ENTER LEVEL NAME", NULL);
+				char oldname[257];
+				if(basename == NULL) return 0;
+				if(strlen(basename) <= 0)
+				{
+					free(basename);
+					errorloop("Type in a name!");
+					return 0;
+				}
+
+				if(strlen(basename) > 255)
+				{
+					free(basename);
+					errorloop("Level name too large");
+					return 0;
+				}
+
+				strcpy(oldname, game->settings.map_name);
+				strcpy(game->settings.map_name, basename);
+				free(basename);
+				game_push_settings(game, game->ab_local, &(game->settings));
+				strcpy(game->settings.map_name, oldname);
 
 			}
 
@@ -854,7 +876,6 @@ int gameloop(int net_mode, TCPsocket sock)
 	{
 		game_v = game_new(NET_CLIENT);
 		assert(game_v != NULL);
-		// TODO: sync crap
 	}
 
 	// Prepare action buffer stuff
