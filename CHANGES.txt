@@ -1,5 +1,10 @@
 Changelog:
 
+Alpha 3:
+* Better networking support
+* Nice game setup menu thing
+* Added "layer8" map
+
 Alpha 2:
 * Networking support! (2-player only and quite dodgy, but it's there!)
 * Icons!
