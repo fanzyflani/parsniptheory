@@ -5,6 +5,24 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
+// These 2 tables are from here: http://wiki.multimedia.cx/index.php?title=IMA_ADPCM
+int ima_index_table[16] = {
+	-1, -1, -1, -1, 2, 4, 6, 8,
+	-1, -1, -1, -1, 2, 4, 6, 8
+}; 
+
+int ima_step_table[89] = { 
+	7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 
+	19, 21, 23, 25, 28, 31, 34, 37, 41, 45, 
+	50, 55, 60, 66, 73, 80, 88, 97, 107, 118, 
+	130, 143, 157, 173, 190, 209, 230, 253, 279, 307,
+	337, 371, 408, 449, 494, 544, 598, 658, 724, 796,
+	876, 963, 1060, 1166, 1282, 1411, 1552, 1707, 1878, 2066, 
+	2272, 2499, 2749, 3024, 3327, 3660, 4026, 4428, 4871, 5358,
+	5894, 6484, 7132, 7845, 8630, 9493, 10442, 11487, 12635, 13899, 
+	15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767 
+};
+
 snd_t *snd_splat[SND_SPLAT_COUNT];
 achn_t achns[ACHN_COUNT];
 SDL_AudioSpec audio_spec;
@@ -53,11 +71,46 @@ snd_t *snd_alloc(int len, int is_stereo, int freq)
 	return snd;
 }
 
-snd_t *snd_load_wav(const char *fname)
+int adpcm_predict(int v, int *pred, int *step)
+{
+	int diff;
+
+	diff = (((v&7)*2 + 1) * ima_step_table[*step]) / 8;
+
+	*step += ima_index_table[v];
+	if(*step < 0) *step = 0;
+	if(*step > 88) *step = 88;
+
+	*pred += ((v & 8) != 0 ? -diff : diff);
+	if(*pred < -0x8000) *pred = -0x8000;
+	if(*pred >  0x7FFF) *pred =  0x7FFF;
+
+	return *pred;
+}
+
+void adpcm_load_block(int16_t **wptr, int *pred, int *step, FILE *fp)
 {
 	int i;
+	int v;
+
+	for(i = 0; i < 4; i++)
+	{
+		v = fgetc(fp);
+		*((*wptr)++) = adpcm_predict(v&15, pred, step);
+		*((*wptr)++) = adpcm_predict((v>>4)&15, pred, step);
+	}
+
+}
+
+snd_t *snd_load_wav(const char *fname)
+{
+	int i, j;
+	int lpred, rpred;
+	int lstep, rstep;
+	int16_t *wptr1, *wptr2;
 	char tag[4];
 	int len, freq, channels, sbits, codec, balign;
+	int adlen;
 	FILE *fp;
 	snd_t *snd;
 
@@ -115,7 +168,7 @@ snd_t *snd_load_wav(const char *fname)
 
 	// Read "fmt " chunk
 	codec = io_get2le(fp);
-	if(codec != 1)
+	if(codec != 1 && codec != 17)
 	{
 		printf("snd_load_wav: unsupported codec %i\n", codec);
 		goto fail_fp;
@@ -132,10 +185,17 @@ snd_t *snd_load_wav(const char *fname)
 	io_get4le(fp); // Don't care about bytes per second
 	balign = io_get2le(fp); // TODO: Might end up checking this, might not.
 	sbits = io_get2le(fp);
-	if(sbits != 8 && sbits != 16)
+	if((codec == 17 ? sbits != 4 : sbits != 8 && sbits != 16))
 	{
 		printf("snd_load_wav: unsupported sample bitrate %i\n", sbits);
 		goto fail_fp;
+	}
+
+	if(codec == 17 && balign % 4 != 0)
+	{
+		printf("snd_load_wav: unsupported block alignment %i\n", balign);
+		goto fail_fp;
+
 	}
 
 	// Skip the rest
@@ -165,13 +225,64 @@ snd_t *snd_load_wav(const char *fname)
 	// TODO: Be more graceful
 	assert((len*8) % (channels * sbits) == 0);
 	assert(channels == 1 || channels == 2);
+	assert(len % balign == 0);
 
 	// Allocate sound
-	snd = snd_alloc(len, channels >= 2, freq);
+	switch(codec)
+	{
+		case 1:
+			snd = snd_alloc(len, channels >= 2, freq);
+			break;
+
+		case 17:
+			adlen = (len/balign);
+			adlen *= (balign-4*channels)*2;
+			snd = snd_alloc(adlen,
+				channels >= 2, freq);
+			printf("len %i %i\n", snd->len, len);
+			break;
+
+		default:
+			printf("EDOOFUS: Codec invalid\n");
+			fflush(stdout);
+			abort();
+	}
 
 	// Actually get said data
-	if(sbits == 8)
+	if(codec == 17 && sbits == 4)
 	{
+		wptr1 = snd->ldata;
+		wptr2 = snd->rdata;
+
+		for(i = 0; i < len/balign; i++)
+		{
+			// Feed predictors
+			lpred = io_get2le(fp);
+			lstep = fgetc(fp);
+			fgetc(fp);
+
+			if(channels >= 2)
+			{
+				rpred = io_get2le(fp);
+				rstep = fgetc(fp);
+				fgetc(fp);
+			}
+
+			if(lpred >= 0x8000) lpred -= 0x10000;
+			if(rpred >= 0x8000) rpred -= 0x10000;
+
+			//printf("pred %i %i\n", lpred, lstep);
+
+			// Actually predict things
+			for(j = 0; j < (balign/(4*channels))-1; j++)
+			{
+				adpcm_load_block(&wptr1, &lpred, &lstep, fp);
+				if(channels >= 2) adpcm_load_block(&wptr2, &rpred, &rstep, fp);
+			}
+
+		}
+
+	} else if(sbits == 8) {
 		if(channels == 2)
 		{
 			for(i = 0; i < len/1; i++)
@@ -213,6 +324,10 @@ snd_t *snd_load_wav(const char *fname)
 			abort();
 		}
 
+	} else {
+		printf("EDOOFUS: Bit count invalid\n");
+		fflush(stdout);
+		abort();
 	}
 
 	// TODO: Read "data" chunk
@@ -236,6 +351,8 @@ void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int 
 	achn_t *ac;
 	achn_t *ac_oldest = achns;
 	int oldest_age = 0;
+
+	if(snd == NULL) return;
 
 	// Find a channel
 	for(i = 0, ac = achns; i < ACHN_COUNT; i++, ac++)

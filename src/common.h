@@ -434,6 +434,7 @@ void abuf_bc_block(const void *buf, int len, game_t *game);
 int abuf_bc_get_wspace(game_t *game);
 
 // audio.c
+extern snd_t *snd_splat[];
 void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs);
 void snd_play_splat(int use_world, int sx, int sy);
 int audio_init(void);

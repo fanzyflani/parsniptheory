@@ -343,6 +343,16 @@ int menuloop(int menuid)
 
 		}*/
 
+		// TEST: Draw some of a waveform
+#if 0
+		for(i = 0; i < screen->w; i++)
+		{
+			int v = snd_splat[2]->ldata[i * snd_splat[0]->len /(screen->w*4)];
+			v = (v+0x8000)*screen->h/0x10000;
+			*IMG8(screen, i, v) = 1;
+		}
+#endif
+
 		// Flip
 		screen_flip();
 		SDL_Delay(20);
