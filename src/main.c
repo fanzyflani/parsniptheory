@@ -418,11 +418,8 @@ int main(int argc, char *argv[])
 	pal_main[0][0] = 255/5;
 
 	// Load images
-	// TODO: png support (and hence the dat/ directory)
-	//i_player = img_load_png("dat/player.png"); 
-	i_player = img_load_tga("tga/player.tga"); 
-	//i_tiles1 = img_load_png("dat/tiles1.png"); 
-	i_tiles1 = img_load_tga("tga/tiles1.tga"); 
+	i_player = img_load_png("dat/player.png"); 
+	i_tiles1 = img_load_png("dat/tiles1.png"); 
 	i_food1 = img_load_png("dat/food1.png"); 
 	i_icons1 = img_load_png("dat/icons1.png"); 
 	i_font16 = img_load_png("dat/font16.png"); 

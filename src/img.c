@@ -354,7 +354,7 @@ img_t *img_load_png(const char *fname)
 	}
 
 	// Read data
-	printf("idat len %i %s\n", (int)idat_len, fname);
+	//printf("idat len %i %s\n", (int)idat_len, fname);
 	for(y = 0; y < ih; y++)
 	{
 		int fmode = idat[y*(1+iw*1)];

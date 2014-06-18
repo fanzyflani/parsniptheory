@@ -10,6 +10,14 @@ IMAGES = \
 	tga/player.tga \
 	tga/tiles1.tga
 
+IMAGES_PNG = \
+	dat/font16.png \
+	dat/fontnum1.png \
+	dat/food1.png \
+	dat/icons1.png \
+	dat/player.png \
+	dat/tiles1.png
+
 OBJS_COMMON = \
 	$(OBJDIR)/action.o \
 	$(OBJDIR)/audio.o \
@@ -57,7 +65,7 @@ CFLAGS = -Wall -Wextra -Wno-unused-parameter -O2 -g -Isrc -I/usr/local/include `
 LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) -lm
 LDFLAGS_SERVER = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) -lm
 
-all: $(BINNAME) $(BINNAME_SERVER) dat/pal1.pal
+all: $(BINNAME) $(BINNAME_SERVER) dat/pal1.pal $(IMAGES_PNG)
 
 clean:
 	rm -r $(OBJDIR)
@@ -70,6 +78,9 @@ $(BINNAME): $(OBJDIR) $(OBJS_CLIENT)
 
 $(BINNAME_SERVER): $(OBJDIR) $(OBJS_SERVER)
 	$(CC) -o $(BINNAME_SERVER) $(LDFLAGS_SERVER) $(OBJS_SERVER)
+
+dat/%.png: tga/%.tga
+	python2 tools/tga2png.py $< $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCLUDES)
 	$(CC) -c -o $@ $(CFLAGS) $<
