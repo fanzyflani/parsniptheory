@@ -23,7 +23,56 @@ void io_put2le(int v, FILE *fp)
 	fputc(v1, fp);
 }
 
+uint32_t io_get4le(FILE *fp)
+{
+	int v0 = io_get2le(fp);
+	int v1 = io_get2le(fp);
 
+	return (v1<<16)|v0;
+}
+
+void io_put4le(int v, FILE *fp)
+{
+	int v0 = v&255;
+	int v1 = (v>>16)&255;
+
+	io_put2le(v0, fp);
+	io_put2le(v1, fp);
+}
+
+uint16_t io_get2be(FILE *fp)
+{
+	int v1 = fgetc(fp);
+	int v0 = fgetc(fp);
+
+	return (v1<<8)|v0;
+}
+
+void io_put2be(int v, FILE *fp)
+{
+	int v1 = v&255;
+	int v0 = (v>>8)&255;
+
+	fputc(v1, fp);
+	fputc(v0, fp);
+}
+
+uint32_t io_get4be(FILE *fp)
+{
+	int v1 = io_get2be(fp);
+	int v0 = io_get2be(fp);
+
+	return (v1<<16)|v0;
+}
+
+void io_put4be(int v, FILE *fp)
+{
+	int v0 = v&255;
+	int v1 = (v>>16)&255;
+
+	io_put2be(v1, fp);
+	io_put2be(v0, fp);
+}
 
 void img_free(img_t *img)
 {

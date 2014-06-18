@@ -6,6 +6,7 @@ export SRCDIR="src"
 
 export OBJS_COMMON="\
 	${SRCDIR}/action.c \
+	${SRCDIR}/audio.c \
 	${SRCDIR}/cdefs.c \
 	${SRCDIR}/cell.c \
 	${SRCDIR}/clip.c \

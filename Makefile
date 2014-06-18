@@ -12,6 +12,7 @@ IMAGES = \
 
 OBJS_COMMON = \
 	$(OBJDIR)/action.o \
+	$(OBJDIR)/audio.o \
 	$(OBJDIR)/cdefs.o \
 	$(OBJDIR)/cell.o \
 	$(OBJDIR)/clip.o \

@@ -55,6 +55,8 @@ typedef void *IPaddress;
 #define TIME_HOVER_MS 200
 #define MAP_BUFFER_SIZE 2048
 #define MAP_BUFFER_SEND 2048
+#define SND_SPLAT_COUNT 3
+#define ACHN_COUNT 32
 
 // Versions
 #define MAP_FVERSION 1
@@ -87,6 +89,26 @@ typedef struct cmap
 	char *fname;
 	uint8_t data[256];
 } cmap_t;
+
+// Some sound stuff.
+typedef struct snd
+{
+	int freq;
+	int len;
+	int16_t *data;
+	int16_t *ldata, *rdata;
+} snd_t;
+
+typedef struct achn
+{
+	int freq;
+	int offs, suboffs;
+	int vol; // 0x100 = 1.0
+	int sx, sy;
+	int use_world;
+
+	snd_t *snd;
+} achn_t;
 
 // Here's the GUI stuff.
 typedef struct widget widget_t;
@@ -410,6 +432,9 @@ void abuf_bc_s16(int16_t v, game_t *game);
 void abuf_bc_block(const void *buf, int len, game_t *game);
 int abuf_bc_get_wspace(game_t *game);
 
+// audio.c
+int audio_init(void);
+
 // cdefs.c
 extern cell_file_t *ce_defaults[];
 
@@ -466,6 +491,12 @@ widget_t *gui_new(int (*f_init)(widget_t *g, void *ud), widget_t *parent, int w,
 // img.c
 uint16_t io_get2le(FILE *fp);
 void io_put2le(int v, FILE *fp);
+uint32_t io_get4le(FILE *fp);
+void io_put4le(int v, FILE *fp);
+uint16_t io_get2be(FILE *fp);
+void io_put2be(int v, FILE *fp);
+uint32_t io_get4be(FILE *fp);
+void io_put4be(int v, FILE *fp);
 
 void img_free(img_t *img);
 img_t *img_new(int w, int h);

@@ -429,6 +429,10 @@ int main(int argc, char *argv[])
 	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
 	cm_food1 = cmaps[i_food1->cmidx].data;
 
+	// Load sound
+	if(!audio_init())
+		return 0;
+
 	// Prepare teams
 	for(i = 0; i < TEAM_MAX; i++)
 		teams[i] = team_new(i);
