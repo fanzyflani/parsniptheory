@@ -119,7 +119,7 @@ int input_poll(void)
 			break;
 
 		case SDL_ACTIVEEVENT:
-			if(ev.active.gain == 0)
+			if(ev.active.gain == 0 && ev.active.state == SDL_APPINPUTFOCUS)
 			{
 				mouse_x = 160;
 				mouse_y = 100;
