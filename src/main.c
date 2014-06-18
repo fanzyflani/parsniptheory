@@ -407,7 +407,7 @@ int main(int argc, char *argv[])
 
 	// Set up basic video mode
 	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 3)", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 4)", NULL);
 	loadicon("dat/icon.tga");
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
 	printf("screen %p %i %i\n", screen_surface, screen_surface->w, screen_surface->h);
@@ -437,12 +437,12 @@ int main(int argc, char *argv[])
 	for(i = 0; i < TEAM_MAX; i++)
 		teams[i] = team_new(i);
 
-	// Enter menu loop
 #ifdef __EMSCRIPTEN__
-	printf("forcing 2-player game\n");
-	// Force a 2-player game
+	// Force a hotseat game
+	printf("forcing hotseat game\n");
 	switch(2)
 #else
+	// Enter menu loop
 	for(;;)
 	switch(menuloop(0))
 #endif
@@ -475,9 +475,12 @@ int main(int argc, char *argv[])
 		} break;
 
 		case 0x10C: {
-			net_connect_host = text_dialogue("ENTER HOSTNAME OR IP", "");
-			if(net_connect_host == NULL)
+			char *host = text_dialogue("ENTER HOSTNAME OR IP", net_connect_host);
+			if(host == NULL)
 				break;
+			if(net_connect_host != NULL)
+				free(net_connect_host);
+			net_connect_host = host;
 
 			IPaddress client_ip;
 			TCPsocket client_sockfd;

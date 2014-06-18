@@ -8,6 +8,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 snd_t *snd_splat[SND_SPLAT_COUNT];
 achn_t achns[ACHN_COUNT];
 SDL_AudioSpec audio_spec;
+int audio_age = 0;
+SDL_mutex *audio_mutex = NULL;
 
 static int clampadd16(int a, int b)
 {
@@ -227,8 +229,67 @@ fail_fp:
 
 }
 
+void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs)
+{
+	int i;
+	int mutret;
+	achn_t *ac;
+	achn_t *ac_oldest = achns;
+	int oldest_age = 0;
+
+	// Find a channel
+	for(i = 0, ac = achns; i < ACHN_COUNT; i++, ac++)
+	{
+		if(ac->snd == NULL) break;
+		if(ac->offs >= ac->snd->len) break;
+
+		if((audio_age - ac->age) > oldest_age)
+		{
+			oldest_age = (audio_age - ac->age);
+			ac_oldest = ac;
+		}
+	}
+
+	// Kill the oldest sound if we can't find a free slot
+	if(ac >= achns + ACHN_COUNT)
+		ac = ac_oldest;
+
+	// Lock audio
+	mutret = SDL_mutexP(audio_mutex);
+	assert(mutret != -1);
+
+	// Play a sound
+	ac->age = audio_age++;
+	ac->snd = snd;
+	ac->offs = offs;
+	ac->suboffs = 0;
+	ac->freq = (snd->freq<<12)/(audio_spec.freq>>4);
+	ac->freq = (ac->freq * fmul)>>8;
+	ac->vol = vol;
+	ac->use_world = use_world;
+	ac->sx = sx;
+	ac->sy = sy;
+
+	// Unlock audio
+	mutret = SDL_mutexV(audio_mutex);
+	assert(mutret != -1);
+}
+
+void snd_play_splat(int use_world, int sx, int sy)
+{
+	int vol = 0x100 - (rand() % 53);
+	int fmul = 0x100 - 53/2 + (rand() % 53);
+	rand(); // Try not to do groups of 3 in a row
+	int smp = rand() % 3;
+	rand(); // Try not to do groups of 3 in a row
+
+	snd_play(snd_splat[smp], vol, use_world, sx, sy, fmul, 0);
+
+}
+
 void achn_reset(achn_t *ac)
 {
+	ac->age = audio_age;
 	ac->freq = 0;
 	ac->offs = 0;
 	ac->suboffs = 0;
@@ -252,14 +313,17 @@ static void audio_callback(void *userdata, Uint8 *stream, int len_samples)
 	uint16_t *a16;
 	int16_t *ldata, *rdata;
 	int i, j;
-	//int len_samples;
 	int chns = audio_spec.channels;
-	//printf("chns %i\n", chns);
 	int bias = 0;
 	int lvol, rvol;
 	achn_t *ac;
+	int mutret;
 
 	len_samples /= chns;
+
+	// Lock audio
+	mutret = SDL_mutexP(audio_mutex);
+	assert(mutret != -1);
 
 	// Select according to whatever
 	switch(audio_spec.format)
@@ -276,7 +340,6 @@ static void audio_callback(void *userdata, Uint8 *stream, int len_samples)
 			bias = -0x8000;
 		case AUDIO_U16SYS:
 			len_samples /= 2;
-			//printf("cb %i %i\n", len_bytes, len_samples);
 			for(i = 0, a16 = (uint16_t *)stream; i < len_samples*chns; i++)
 				*(a16++) = 0x8000;
 
@@ -294,7 +357,6 @@ static void audio_callback(void *userdata, Uint8 *stream, int len_samples)
 					if(ac->offs >= ac->snd->len) break;
 					a16[0] = clampadd16(a16[0], (lvol * (int)ldata[ac->offs])>>8);
 					if(chns >= 2) a16[1] = clampadd16(a16[1], (rvol * (int)rdata[ac->offs])>>8);
-					//printf("v %i\n", a16[0]);
 					ac->suboffs += ac->freq;
 					ac->offs += ac->suboffs>>16;
 					ac->suboffs &= 0xFFFF;
@@ -311,6 +373,11 @@ static void audio_callback(void *userdata, Uint8 *stream, int len_samples)
 			abort();
 
 	}
+
+	// Unlock audio
+	mutret = SDL_mutexV(audio_mutex);
+	assert(mutret != -1);
+
 }
 
 int audio_init(void)
@@ -329,6 +396,11 @@ int audio_init(void)
 		sprintf(buf, "wav/splat%i.wav", i+1);
 		snd_splat[i] = snd_load_wav(buf);
 	}
+
+	// Create mutex
+	audio_mutex = SDL_CreateMutex();
+	assert(audio_mutex != NULL);
+
 
 	// Set up SDL audio
 	// Note, some systems hate 44100Hz, so we'll go for 48000Hz
@@ -354,16 +426,8 @@ int audio_init(void)
 		, audio_spec.format
 	);
 
-	// TEST: Play a sound
-	achns[0].snd = snd_splat[0];
-	achns[0].offs = 0;
-	achns[0].suboffs = 0;
-	achns[0].freq = (snd_splat[0]->freq<<12)/(audio_spec.freq>>4);
-	printf("freq %08X\n", achns[0].freq);
-	achns[0].vol = 0x100;
-	achns[0].use_world = 0;
-	achns[0].sx = 0;
-	achns[0].sy = 0;
+	// Play sound
+	snd_play_splat(0, 0, 0);
 
 	// Unpause audio and return
 	SDL_PauseAudio(0);

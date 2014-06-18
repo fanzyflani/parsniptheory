@@ -101,6 +101,7 @@ typedef struct snd
 
 typedef struct achn
 {
+	int age;
 	int freq;
 	int offs, suboffs;
 	int vol; // 0x100 = 1.0
@@ -433,6 +434,8 @@ void abuf_bc_block(const void *buf, int len, game_t *game);
 int abuf_bc_get_wspace(game_t *game);
 
 // audio.c
+void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs);
+void snd_play_splat(int use_world, int sx, int sy);
 int audio_init(void);
 
 // cdefs.c

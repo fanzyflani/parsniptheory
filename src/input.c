@@ -118,6 +118,14 @@ int input_poll(void)
 			mouse_b &= ~(1<<(ev.button.button-1));
 			break;
 
+		case SDL_ACTIVEEVENT:
+			if(ev.active.gain == 0)
+			{
+				mouse_x = 160;
+				mouse_y = 100;
+			}
+			break;
+
 		case SDL_MOUSEMOTION:
 			if(ev.motion.x < screen_ofx) break;
 			if(ev.motion.y < screen_ofy) break;

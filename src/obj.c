@@ -355,6 +355,7 @@ void obj_food_tomato_f_tick(obj_t *ob)
 		// Do damage
 		ce = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->f.cx, ob->f.cy);
 		ce->splatters[FOOD_TOMATO] |= 1<<((rand()>>12)&3);
+		snd_play_splat(1, ob->f.cx*32+16, ob->f.cy*24+12);
 		if(ce->ob && ce->ob->f.otyp == OBJ_PLAYER)
 		{
 			//printf("DAMAGED\n");
