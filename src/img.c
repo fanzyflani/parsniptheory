@@ -207,6 +207,194 @@ img_t *img_load_tga(const char *fname)
 	return img;
 }
 
+img_t *img_load_png(const char *fname)
+{
+	FILE *fp;
+	int x, y, i;
+	int res;
+	int iw, ih, bits, ctyp, cmpm, filtm, intm;
+	int len;
+	uint8_t header[8];
+	uint8_t tag[4];
+
+	int valid_ihdr = 0;
+	uint8_t *plte = NULL;
+	uint8_t *idat_cmp = NULL;
+	uint8_t *idat = NULL;
+	int plte_len = 0;
+	int plte_entries = 0;
+	int idat_cmp_len = 0;
+	uLongf idat_len = 0;
+
+	// Open file
+	fp = fopen(fname, "rb");
+	if(fp == NULL)
+	{
+		perror("img_load_png");
+		return NULL;
+	}
+
+	// We'll just shove assert()s everywhere.
+	// If you drop in a PNG file this can't handle,
+	// it's your fault for being bad at modding.
+
+	// Read PNG header
+	header[7] = '\x00';
+	fread(header, 8, 1, fp);
+	if(memcmp(header, "\x89PNG\x0D\x0A\x1A\x0A", 8))
+	{
+		printf("img_load_png: not a PNG file\n");
+		fclose(fp);
+		return NULL;
+	}
+
+	// Read all the stuff
+	for(;;)
+	{
+		// Shove in a dummy, and read
+		len = io_get4be(fp);
+		memcpy(tag, "EOF!", 4);
+		fread(tag, 4, 1, fp);
+
+		if(!memcmp(tag, "IEND", 4))
+		{
+			// All good!
+			break;
+
+		} else if(!memcmp(tag, "IHDR", 4)) {
+			// Load header
+			assert(!valid_ihdr);
+			assert(len == 13);
+
+			// Load everything
+			iw = io_get4be(fp);
+			ih = io_get4be(fp);
+			bits = fgetc(fp);
+			ctyp = fgetc(fp);
+			cmpm = fgetc(fp);
+			filtm = fgetc(fp);
+			intm = fgetc(fp);
+
+			// Check things
+			assert(iw != 0);
+			assert(ih != 0);
+			assert(iw < 16384); // mostly for sanity
+			assert(ih < 16384); // mostly for sanity
+			assert(bits == 1 || bits == 2 || bits == 4 || bits == 8);
+			assert(bits == 8); // OK, we don't support the other things yet
+			assert(ctyp == 3);
+			assert(cmpm == 0);
+			assert(filtm == 0);
+			assert(intm == 0);
+
+			// We have a header now!
+			valid_ihdr = 1;
+
+		} else if(!memcmp(tag, "PLTE", 4)) {
+			// Load palette
+			assert(len <= (1<<bits)*3);
+			assert(len % 3 == 0);
+			plte = malloc(len);
+			plte_len = len;
+			plte_entries = plte_len / 3;
+			fread(plte, len, 1, fp);
+
+		} else if(!memcmp(tag, "IDAT", 4)) {
+			// Add this to the compressed IDAT stream
+			idat_cmp = realloc(idat_cmp, idat_cmp_len + len);
+			fread(idat_cmp + idat_cmp_len, 1, len, fp);
+			idat_cmp_len += len;
+
+		} else if((tag[0] & 0x20) == 0) {
+			printf("img_load_png: critical chunk %c%c%c%c not supported\n",
+				tag[0], tag[1], tag[2], tag[3]);
+			fflush(fp);
+			abort();
+
+		} else {
+			// Skip this chunk
+			fseek(fp, len, SEEK_CUR);
+		}
+
+		// Skip CRC
+		io_get4be(fp);
+
+	}
+
+	// Do some checks
+	assert(valid_ihdr);
+	assert(idat_cmp != NULL);
+	assert(plte != NULL);
+
+	// Decompress image
+	idat_len = ih*(1+iw*1);
+	idat = malloc(idat_len);
+	res = uncompress((Bytef *)idat, &idat_len, (Bytef *)idat_cmp, idat_cmp_len);
+	assert(res == Z_OK);
+
+	// Create image
+	img_t *img = img_new(iw, ih);
+
+	// Load palette
+	for(i = 0; i < plte_entries; i++)
+	{
+		img->pal[i][0] = plte[i*3+2];
+		img->pal[i][1] = plte[i*3+1];
+		img->pal[i][2] = plte[i*3+0];
+		img->pal[i][3] = 0;
+	}
+
+	// Clear remainder of palette
+	for(; i < 256; i++)
+	{
+		img->pal[i][0] = 0;
+		img->pal[i][1] = 0;
+		img->pal[i][2] = 0;
+		img->pal[i][3] = 0;
+	}
+
+	// Read data
+	printf("idat len %i %s\n", (int)idat_len, fname);
+	for(y = 0; y < ih; y++)
+	{
+		int fmode = idat[y*(1+iw*1)];
+		assert(fmode == 0); // TODO: Support other modes
+
+		for(x = 0; x < iw; x++)
+		{
+			*IMG8(img, x, y) = idat[y*(1+iw*1)+1 + x];
+		}
+	}
+
+	// Close
+	fclose(fp);
+	
+	// Find colourmap
+	for(i = 0; cmaps[i].fname != NULL; i++)
+	{
+		if(!strcasecmp(cmaps[i].fname, fname))
+		{
+			img->cmidx = i;
+			break;
+		}
+	}
+
+	// Did we find one?
+	if(cmaps[i].fname == NULL)
+	{
+		// Use a dummy
+		img->cmidx = -1;
+	}
+
+	// Free extra crap
+	if(plte != NULL) free(plte);
+	if(idat_cmp != NULL) free(idat_cmp);
+	if(idat != NULL) free(idat);
+
+	// Return
+	return img;
+}
+
 void load_palette(const char *fname)
 {
 	int i, j;
@@ -267,5 +455,6 @@ void load_palette(const char *fname)
 
 	// Close and return
 	fclose(fp);
+
 }
 

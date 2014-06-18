@@ -504,6 +504,7 @@ void io_put4be(int v, FILE *fp);
 void img_free(img_t *img);
 img_t *img_new(int w, int h);
 img_t *img_load_tga(const char *fname);
+img_t *img_load_png(const char *fname);
 void load_palette(const char *fname);
 
 // input.c

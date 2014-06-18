@@ -419,12 +419,14 @@ int main(int argc, char *argv[])
 
 	// Load images
 	// TODO: png support (and hence the dat/ directory)
+	//i_player = img_load_png("dat/player.png"); 
 	i_player = img_load_tga("tga/player.tga"); 
+	//i_tiles1 = img_load_png("dat/tiles1.png"); 
 	i_tiles1 = img_load_tga("tga/tiles1.tga"); 
-	i_food1 = img_load_tga("tga/food1.tga"); 
-	i_icons1 = img_load_tga("tga/icons1.tga"); 
-	i_font16 = img_load_tga("tga/font16.tga"); 
-	i_fontnum1 = img_load_tga("tga/fontnum1.tga"); 
+	i_food1 = img_load_png("dat/food1.png"); 
+	i_icons1 = img_load_png("dat/icons1.png"); 
+	i_font16 = img_load_png("dat/font16.png"); 
+	i_fontnum1 = img_load_png("dat/fontnum1.png"); 
 	cm_player = cmaps[i_player->cmidx].data;
 	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
 	cm_food1 = cmaps[i_food1->cmidx].data;
