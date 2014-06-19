@@ -28,8 +28,12 @@ TCP port 2014. More robust than it was in Alpha 2. Let me know if you get any ho
 ----
 
 Playing instructions:
-* Left click selects a unit.
-* Right click either moves your unit, or attempts to throw a tomato at an enemy player.
+* For "L for all":
+  * Left click either selects a unit, moves your unit, or attempts to throw a tomato at an enemy player.
+  * Right click deselects.
+* For "L select, R act":
+  * Left click either selects or deselects a unit.
+  * Right click either moves your unit, or attempts to throw a tomato at an enemy player.
 * Enter ends your turn and moves onto the next player.
 * Your units get 7 "steps" each.
   * Moving by 1 tile  uses up 1 step.

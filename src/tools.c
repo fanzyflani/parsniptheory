@@ -407,6 +407,64 @@ void errorloop(const char *error)
 }
 
 // Dialogue loop
+int options_dialogue(const char *title, const char *opt1, const char *opt2)
+{
+	int titlelen = strlen(title);
+	int opt1len = strlen(opt1);
+	int opt2len = strlen(opt2);
+	int hl1 = 2;
+	int hl2 = 2;
+
+	input_key_queue_flush();
+
+	for(;;)
+	{
+		// Determine selection
+		hl1 = (mouse_y >= screen->h/2-4-1 && mouse_y < screen->h/2-4-1+18 ? 0 : 2);
+		hl2 = (mouse_y >= screen->h/2+16-1 && mouse_y < screen->h/2+16-1+18 ? 0 : 2);
+
+		// Draw text
+		screen_clear(0);
+		draw_rect_d(screen, screen->w/2-8*opt1len-1, screen->h/2-4-1, opt1len*16+2, 18, 64+8*2+hl1);
+		draw_rect_d(screen, screen->w/2-8*opt2len-1, screen->h/2+16-1, opt2len*16+2, 18, 64+8*2+hl2);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*titlelen, screen->h/2-30, 1, "%s", title);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*opt1len, screen->h/2-4, 1, "%s", opt1);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*opt2len, screen->h/2+16, 1, "%s", opt2);
+
+		// Flip
+		screen_flip();
+		SDL_Delay(20);
+		
+		// Input
+		if(input_poll())
+			return -1;
+
+		while(input_key_queue_peek() != 0)
+		{
+			int v = input_key_queue_pop();
+			if((v & 0x80000000) != 0)
+			{
+				continue;
+			}
+
+			if(((v>>16)&0x7FFF) == SDLK_ESCAPE) {
+				return -1;
+			} 
+		}
+
+		if(((mouse_ob & ~mouse_b) & 1) && (hl1 == 0 || hl2 == 0))
+		{
+			// Eat clicks and return
+			if(input_poll()) return -1;
+			if(hl1 == 0) return 0;
+			if(hl2 == 0) return 1;
+		}
+
+	}
+
+}
+
+// Dialogue loop
 char *text_dialogue(const char *title, const char *def)
 {
 	const int tmax = 256;

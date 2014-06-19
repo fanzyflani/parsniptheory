@@ -41,5 +41,5 @@ export OBJS_SERVER="\
 	${SRCDIR}/smain.c"
 	#
 
-/usr/home/ben/Downloads/emscripten/emcc -o index.js -O2 -DNO_NET $OBJS_CLIENT -Isackit $(for A in dat/* lvl/* tga/*; do echo --preload-file "${A}"; done)
+/usr/home/ben/Downloads/emscripten/emcc -o index.js -O2 -DNO_NET $OBJS_CLIENT -Isrc -Isackit $(for A in dat/* lvl/* tga/*; do echo --preload-file "${A}"; done)
 

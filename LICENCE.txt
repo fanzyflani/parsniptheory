@@ -13,6 +13,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 Parsnip Theory uses a few other pieces of software.
 The appropriate licences for each are:
+- sackit: Public Domain.
 - SDL: lic/LGPLv2.1.txt
 - SDL_net: lic/SDL_net.txt (zlib-style)
 - zlib: lic/zlib.txt

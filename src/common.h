@@ -35,6 +35,8 @@ typedef void *IPaddress;
 #define SDLNet_ResolveHost(...) -1
 #endif
 
+#include <sackit.h>
+
 #include <assert.h>
 
 #ifndef WIN32
@@ -102,6 +104,7 @@ typedef struct snd
 typedef struct achn
 {
 	int age;
+	int nokill;
 	int freq;
 	int offs, suboffs;
 	int vol; // 0x100 = 1.0
@@ -435,8 +438,10 @@ int abuf_bc_get_wspace(game_t *game);
 
 // audio.c
 extern snd_t *snd_splat[];
-void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs);
+achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs, int lockme);
 void snd_play_splat(int use_world, int sx, int sy);
+void music_free(it_module_t *mod);
+it_module_t *music_load_it(const char *fname);
 int audio_init(void);
 
 // cdefs.c
@@ -479,6 +484,7 @@ void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, 
 int editloop(void);
 
 // game.c
+extern int game_1button;
 extern game_t *game_m;
 extern game_t *game_v;
 void game_free(game_t *game);
@@ -550,6 +556,7 @@ int smod(int n, int d);
 int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2, int y2);
 int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2);
 void errorloop(const char *error);
+int options_dialogue(const char *title, const char *opt1, const char *opt2);
 char *text_dialogue(const char *title, const char *def);
 void chdir_to_exe(const char *farg);
 

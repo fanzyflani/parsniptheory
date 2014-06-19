@@ -23,11 +23,19 @@ int ima_step_table[89] = {
 	15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794, 32767 
 };
 
-snd_t *snd_splat[SND_SPLAT_COUNT];
 achn_t achns[ACHN_COUNT];
 SDL_AudioSpec audio_spec;
 int audio_age = 0;
 SDL_mutex *audio_mutex = NULL;
+
+snd_t *snd_splat[SND_SPLAT_COUNT];
+it_module_t *mod_trk1;
+sackit_playback_t *sackit = NULL;
+achn_t *ac_sackit = NULL;
+snd_t *snd_sackit = NULL;
+int music_buffer_free = 0;
+
+static void music_update(void);
 
 static int clampadd16(int a, int b)
 {
@@ -344,7 +352,7 @@ fail_fp:
 
 }
 
-void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs)
+achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs, int lockme)
 {
 	int i;
 	int mutret;
@@ -352,7 +360,7 @@ void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int 
 	achn_t *ac_oldest = achns;
 	int oldest_age = 0;
 
-	if(snd == NULL) return;
+	if(snd == NULL) return NULL;
 
 	// Find a channel
 	for(i = 0, ac = achns; i < ACHN_COUNT; i++, ac++)
@@ -360,7 +368,7 @@ void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int 
 		if(ac->snd == NULL) break;
 		if(ac->offs >= ac->snd->len) break;
 
-		if((audio_age - ac->age) > oldest_age)
+		if((!ac->nokill) && (audio_age - ac->age) > oldest_age)
 		{
 			oldest_age = (audio_age - ac->age);
 			ac_oldest = ac;
@@ -369,11 +377,20 @@ void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int 
 
 	// Kill the oldest sound if we can't find a free slot
 	if(ac >= achns + ACHN_COUNT)
+	{
 		ac = ac_oldest;
 
+		// Fail silently if it's a nokill channel
+		if(ac->nokill)
+			return NULL;
+	}
+
 	// Lock audio
-	mutret = SDL_mutexP(audio_mutex);
-	assert(mutret != -1);
+	if(lockme)
+	{
+		mutret = SDL_mutexP(audio_mutex);
+		assert(mutret != -1);
+	}
 
 	// Play a sound
 	ac->age = audio_age++;
@@ -388,6 +405,129 @@ void snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int 
 	ac->sy = sy;
 
 	// Unlock audio
+	if(lockme)
+	{
+		mutret = SDL_mutexV(audio_mutex);
+		assert(mutret != -1);
+	}
+
+	// Return channel
+	return ac;
+}
+
+// WARNING: MUST HAVE AUDIO LOCK BEFORE CALLING!
+static void music_update(void)
+{
+	int i;
+
+	// Ensure we have things
+	if(sackit == NULL) return;
+
+	//printf("%i %i %i\n", ac_sackit->offs, music_buffer_free, sackit->buf_len);
+	// Move stuff if need be
+	if(ac_sackit->offs >= (int)sackit->buf_len)
+	{
+		//printf("move %i\n", ac_sackit->offs);
+		memmove(snd_sackit->ldata, snd_sackit->ldata + ac_sackit->offs, 2*snd_sackit->len - ac_sackit->offs);
+		if(snd_sackit->rdata != snd_sackit->ldata)
+			memmove(snd_sackit->rdata, snd_sackit->rdata + ac_sackit->offs, 2*snd_sackit->len - ac_sackit->offs);
+
+		music_buffer_free += ac_sackit->offs;
+		ac_sackit->offs = 0;
+	}
+
+	// Update if need be
+	while(music_buffer_free >= (int)sackit->buf_len)
+	{
+		sackit_playback_update(sackit);
+		int16_t *d0 = snd_sackit->ldata + snd_sackit->len - music_buffer_free;
+		int16_t *d1 = snd_sackit->rdata + snd_sackit->len - music_buffer_free;
+		int16_t *src = sackit->buf;
+		music_buffer_free -= sackit->buf_len;
+
+		if(snd_sackit->ldata != snd_sackit->rdata)
+		{
+			for(i = 0; i < (int)sackit->buf_len; i++)
+			{
+				*(d0++) = *(src++);
+				*(d1++) = *(src++);
+			}
+
+		} else {
+			for(i = 0; i < (int)sackit->buf_len; i++)
+			{
+				*(d0++) = *(src++);
+			}
+		}
+
+	}
+
+	// All done!
+
+}
+
+void music_free(it_module_t *mod)
+{
+	sackit_module_free(mod);
+}
+
+it_module_t *music_load_it(const char *fname)
+{
+	return sackit_module_load(fname);
+}
+
+void music_play(it_module_t *mod)
+{
+	int mutret;
+
+	// Lock audio
+	mutret = SDL_mutexP(audio_mutex);
+	assert(mutret != -1);
+
+	// Destroy sackit playback object if need be
+	if(sackit != NULL)
+	{
+		sackit_playback_free(sackit);
+		sackit = NULL;
+	}
+
+	// If mod is NULL, we are killing the sound
+	if(mod == NULL)
+	{
+		if(ac_sackit != NULL)
+		{
+			ac_sackit->nokill = 0;
+			ac_sackit->snd = NULL;
+			ac_sackit = NULL;
+		}
+
+		if(snd_sackit != NULL)
+		{
+			snd_free(snd_sackit);
+			snd_sackit = NULL;
+		}
+
+		return;
+	}
+
+	// Create new objects
+	if(snd_sackit == NULL)
+	{
+		snd_sackit = snd_alloc(65536, audio_spec.channels >= 2, 44100);
+		assert(ac_sackit == NULL);
+		ac_sackit = snd_play(snd_sackit, 0x80, 0, 0, 0, 0x100, 0, 0);
+		ac_sackit->nokill = 1;
+
+	}
+
+	// Create sackit playback object
+	sackit = sackit_playback_new(mod, 2048, 128,
+		audio_spec.channels >= 2 ? MIXER_IT214FS : MIXER_IT214F);
+
+	// Prime the buffer
+	music_buffer_free = snd_sackit->len;
+
+	// Unlock audio
 	mutret = SDL_mutexV(audio_mutex);
 	assert(mutret != -1);
 }
@@ -400,13 +540,14 @@ void snd_play_splat(int use_world, int sx, int sy)
 	int smp = rand() % 3;
 	rand(); // Try not to do groups of 3 in a row
 
-	snd_play(snd_splat[smp], vol, use_world, sx, sy, fmul, 0);
+	snd_play(snd_splat[smp], vol, use_world, sx, sy, fmul, 0, 1);
 
 }
 
 void achn_reset(achn_t *ac)
 {
 	ac->age = audio_age;
+	ac->nokill = 0;
 	ac->freq = 0;
 	ac->offs = 0;
 	ac->suboffs = 0;
@@ -441,6 +582,9 @@ static void audio_callback(void *userdata, Uint8 *stream, int len_samples)
 	// Lock audio
 	mutret = SDL_mutexP(audio_mutex);
 	assert(mutret != -1);
+
+	// Update music
+	music_update();
 
 	// Select according to whatever
 	switch(audio_spec.format)
@@ -510,14 +654,16 @@ int audio_init(void)
 	// Load sounds
 	for(i = 0; i < SND_SPLAT_COUNT; i++)
 	{
-		sprintf(buf, "wav/splat%i.wav", i+1);
+		sprintf(buf, "dat/splat%i.wav", i+1);
 		snd_splat[i] = snd_load_wav(buf);
 	}
+
+	// Load music
+	mod_trk1 = music_load_it("dat/trk1.it");
 
 	// Create mutex
 	audio_mutex = SDL_CreateMutex();
 	assert(audio_mutex != NULL);
-
 
 	// Set up SDL audio
 	// Note, some systems hate 44100Hz, so we'll go for 48000Hz
@@ -542,6 +688,9 @@ int audio_init(void)
 		, audio_spec.samples
 		, audio_spec.format
 	);
+
+	// Play music
+	music_play(mod_trk1);
 
 	// Play sound
 	snd_play_splat(0, 0, 0);

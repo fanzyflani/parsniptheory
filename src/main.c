@@ -347,9 +347,13 @@ int menuloop(int menuid)
 #if 0
 		for(i = 0; i < screen->w; i++)
 		{
-			int v = snd_splat[2]->ldata[i * snd_splat[0]->len /(screen->w*4)];
+			int v;
+			v = snd_sackit->ldata[i * (snd_sackit->len) / screen->w];
 			v = (v+0x8000)*screen->h/0x10000;
 			*IMG8(screen, i, v) = 1;
+			v = snd_sackit->ldata[i * (2048) / screen->w];
+			v = (v+0x8000)*screen->h/0x10000;
+			*IMG8(screen, i, v) = 0;
 		}
 #endif
 

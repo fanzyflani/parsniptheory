@@ -116,18 +116,25 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 			abuf_write_u8(ACT_SELECT, ab);
 			abuf_write_s16(mx, ab);
 			abuf_write_s16(my, ab);
+			return;
 
-		} else {
+		} else if(!game_1button) {
 			// Deselect objects
-			// TODO: Send
 			abuf_write_u8(ACT_DESELECT, ab);
-			//game_handle_deselect(game, ab, NET_S2C);
+			return;
 
 		}
 	}
+	
+	if(button == 2 && game_1button)
+	{
+		// Deselect objects
+		abuf_write_u8(ACT_DESELECT, ab);
+		return;
+	}
 
 	// Object move / attack
-	else if(button == 2)
+	if(game_1button ? button == 0 : button == 2)
 	{
 		// Check if we have an object selected
 
@@ -138,17 +145,24 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 
 			if(dce != NULL && dce->ob == NULL)
 			{
-				// Move it
-				abuf_write_u8(ACT_MOVE, ab);
-				abuf_write_s16(game->selob->f.cx, ab);
-				abuf_write_s16(game->selob->f.cy, ab);
-				abuf_write_s16(mx, ab);
-				abuf_write_s16(my, ab);
-				abuf_write_u16(0, ab);
-				abuf_write_u16(game->selob->steps_left, ab);
-				
-				//game_handle_move(game, ab, NET_S2C, game->selob->f.cx, game->selob->f.cy, mx, my,
-				//	0, game->selob->steps_left);
+				// Do A* trace
+				int dirlist[1024];
+				int dirlen = astar_layer(game->lv->layers[0], dirlist, 1024,
+					game->selob->f.cx, game->selob->f.cy, mx, my);
+
+				// Check if in range
+				if(dirlen <= game->selob->steps_left)
+				{
+					// Move it
+					abuf_write_u8(ACT_MOVE, ab);
+					abuf_write_s16(game->selob->f.cx, ab);
+					abuf_write_s16(game->selob->f.cy, ab);
+					abuf_write_s16(mx, ab);
+					abuf_write_s16(my, ab);
+					abuf_write_u16(0, ab);
+					abuf_write_u16(game->selob->steps_left, ab);
+				}
+
 			} else if(dce != NULL) {
 				// Attack it
 				abuf_write_u8(ACT_ATTACK, ab);

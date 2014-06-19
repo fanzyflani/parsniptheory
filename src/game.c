@@ -13,6 +13,7 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 	? 0 : 2)
 
 int game_pause = 0;
+int game_1button = 0;
 
 static void game_draw_player(int x, int y, int team, int face)
 {
@@ -876,6 +877,19 @@ int gameloop(int net_mode, TCPsocket sock)
 	{
 		game_v = game_new(NET_CLIENT);
 		assert(game_v != NULL);
+
+		switch(options_dialogue("Pick controls:", "L for all (RA)", "L select/R act (AoE)"))
+		{
+			case 0:
+				game_1button = 1;
+				break;
+
+			case 1:
+				game_1button = 0;
+				break;
+
+		}
+
 	}
 
 	// Prepare action buffer stuff
