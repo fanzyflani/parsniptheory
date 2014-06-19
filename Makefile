@@ -11,12 +11,12 @@ IMAGES = \
 	tga/tiles1.tga
 
 IMAGES_PNG = \
-	dat/font16.png \
-	dat/fontnum1.png \
-	dat/food1.png \
-	dat/icons1.png \
-	dat/player.png \
-	dat/tiles1.png
+	dat/font16.img \
+	dat/fontnum1.img \
+	dat/food1.img \
+	dat/icons1.img \
+	dat/player.img \
+	dat/tiles1.img
 
 OBJS_COMMON = \
 	$(OBJDIR)/action.o \
@@ -80,7 +80,7 @@ $(BINNAME): $(OBJDIR) $(OBJS_CLIENT)
 $(BINNAME_SERVER): $(OBJDIR) $(OBJS_SERVER)
 	$(CC) -o $(BINNAME_SERVER) $(LDFLAGS_SERVER) $(OBJS_SERVER)
 
-dat/%.png: tga/%.tga
+dat/%.img: tga/%.tga
 	python2 tools/tga2png.py $< $@
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c $(INCLUDES)

@@ -44,6 +44,12 @@ typedef void *IPaddress;
 #include <signal.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#define SDL_CreateMutex() ((void *)1)
+#define SDL_mutexP(x) (0)
+#define SDL_mutexV(x) (0)
+#endif
+
 // Limits
 #define TEAM_MAX 128
 #define TEAM_PRACTICAL_MAX 16

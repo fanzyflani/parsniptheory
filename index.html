@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>Parsnip Theory HTML5 Hotseat Demo (Alpha 3)</title>
+		<title>Parsnip Theory HTML5 Hotseat Demo (Alpha 4 Sneak Preview)</title>
 		<style>
 			body {
 				font-family: arial;
@@ -36,7 +36,7 @@
 
 		<div style="text-align: center">
 			<p>
-				Parsnip Theory Alpha 3 is now available on itch.io! Featuring netplay, a level editor, and much smoother performance!
+				Parsnip Theory Alpha 4 is now available on itch.io! Featuring netplay, a level editor, and much smoother performance!
 			</p>
 			<p>
 			<a href="http://fanzyflani.itch.io/parsnip-theory">Download it today!</a>
@@ -47,12 +47,19 @@
 			<p>
 			Playing instructions:
 			<ul>
-			<li><b>Left click</b> selects a unit.</li>
-			<li><b>Right click</b> either moves your unit, or attempts to throw a tomato at an enemy player.</li>
+			<!--<li>For "L select, R act":<ul>-->
+				<li>Left click either selects or deselects a unit.</li>
+				<li>Right click either moves your unit, or attempts to throw a tomato at an enemy player.</li>
+			<!--</ul></li>-->
+			<!-- Not enabled!
+			<li>For "L for all":<ul>
+				<li>Left click either selects a unit, moves your unit, or attempts to throw a tomato at an enemy player.</li>
+				<li>Right click deselects.</li>
+			</ul></li>-->
 			<li><b>ENTER</b> ends your turn and moves onto the next player.</li>
 			<li>Your units get 7 "steps" each.<ul>
-			  <li>Moving by 1 tile  uses up 1 step.</li>
-			  <li>Throwing a tomato uses up 2 steps.</li>
+				<li>Moving by 1 tile  uses up 1 step.</li>
+				<li>Throwing a tomato uses up 2 steps.</li>
 			</ul></li>
 			<li>Getting hit by a tomato takes 10 points off that unit's tolerance meter.</li>
 			<li>Once the tolerance meter hits 0, that unit is out!</li>
@@ -67,6 +74,8 @@
 			var progressElement = document.getElementById('progress');
 
 			var Module = {
+				noAudioDecoding: false,
+				noImageDecoding: false,
 				preRun: [],
 				postRun: [],
 				print: (function() {
@@ -79,6 +88,7 @@
 						//text = text.replace(/</g, "&lt;");
 						//text = text.replace(/>/g, "&gt;");
 						//text = text.replace('\n', '<br>', 'g');
+						//alert(text);
 						console.log(text);
 						if (element) {
 							element.value += text + "\n";

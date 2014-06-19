@@ -654,7 +654,7 @@ int audio_init(void)
 	// Load sounds
 	for(i = 0; i < SND_SPLAT_COUNT; i++)
 	{
-		sprintf(buf, "dat/splat%i.wav", i+1);
+		sprintf(buf, "dat/splat%i.snd", i+1);
 		snd_splat[i] = snd_load_wav(buf);
 	}
 

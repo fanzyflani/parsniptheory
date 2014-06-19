@@ -368,6 +368,12 @@ void errorloop(const char *error)
 {
 	input_key_queue_flush();
 
+#ifdef __EMSCRIPTEN__
+	if(1) {
+		return;
+	}
+#endif
+
 	for(;;)
 	{
 		// Draw text
@@ -409,6 +415,11 @@ void errorloop(const char *error)
 // Dialogue loop
 int options_dialogue(const char *title, const char *opt1, const char *opt2)
 {
+#ifdef __EMSCRIPTEN__
+	if(1) {
+		return -1;
+	}
+#endif
 	int titlelen = strlen(title);
 	int opt1len = strlen(opt1);
 	int opt2len = strlen(opt2);
@@ -467,6 +478,12 @@ int options_dialogue(const char *title, const char *opt1, const char *opt2)
 // Dialogue loop
 char *text_dialogue(const char *title, const char *def)
 {
+#ifdef __EMSCRIPTEN__
+	if(1) {
+		return NULL;
+	}
+#endif
+
 	const int tmax = 256;
 	char tbuf[256+1];
 	int tlen = 0;

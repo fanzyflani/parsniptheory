@@ -151,7 +151,7 @@ for cat in files:
 		# Process tuple list
 		cmap = [0xFF for i in xrange(256)]
 		cmaps[fname] = cmap
-		cmaps[fname.replace(".tga", ".png").replace("tga/","dat/")] = cmap
+		cmaps[fname.replace(".tga", ".img").replace("tga/","dat/")] = cmap
 		for tup in pranges[cat]:
 			if tup[0] == "trans":
 				cmap[tup[1]] = transcol
