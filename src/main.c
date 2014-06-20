@@ -276,6 +276,14 @@ widget_t *menu_gen_widget(struct menu_data *mdat, const char *name)
 	g->sx = groot->w/2 - 8*strlen(name);
 	g->sy = groot->h/2 - 8;
 
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 5 - SHAREWARE - Spread to all your friends! Even though it's not finished!");
+	g->sx = 0;
+	g->sy = 0;
+
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Copyright (C) 2014, fanzyflani. All rights reserved. More text can go here.");
+	g->sx = 0;
+	g->sy = groot->h-7;
+
 	// Widgets
 	for(i = 0; i < 4; i++)
 	{
@@ -416,14 +424,14 @@ int main(int argc, char *argv[])
 	i_food1 = img_load_tga("tga/food1.tga"); 
 	i_icons1 = img_load_tga("tga/icons1.tga"); 
 	i_font16 = img_load_tga("tga/font16.tga"); 
-	i_fontnum1 = img_load_tga("tga/fontnum1.tga"); 
+	i_font57 = img_load_tga("tga/font57.tga"); 
 #else
 	i_player = img_load_png("dat/player.img"); 
 	i_tiles1 = img_load_png("dat/tiles1.img"); 
 	i_food1 = img_load_png("dat/food1.img"); 
 	i_icons1 = img_load_png("dat/icons1.img"); 
 	i_font16 = img_load_png("dat/font16.img"); 
-	i_fontnum1 = img_load_png("dat/fontnum1.img"); 
+	i_font57 = img_load_png("dat/font57.img"); 
 #endif
 	cm_player = cmaps[i_player->cmidx].data;
 	cm_tiles1 = cmaps[i_tiles1->cmidx].data;

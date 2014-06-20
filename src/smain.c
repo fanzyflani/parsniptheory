@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	i_food1 = img_load_png("dat/food1.img"); 
 	i_icons1 = img_load_png("dat/icons1.img"); 
 	i_font16 = img_load_png("dat/font16.img"); 
-	i_fontnum1 = img_load_png("dat/fontnum1.img"); 
+	i_font57 = img_load_png("dat/font57.img"); 
 	cm_player = cmaps[i_player->cmidx].data;
 	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
 	cm_food1 = cmaps[i_food1->cmidx].data;

@@ -36,7 +36,7 @@ img_t *i_tiles1 = NULL;
 img_t *i_food1 = NULL;
 img_t *i_icons1 = NULL;
 img_t *i_font16 = NULL;
-img_t *i_fontnum1 = NULL;
+img_t *i_font57 = NULL;
 
 // Colourmaps
 uint8_t *cm_player = NULL;

@@ -483,7 +483,7 @@ void draw_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
-void draw_num1_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ...);
+void draw_57_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ...);
 void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, const char *fmt, ...);
 
 // edit.c
@@ -502,6 +502,7 @@ int gameloop(int net_mode, TCPsocket sock);
 // gui.c
 int gui_bag_init(widget_t *g, void *ud);
 int gui_label_init(widget_t *g, void *ud);
+int gui_label57_init(widget_t *g, void *ud);
 
 void gui_reparent(widget_t *gp, widget_t *gc);
 void gui_free(widget_t *g);
@@ -590,7 +591,7 @@ extern img_t *i_tiles1;
 extern img_t *i_food1;
 extern img_t *i_icons1;
 extern img_t *i_font16;
-extern img_t *i_fontnum1;
+extern img_t *i_font57;
 extern uint8_t *cm_player;
 extern uint8_t *cm_tiles1;
 extern uint8_t *cm_food1;

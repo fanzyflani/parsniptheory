@@ -12,6 +12,7 @@ IMAGES = \
 
 IMAGES_PNG = \
 	dat/font16.img \
+	dat/font57.img \
 	dat/fontnum1.img \
 	dat/food1.img \
 	dat/icons1.img \

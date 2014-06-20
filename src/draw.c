@@ -144,13 +144,13 @@ void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c)
 	draw_vline_d(dst, x+w, y+1, h-1, c);
 }
 
-void draw_num1_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ...)
+void draw_57_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ...)
 {
 	va_list va;
 	char buf[1024];
-	img_t *font = i_fontnum1;
-	const int fwidth = 6;
-	const int fheight = 8;
+	img_t *font = i_font57;
+	const int fwidth = 5;
+	const int fheight = 7;
 	const int fwstep = 4;
 
 	// Firstly, make sure we actually *have* a font.
@@ -176,10 +176,8 @@ void draw_num1_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ..
 		int sx = 0;
 		int sy = 0;
 
-		if((*cp) == '.') sx = 0;
-		else if((*cp) >= '0' && (*cp) <= '9') sx = (*cp) - '0' + 1;
-		else if((*cp) == '-') sx = 11;
-		else continue;
+		sx = ((*cp)   )&15;
+		sy = ((*cp)>>4)&15;
 
 		sx *= fwidth;
 		sy *= fheight;

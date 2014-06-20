@@ -55,6 +55,23 @@ int gui_label_init(widget_t *g, void *ud)
 	return 1;
 }
 
+//
+// LABEL
+//
+static void gui_label57_f_draw(widget_t *g, int sx, int sy)
+{
+	// TODO: clip this
+	draw_57_printf(screen, sx, sy, 1, "%s", (const char *)g->v1);
+}
+
+int gui_label57_init(widget_t *g, void *ud)
+{
+	g->f_draw = gui_label57_f_draw;
+	g->f_free = gui_label_f_free;
+	g->v1 = strdup(ud);
+
+	return 1;
+}
 
 //
 // GENERAL SUPPORT

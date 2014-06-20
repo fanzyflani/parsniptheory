@@ -261,7 +261,7 @@ void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 	*/
 
 	// Draw health
-	draw_num1_printf(dst,
+	draw_57_printf(dst,
 		camx + 32*ob->f.cx + ob->f.ox,
 		camy + 24*ob->f.cy + ob->f.oy - 24,
 		1, "%i", ob->health);

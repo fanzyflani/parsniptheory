@@ -1,5 +1,9 @@
 Changelog:
 
+Alpha 5:
+* Added a new map: 'airport'
+* You are now required to click before you move (should fix the many "where the hell am I" issues)
+
 Alpha 4:
 * Added 1-button mode (for people who can't stand the default)
 * Added sound (just splats) + music (incomplete)
