@@ -13,6 +13,7 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 	? 0 : 2)
 
 int game_pause = 0;
+int game_press_to_move = 1;
 int game_1button = 0;
 
 static void game_draw_player(int x, int y, int team, int face)
@@ -156,6 +157,9 @@ int gameloop_next_turn(game_t *game, int tid, int steps_added)
 
 	// Take note of the current player
 	int oldcp = game->curplayer;
+
+	// Set "press to move" thing
+	game_press_to_move = 1;
 
 	// Check tid
 	if(tid == -1)
@@ -367,6 +371,11 @@ void gameloop_draw_playing(game_t *game)
 		screen_dim_halftone();
 		draw_printf(screen, i_font16, 16, screen->w/2-8*6, screen->h/2-8, 1, "PAUSED");
 
+	} else if(game_press_to_move && game->claim_team[game->curplayer] == game->netid) {
+		screen_dim_halftone();
+		draw_printf(screen, i_font16, 16, screen->w/2-8*8-4, screen->h/2-16, 1, "PLAYER %i", game->curplayer+1);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*12, screen->h/2, 1, "CLICK TO MOVE");
+
 	}
 
 }
@@ -514,7 +523,7 @@ int game_tick_playing(game_t *game)
 
 	// Update UI
 	//if(game->net_mode != NET_SERVER)
-	if(!game_pause)
+	if((!game_pause) && (!game_press_to_move))
 	{
 		if(game->mx < (screen->w>>3)) game->camx -= 4;
 		if(game->my < (screen->h>>3)) game->camy -= 4;
@@ -654,13 +663,14 @@ int game_input_setup(game_t *game)
 
 int game_input_playing(game_t *game)
 {
-	// Block input if waiting for object
+	// Block input if this isn't your team
 	if(game->claim_team[game->curplayer] != game->netid)
 	{
 		input_key_queue_flush();
 		return 0;
 	}
 
+	// Block input if paused
 	if(game_pause)
 	{
 		while(input_key_queue_peek() != 0)
@@ -669,6 +679,7 @@ int game_input_playing(game_t *game)
 			case SDLK_ESCAPE | 0x8000:
 				// Unpause
 				game_pause = 0;
+				game_press_to_move = 0;
 
 				break;
 		}
@@ -676,6 +687,21 @@ int game_input_playing(game_t *game)
 		return 0;
 	}
 
+	// Block input if waiting for move
+	if(game_press_to_move)
+	{
+		input_key_queue_flush();
+		if((mouse_ob & ~mouse_b) & 7)
+		{
+			game_press_to_move = 0;
+			game_pause = 0;
+		}
+
+		return 0;
+	}
+
+
+	// Block input if waiting for object
 	if(level_obj_waiting(game->lv) != NULL)
 		return 0;
 
@@ -797,10 +823,15 @@ int gameloop_core(game_t *game)
 	// TODO? Properly do the lock state stuff?
 	//if(game->ab_local->state == CLIENT_UNLOCKED)
 	if(game->main_state != GAME_PLAYING || game->claim_team[game->curplayer] == game->netid)
-	if(!game_pause)
 	{
-		game->mx = mouse_x;
-		game->my = mouse_y;
+		if((!game_pause) && (!game_press_to_move))
+		{
+			game->mx = mouse_x;
+			game->my = mouse_y;
+		} else {
+			game->mx = 160;
+			game->my = 100;
+		}
 	}
 
 	// Process ticks
@@ -858,6 +889,7 @@ int gameloop(int net_mode, TCPsocket sock)
 	if(game_v != NULL) { game_free(game_v); game_v = NULL; }
 	if(game_m != NULL) { game_free(game_m); game_m = NULL; }
 	game_pause = 0;
+	game_press_to_move = 1;
 
 	// Prepare model
 	if(net_mode == NET_LOCAL || net_mode == NET_SERVER)

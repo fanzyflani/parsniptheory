@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 
 	// Set up basic video mode
 	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip SERVER - SHAREWARE (alpha 4)", NULL);
+	SDL_WM_SetCaption("Parsnip SERVER - SHAREWARE (alpha 5)", NULL);
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, 0);
 	screen = img_new(320, 200);
 

@@ -272,7 +272,7 @@ widget_t *menu_gen_widget(struct menu_data *mdat, const char *name)
 	widget_t *g;
 
 	// Text
-	g = gui_new(gui_label_init, groot, 16*strlen(name), 16, name);
+	g = gui_new(gui_label_init, groot, 16*strlen(name), 16, (void *)name);
 	g->sx = groot->w/2 - 8*strlen(name);
 	g->sy = groot->h/2 - 8;
 
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
 
 	// Set up basic video mode
 	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 4)", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 5)", NULL);
 	loadicon("dat/icon.tga");
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
 	printf("screen %p %i %i\n", screen_surface, screen_surface->w, screen_surface->h);
