@@ -264,13 +264,19 @@ static int menu_widget_f_init(widget_t *g, void *ud)
 	return 1;
 }
 
-widget_t *menu_gen_widget(struct menu_data *mdat)
+widget_t *menu_gen_widget(struct menu_data *mdat, const char *name)
 {
 	int i;
 
 	widget_t *groot = gui_new(gui_bag_init, NULL, screen->w, screen->h, NULL);
 	widget_t *g;
 
+	// Text
+	g = gui_new(gui_label_init, groot, 16*strlen(name), 16, name);
+	g->sx = groot->w/2 - 8*strlen(name);
+	g->sy = groot->h/2 - 8;
+
+	// Widgets
 	for(i = 0; i < 4; i++)
 	{
 		g = gui_new(menu_widget_f_init, groot, screen->w/2-20, screen->h/2-20, (void *)(mdat+i));
@@ -284,9 +290,11 @@ widget_t *menu_gen_widget(struct menu_data *mdat)
 
 int menuloop(int menuid)
 {
+	widget_t *g_menu = NULL;
+
 	// Init widgets if need be
-	if(menu_g_main == NULL) menu_g_main = menu_gen_widget(menu_gui_data[0]);
-	if(menu_g_game == NULL) menu_g_game = menu_gen_widget(menu_gui_data[2]);
+	if(menu_g_main == NULL) menu_g_main = menu_gen_widget(menu_gui_data[0], menu_names[0]);
+	if(menu_g_game == NULL) menu_g_game = menu_gen_widget(menu_gui_data[2], menu_names[2]);
 	menu_click_catcher = -1;
 
 	// Ensure our clicks don't cut through twice
@@ -304,16 +312,11 @@ int menuloop(int menuid)
 		// Clear the screen
 		screen_clear(0);
 
-		// Work out what's selected
-
-		// Draw menu name
-		draw_printf(screen, i_font16, 16,
-			screen->w/2 - 8*strlen(menu_names[menuid]), screen->h/2 - 8,
-			1, menu_names[menuid]);
+		/**/ if(menuid == 0) g_menu = menu_g_main;
+		else if(menuid == 2) g_menu = menu_g_game;
 
 		// Draw widget
-		/**/ if(menuid == 0) gui_draw(menu_g_main, 0, 0);
-		else if(menuid == 2) gui_draw(menu_g_game, 0, 0);
+		gui_draw(g_menu, g_menu->sx, g_menu->sy);
 
 		// TEST: Draw some of a waveform
 #if 0
@@ -334,8 +337,7 @@ int menuloop(int menuid)
 		SDL_Delay(20);
 
 		// Catch clicks
-		/**/ if(menuid == 0) gui_mouse_auto(menu_g_main, 0, 0);
-		else if(menuid == 2) gui_mouse_auto(menu_g_game, 0, 0);
+		gui_mouse_auto(g_menu, g_menu->sx, g_menu->sy);
 
 		// Check if clicked
 		if(menu_click_catcher != -1)

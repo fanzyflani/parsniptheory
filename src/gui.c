@@ -33,6 +33,30 @@ int gui_bag_init(widget_t *g, void *ud)
 }
 
 //
+// LABEL
+//
+static void gui_label_f_draw(widget_t *g, int sx, int sy)
+{
+	// TODO: clip this
+	draw_printf(screen, i_font16, 16, sx, sy, 1, "%s", (const char *)g->v1);
+}
+
+static void gui_label_f_free(widget_t *g)
+{
+	free(g->v1);
+}
+
+int gui_label_init(widget_t *g, void *ud)
+{
+	g->f_draw = gui_label_f_draw;
+	g->f_free = gui_label_f_free;
+	g->v1 = strdup(ud);
+
+	return 1;
+}
+
+
+//
 // GENERAL SUPPORT
 //
 

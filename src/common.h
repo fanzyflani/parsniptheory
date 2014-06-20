@@ -501,6 +501,7 @@ int gameloop(int net_mode, TCPsocket sock);
 
 // gui.c
 int gui_bag_init(widget_t *g, void *ud);
+int gui_label_init(widget_t *g, void *ud);
 
 void gui_reparent(widget_t *gp, widget_t *gc);
 void gui_free(widget_t *g);
