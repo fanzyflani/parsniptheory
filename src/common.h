@@ -131,8 +131,8 @@ struct widget
 
 	void (*f_free)(widget_t *g);
 	void (*f_draw)(widget_t *g, int sx, int sy);
-	void (*f_mouse_b)(widget_t *g, int mx, int my, int mb, int db, int ds);
-	void (*f_mouse_m)(widget_t *g, int mx, int my, int mb, int dx, int dy);
+	int (*f_mouse_b)(widget_t *g, int mx, int my, int mb, int db, int ds);
+	int (*f_mouse_m)(widget_t *g, int mx, int my, int mb, int dx, int dy);
 	int (*f_mouse_f)(widget_t *g, int mx, int my, int enter, int leave);
 
 	// This may resemble the Allegro 4 GUI.
@@ -500,9 +500,15 @@ int gameloop_next_turn(game_t *game, int tid, int steps_added);
 int gameloop(int net_mode, TCPsocket sock);
 
 // gui.c
+int gui_bag_init(widget_t *g, void *ud);
+
 void gui_reparent(widget_t *gp, widget_t *gc);
 void gui_free(widget_t *g);
 widget_t *gui_new(int (*f_init)(widget_t *g, void *ud), widget_t *parent, int w, int h, void *ud);
+void gui_draw(widget_t *g, int sx, int sy);
+void gui_draw_children(widget_t *g, int sx, int sy);
+int gui_mouse_b(widget_t *g, int mx, int my, int mb, int db, int ds);
+int gui_mouse_m(widget_t *g, int mx, int my, int mb, int dx, int dy);
 
 // img.c
 uint16_t io_get2le(FILE *fp);

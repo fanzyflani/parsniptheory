@@ -11,6 +11,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #define MAIN_MENU_MOVETO   3
 
 char *net_connect_host = NULL;
+widget_t *menu_g_main = NULL;
+widget_t *menu_g_game = NULL;
 
 static void menu_draw_player(int x, int y, int team, int face)
 {
@@ -206,10 +208,75 @@ const char *menu_names[] = {
 	"NETWORK GAME   ",
 };
 
+static void menu_widget_f_free(widget_t *g)
+{
+
+}
+
+static void menu_widget_f_draw(widget_t *g, int sx, int sy)
+{
+	int x, y, j;
+	int mx = mouse_x - sx;
+	int my = mouse_y - sy;
+	int sel = (mx >= 0 && my >= 0 && mx < g->w && my < g->h);
+
+	// Draw rectangle
+	draw_rect_d(screen, sx, sy, g->w, g->h, 64 + (sel ? 0 : 2) + 8*g->i1);
+
+	// Draw GUI contents
+	struct menu_data *md = (struct menu_data *)(g->v1);
+
+	for(j = 0; j < 4; j++)
+	{
+		if(md->pics[j].f_draw == NULL) continue;
+
+		x = md->pics[j].x;
+		y = md->pics[j].y;
+		if(x < 0) x += g->w;
+		if(y < 0) y += g->h;
+
+		md->pics[j].f_draw(sx + x, sy + y, md->pics[j].a1, md->pics[j].a2);
+	}
+
+	// Draw text
+	draw_printf(screen, i_font16, 16, sx + 5, sy + 10, 1, md->name);
+
+
+}
+
+static int menu_widget_f_init(widget_t *g, void *ud)
+{
+	g->v1 = ud;
+
+	g->f_draw = menu_widget_f_draw;
+	g->f_free = menu_widget_f_free;
+
+	return 1;
+}
+
+widget_t *menu_gen_widget(struct menu_data *mdat)
+{
+	int i;
+
+	widget_t *groot = gui_new(gui_bag_init, NULL, screen->w, screen->h, NULL);
+	widget_t *g;
+
+	for(i = 0; i < 4; i++)
+	{
+		g = gui_new(menu_widget_f_init, groot, screen->w/2-20, screen->h/2-20, (void *)(mdat+i));
+		g->sx = 10+((i&1) ? screen->w/2 : 0);
+		g->sy = 10+((i&2) ? screen->h/2 : 0);
+		g->i1 = i;
+	}
+
+	return groot;
+}
+
 int menuloop(int menuid)
 {
-	int x, y, i, j;
-	int sx, sy;
+	// Init widgets if need be
+	if(menu_g_main == NULL) menu_g_main = menu_gen_widget(menu_gui_data[0]);
+	if(menu_g_game == NULL) menu_g_game = menu_gen_widget(menu_gui_data[2]);
 
 	// Ensure our clicks don't cut through twice
 	input_poll();
@@ -253,95 +320,14 @@ int menuloop(int menuid)
 
 		}
 
-		// Draw rectangles
-		draw_rect_d(screen, 10, 10, screen->w/2-20, screen->h/2-20, 64 + (sel==0 ? 0 : 2) + 8*0);
-		draw_rect_d(screen, screen->w/2 + 10, 10, screen->w/2-20, screen->h/2-20, 64 + (sel==1 ? 0 : 2) + 8*1);
-		draw_rect_d(screen, 10, screen->h/2 + 10, screen->w/2-20, screen->h/2-20, 64 + (sel==2 ? 0 : 2) + 8*2);
-		draw_rect_d(screen, screen->w/2 + 10, screen->h/2 + 10, screen->w/2-20, screen->h/2-20, 64 + (sel==3 ? 0 : 2) + 8*3);
-		
-		// Draw GUI contents
-		struct menu_data *md = menu_gui_data[menuid];
-
+		// Draw menu name
 		draw_printf(screen, i_font16, 16,
 			screen->w/2 - 8*strlen(menu_names[menuid]), screen->h/2 - 8,
 			1, menu_names[menuid]);
 
-		for(i = 0; i < 4; i++)
-		{
-			// Get top-left corner
-			sx = ((i&1) == 0 ? 0 : screen->w/2) + 10;
-			sy = ((i&2) == 0 ? 0 : screen->h/2) + 10;
-
-			// Draw background
-			for(j = 0; j < 4; j++)
-			{
-				if(md[i].pics[j].f_draw == NULL) continue;
-
-				x = md[i].pics[j].x;
-				y = md[i].pics[j].y;
-				if(x < 0) x += (screen->w/2-20);
-				if(y < 0) y += (screen->h/2-20);
-
-				md[i].pics[j].f_draw(sx + x, sy + y, md[i].pics[j].a1, md[i].pics[j].a2);
-			}
-
-			// Draw text
-			draw_printf(screen, i_font16, 16, sx + 5, sy + 10, 1, md[i].name);
-		}
-
-		/*
-		if(menuid == 0)
-		{
-			// Draw backgrounds
-
-			draw_img_trans_cmap_d_sd(screen, i_tiles1,
-				screen->w/2 - 10 - 10 - 36*3, screen->h - 10 - 10 - 24,
-				32*1, 24*0, 32, 24, 0, cm_tiles1);
-			draw_img_trans_cmap_d_sd(screen, i_tiles1,
-				screen->w/2 - 10 - 10 - 36*2, screen->h - 10 - 10 - 24,
-				32*5, 24*0, 32, 24, 0, cm_tiles1);
-			draw_img_trans_cmap_d_sd(screen, i_tiles1,
-				screen->w/2 - 10 - 10 - 36*1, screen->h - 10 - 10 - 24,
-				32*12, 24*0, 32, 24, 0, cm_tiles1);
-
-			// Draw texts
-			draw_printf(screen, i_font16, 16, 15, 20, 1, "HOT SEAT");
-			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "NETWORK");
-			draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "LVL EDIT");
-			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "QUIT");
-			draw_printf(screen, i_font16, 16, screen->w/2 - 8*(7+1+6+1), screen->h/2 - 8, 1,
-				"PARSNIP THEORY");
-		
-		} else if(menuid == 1) {
-			// Draw backgrounds
-			for(i = 0; i < 2; i++)
-				menu_draw_player(screen->w/2 - 10 - 32 - 28*1 + 28*i, screen->h/2 - 10 - 44, i, 0);
-			for(i = 0; i < 3; i++)
-				menu_draw_player(screen->w - 10 - 32 - 28*2 + 28*i, screen->h/2 - 10 - 44, i, 0);
-			for(i = 0; i < 4; i++)
-				menu_draw_player(screen->w/2 - 10 - 32 - 28*3 + 28*i, screen->h - 10 - 44, i, 0);
-
-			// Draw texts
-			draw_printf(screen, i_font16, 16, 15, 20, 1, "2 PLAYER");
-			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "3 PLAYER");
-			draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "4 PLAYER");
-			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "GO BACK");
-			draw_printf(screen, i_font16, 16, screen->w/2 - 8*(3+1+4-1), screen->h/2 - 8, 1,
-				"HOT SEAT");
-
-		} else if(menuid == 2) {
-			// Draw backgrounds
-
-			// Draw texts
-			draw_printf(screen, i_font16, 16, 15, 20, 1, "CONNECT");
-			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20, 1, "CREATE");
-			//draw_printf(screen, i_font16, 16, 15, 20 + screen->h/2, 1, "SETUP");
-			draw_printf(screen, i_font16, 16, 15, screen->h - 20 - 16, 1, "X");
-			draw_printf(screen, i_font16, 16, 15 + screen->w/2, 20 + screen->h/2, 1, "GO BACK");
-			draw_printf(screen, i_font16, 16, screen->w/2 - 8*(7+1+4+3), screen->h/2 - 8, 1,
-				"NETWORK GAME");
-
-		}*/
+		// Draw widget
+		/**/ if(menuid == 0) gui_draw(menu_g_main, 0, 0);
+		else if(menuid == 2) gui_draw(menu_g_game, 0, 0);
 
 		// TEST: Draw some of a waveform
 #if 0

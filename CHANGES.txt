@@ -1,5 +1,11 @@
 Changelog:
 
+Alpha 4:
+* Added 1-button mode (for people who can't stand the default)
+* Added sound (just splats) + music (incomplete)
+* Added png loader
+* Much less annoying when you drop focus
+
 Alpha 3:
 * Better networking support
 * Nice game setup menu thing

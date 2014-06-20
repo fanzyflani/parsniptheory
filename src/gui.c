@@ -6,8 +6,31 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #include "common.h"
 
 //
-// 
+// BAG
 //
+static void gui_bag_f_draw(widget_t *g, int sx, int sy)
+{
+	gui_draw_children(g, sx, sy);
+}
+
+static void gui_bag_f_free(widget_t *g)
+{
+	widget_t *sg, *sg2;
+
+	for(sg = g->fchild; sg != NULL; sg = sg2)
+	{
+		sg2 = sg->nsib;
+		gui_free(sg);
+	}
+}
+
+int gui_bag_init(widget_t *g, void *ud)
+{
+	g->f_draw = gui_bag_f_draw;
+	g->f_free = gui_bag_f_free;
+
+	return 1;
+}
 
 //
 // GENERAL SUPPORT
@@ -99,7 +122,48 @@ widget_t *gui_new(int (*f_init)(widget_t *g, void *ud), widget_t *parent, int w,
 
 void gui_draw(widget_t *g, int sx, int sy)
 {
-	if(g->f_draw != NULL)
-		g->f_draw(g, g->sx + sx, g->sy + sy);
+	if(g != NULL && g->f_draw != NULL)
+		g->f_draw(g, sx, sy);
 }
+
+void gui_draw_children(widget_t *g, int sx, int sy)
+{
+	if(g == NULL) return;
+
+	for(g = g->fchild; g != NULL; g = g->nsib)
+		gui_draw(g, g->sx + sx, g->sy + sy);
+}
+
+int gui_mouse_b(widget_t *g, int mx, int my, int mb, int db, int ds)
+{
+	widget_t *sg;
+
+	for(sg = g->fchild; sg != NULL; sg = sg->nsib)
+	if(mx >= sg->sx && mx < sg->sx + sg->w)
+	if(my >= sg->sy && my < sg->sy + sg->h)
+	if(gui_mouse_b(sg, mx - sg->sx, my - sg->sy, mb, db, ds))
+		return 1;
+
+	if(g->f_mouse_b != NULL)
+		return g->f_mouse_b(g, mx, my, mb, db, ds);
+
+	return 0;
+}
+
+int gui_mouse_m(widget_t *g, int mx, int my, int mb, int dx, int dy)
+{
+	widget_t *sg;
+
+	for(sg = g->fchild; sg != NULL; sg = sg->nsib)
+	if(mx >= sg->sx && mx < sg->sx + sg->w)
+	if(my >= sg->sy && my < sg->sy + sg->h)
+	if(gui_mouse_m(sg, mx - sg->sx, my - sg->sy, mb, dx, dy))
+		return 1;
+
+	if(g->f_mouse_m != NULL)
+		return g->f_mouse_m(g, mx, my, mb, dx, dy);
+
+	return 0;
+}
+
 
