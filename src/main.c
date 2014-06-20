@@ -14,6 +14,8 @@ char *net_connect_host = NULL;
 widget_t *menu_g_main = NULL;
 widget_t *menu_g_game = NULL;
 
+int menu_click_catcher = -1;
+
 static void menu_draw_player(int x, int y, int team, int face)
 {
 	int i;
@@ -213,6 +215,14 @@ static void menu_widget_f_free(widget_t *g)
 
 }
 
+static int menu_widget_f_mouse_b(widget_t *g, int mx, int my, int mb, int db, int ds)
+{
+	if(ds == 0 && db == 0)
+		menu_click_catcher = g->i1;
+	
+	return 1;
+}
+
 static void menu_widget_f_draw(widget_t *g, int sx, int sy)
 {
 	int x, y, j;
@@ -241,7 +251,6 @@ static void menu_widget_f_draw(widget_t *g, int sx, int sy)
 	// Draw text
 	draw_printf(screen, i_font16, 16, sx + 5, sy + 10, 1, md->name);
 
-
 }
 
 static int menu_widget_f_init(widget_t *g, void *ud)
@@ -250,6 +259,7 @@ static int menu_widget_f_init(widget_t *g, void *ud)
 
 	g->f_draw = menu_widget_f_draw;
 	g->f_free = menu_widget_f_free;
+	g->f_mouse_b = menu_widget_f_mouse_b;
 
 	return 1;
 }
@@ -277,6 +287,7 @@ int menuloop(int menuid)
 	// Init widgets if need be
 	if(menu_g_main == NULL) menu_g_main = menu_gen_widget(menu_gui_data[0]);
 	if(menu_g_game == NULL) menu_g_game = menu_gen_widget(menu_gui_data[2]);
+	menu_click_catcher = -1;
 
 	// Ensure our clicks don't cut through twice
 	input_poll();
@@ -294,31 +305,6 @@ int menuloop(int menuid)
 		screen_clear(0);
 
 		// Work out what's selected
-		int sel = -1;
-
-		if(mouse_x >= 10 && mouse_x < screen->w/2 - 10)
-		{
-			if(mouse_y >= 10 && mouse_y < screen->h/2 - 10)
-			{
-				sel = 0;
-
-			} else if(mouse_y >= screen->h/2 + 10 && mouse_y < screen->h - 10) {
-				sel = 2;
-
-			}
-
-		} else if(mouse_x >= screen->w/2 + 10 && mouse_x < screen->w - 10) {
-			if(mouse_y >= 10 && mouse_y < screen->h/2 - 10)
-			{
-				sel = 1;
-
-			} else if(mouse_y >= screen->h/2 + 10 && mouse_y < screen->h - 10) {
-				sel = 3;
-
-			}
-
-
-		}
 
 		// Draw menu name
 		draw_printf(screen, i_font16, 16,
@@ -347,16 +333,20 @@ int menuloop(int menuid)
 		screen_flip();
 		SDL_Delay(20);
 
+		// Catch clicks
+		/**/ if(menuid == 0) gui_mouse_auto(menu_g_main, 0, 0);
+		else if(menuid == 2) gui_mouse_auto(menu_g_game, 0, 0);
+
 		// Check if clicked
-		if((mouse_ob & 1) && !(mouse_b & 1))
-		switch(menu_gui_data[menuid][sel].act)
+		if(menu_click_catcher != -1)
+		switch(menu_gui_data[menuid][menu_click_catcher].act)
 		{
 			case MAIN_MENU_MOVETO:
-				return menuloop(menu_gui_data[menuid][sel].arg);
+				return menuloop(menu_gui_data[menuid][menu_click_catcher].arg);
 			case MAIN_MENU_GOBACK:
 				return 0;
 			case MAIN_MENU_ACTION:
-				return menu_gui_data[menuid][sel].arg;
+				return menu_gui_data[menuid][menu_click_catcher].arg;
 		}
 
 		// Poll input

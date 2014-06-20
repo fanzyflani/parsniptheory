@@ -166,4 +166,28 @@ int gui_mouse_m(widget_t *g, int mx, int my, int mb, int dx, int dy)
 	return 0;
 }
 
+void gui_mouse_auto(widget_t *g, int sx, int sy)
+{
+	int i;
+
+	// Mouse coordinates
+	int mx = mouse_x - sx;
+	int my = mouse_y - sy;
+	int dx = mouse_x - mouse_ox;
+	int dy = mouse_y - mouse_oy;
+
+	// Mouse motion
+	gui_mouse_m(g, mx, my, mouse_ob, dx, dy);
+
+	// Mouse change states
+	for(i = 0; i < 32; i++)
+	{
+		if(((mouse_b & ~mouse_ob)>>i) & 1)
+			gui_mouse_b(g, mx, my, mouse_b, i, 1);
+		else if(((mouse_ob & ~mouse_b)>>i) & 1)
+			gui_mouse_b(g, mx, my, mouse_b, i, 0);
+
+	}
+
+}
 

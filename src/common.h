@@ -509,6 +509,7 @@ void gui_draw(widget_t *g, int sx, int sy);
 void gui_draw_children(widget_t *g, int sx, int sy);
 int gui_mouse_b(widget_t *g, int mx, int my, int mb, int db, int ds);
 int gui_mouse_m(widget_t *g, int mx, int my, int mb, int dx, int dy);
+void gui_mouse_auto(widget_t *g, int sx, int sy);
 
 // img.c
 uint16_t io_get2le(FILE *fp);
