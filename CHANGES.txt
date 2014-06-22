@@ -3,6 +3,11 @@ Changelog:
 Alpha 5:
 * Added a new map: 'airport'
 * You are now required to click before you move (should fix the many "where the hell am I" issues)
+* Player ID now shown on setup screen
+* Admin can now deassign teams
+* WASD/Arrows now scroll + mouse scrolling can be turned off
+* Game properly remembers the last address you typed in
+* Fancy plasma! Please tell me if it's terrible and I can revert it.
 
 Alpha 4:
 * Added 1-button mode (for people who can't stand the default)

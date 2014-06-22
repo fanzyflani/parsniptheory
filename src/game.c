@@ -15,6 +15,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 int game_pause = 0;
 int game_press_to_move = 1;
 int game_1button = 0;
+int game_mscroll = 1;
+int game_scrollkeys = 0;
 
 static void game_draw_player(int x, int y, int team, int face)
 {
@@ -435,6 +437,11 @@ void gameloop_draw_setup(game_t *game)
 				64+8*0+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42));
 
 		game_draw_player(4 + (i&7)*36, 80+(i>>3)*44, i, 0);
+
+		if(game->claim_team[i] == 0xFE)
+			draw_57_printf(screen, 4 + (i&7)*36, 80+(i>>3)*44, 1, "LOC");
+		else if(game->claim_team[i] != 0xFF)
+			draw_57_printf(screen, 4 + (i&7)*36, 80+(i>>3)*44, 1, "%03i", game->claim_team[i]);
 	}
 }
 
@@ -523,12 +530,21 @@ int game_tick_playing(game_t *game)
 
 	// Update UI
 	//if(game->net_mode != NET_SERVER)
-	if((!game_pause) && (!game_press_to_move))
+	if((!game_pause) && (!game_press_to_move) && game->claim_team[game->curplayer] == game->netid)
 	{
-		if(game->mx < (screen->w>>3)) game->camx -= 4;
-		if(game->my < (screen->h>>3)) game->camy -= 4;
-		if(game->mx >= ((screen->w*7)>>3)) game->camx += 4;
-		if(game->my >= ((screen->h*7)>>3)) game->camy += 4;
+		if(game_mscroll)
+		{
+			if(game->mx < (screen->w>>3)) game->camx -= 4;
+			if(game->my < (screen->h>>3)) game->camy -= 4;
+			if(game->mx >= ((screen->w*7)>>3)) game->camx += 4;
+			if(game->my >= ((screen->h*7)>>3)) game->camy += 4;
+		}
+
+		if((game_scrollkeys & 3) == 1) game->camx -= 4;
+		if((game_scrollkeys & 3) == 2) game->camx += 4;
+		if((game_scrollkeys & 12) == 4) game->camy -= 4;
+		if((game_scrollkeys & 12) == 8) game->camy += 4;
+
 	}
 
 	return 0;
@@ -648,7 +664,7 @@ int game_input_setup(game_t *game)
 			{
 				if(game->claim_team[i] == 0xFF)
 					game_push_claim(game, game->ab_local, 0xFF, i);
-				else if(game->claim_team[i] == game->netid)
+				else if(game->claim_team[i] == game->netid || game->claim_admin == game->netid)
 					game_push_unclaim(game, game->ab_local, 0xFF, i);
 				
 
@@ -720,6 +736,42 @@ int game_input_playing(game_t *game)
 			// Next turn!
 			game_push_newturn(game, game->ab_local, 0, STEPS_PER_TURN);
 
+			break;
+
+		case SDLK_a:
+		case SDLK_LEFT:
+			game_scrollkeys |= 1;
+			break;
+		case SDLK_a | 0x8000:
+		case SDLK_LEFT | 0x8000:
+			game_scrollkeys &= ~1;
+			break;
+
+		case SDLK_d:
+		case SDLK_RIGHT:
+			game_scrollkeys |= 2;
+			break;
+		case SDLK_d | 0x8000:
+		case SDLK_RIGHT | 0x8000:
+			game_scrollkeys &= ~2;
+			break;
+
+		case SDLK_w:
+		case SDLK_UP:
+			game_scrollkeys |= 4;
+			break;
+		case SDLK_w | 0x8000:
+		case SDLK_UP | 0x8000:
+			game_scrollkeys &= ~4;
+			break;
+
+		case SDLK_s:
+		case SDLK_DOWN:
+			game_scrollkeys |= 8;
+			break;
+		case SDLK_s | 0x8000:
+		case SDLK_DOWN | 0x8000:
+			game_scrollkeys &= ~8;
 			break;
 	}
 
@@ -916,9 +968,29 @@ int gameloop(int net_mode, TCPsocket sock)
 				game_1button = 1;
 				break;
 
+			case -2:
 			case 1:
 				game_1button = 0;
 				break;
+
+			default:
+				return 0;
+
+		}
+
+		switch(options_dialogue("Use mouse scroll?", "YES: At edges", "NO: WASD/arrows only"))
+		{
+			case -2:
+			case 0:
+				game_mscroll = 1;
+				break;
+
+			case 1:
+				game_mscroll = 0;
+				break;
+
+			default:
+				return 0;
 
 		}
 

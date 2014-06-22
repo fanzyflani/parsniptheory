@@ -5,10 +5,55 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
+float screen_plasma_ang1 = 0.0;
+float screen_plasma_ang2 = 0.0;
+int screen_plasma_x = 160;
+int screen_plasma_y = 100;
+
+void screen_plasma(void)
+{
+	int x, y, i, v;
+	int vx, vy;
+	for(i = 0; i < 16; i++)
+	{
+		pal_main[i+16][0] = 120+120*sin(screen_plasma_ang1 + M_PI*i/24.0 + M_PI*0.0/3.0);
+		pal_main[i+16][1] = 120+120*sin(screen_plasma_ang2 + M_PI*i/24.0 + M_PI*2.0/3.0);
+		pal_main[i+16][2] = 120+120*sin(screen_plasma_ang1 + screen_plasma_ang2 + M_PI*i/24.0 + M_PI*4.0/3.0);
+	}
+
+	screen_plasma_ang1 += 0.07;
+	screen_plasma_ang2 += 0.057;
+	screen_plasma_x = screen->w/2 + (screen->h/4)*sin(screen_plasma_ang1);
+	screen_plasma_y = screen->h/2 + (screen->h/4)*cos(screen_plasma_ang2);
+
+	int yoffstab[256];
+	for(x = 0; x < 256; x++)
+		yoffstab[x] = screen->h/4*cos(x*M_PI/128 + screen_plasma_ang2 + sin(screen_plasma_ang1 + x/512));
+
+	for(y = 0; y < screen->h; y++)
+	{
+		int xoffs = screen->h/4*sin(y*M_PI*2.0/screen->h + screen_plasma_ang1 + sin(screen_plasma_ang2 + y/(screen->h*4)));
+
+		for(x = 0; x < screen->w; x++)
+		{
+			vx = (x+xoffs-screen_plasma_x);
+			vy = (y+yoffstab[(x-xoffs)&255]-screen_plasma_y);
+			v = vx*vx + vy*vy;
+			v >>= 8;
+			v += (x^y)&1;
+			v >>= 1;
+			v ^= ((v>>4)&1)*15;
+			v &= 15;
+			*IMG8(screen, x, y) = v+16;
+		}
+	}
+}
+
 void screen_clear(uint8_t col)
 {
 	// Easy.
-	memset(screen->data, col, screen->w * screen->h);
+	//memset(screen->data, col, screen->w * screen->h);
+	screen_plasma();
 }
 
 void screen_dim_halftone(void)

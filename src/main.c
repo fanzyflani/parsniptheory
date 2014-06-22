@@ -320,6 +320,8 @@ int menuloop(int menuid)
 		// Clear the screen
 		screen_clear(0);
 
+
+		// Pick menu
 		/**/ if(menuid == 0) g_menu = menu_g_main;
 		else if(menuid == 2) g_menu = menu_g_game;
 
@@ -511,8 +513,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 
-			free(net_connect_host);
-			net_connect_host = NULL;
+			//free(net_connect_host); net_connect_host = NULL;
 
 			gameloop(NET_CLIENT, client_sockfd);
 		} break;

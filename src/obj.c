@@ -265,6 +265,12 @@ void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 		camx + 32*ob->f.cx + ob->f.ox,
 		camy + 24*ob->f.cy + ob->f.oy - 24,
 		1, "%i", ob->health);
+
+	// Draw team number (because colourblind people are a thing)
+	draw_57_printf(dst,
+		camx + 32*ob->f.cx + ob->f.ox + 30 - 4*3,
+		camy + 24*ob->f.cy + ob->f.oy - 24,
+		1, "%3i", fde->team+1);
 }
 
 void obj_player_f_free(obj_t *ob)

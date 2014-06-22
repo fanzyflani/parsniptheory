@@ -5,7 +5,6 @@ See LICENCE.txt for licensing details.
 This program is SHAREWARE. Unfortunately, there is no "registered version" yet, as this is currently in ALPHA TESTING. That means this ISN'T FINISHED.
 
 Please, if you're sharing this program, make sure you share the unmodified files. (You can share modified files, just make sure you have unmodified files handy)
-If you accidentally ruin your dat/level.psl file, rip it out of the .zip file again.
 
 ----
 
@@ -22,8 +21,16 @@ Raspberry Pi users: I haven't got a build for this yet. If you really want one, 
 
 ----
 
+Map list:
+- genesis - The first map ever.
+- layer8 - Simple, boring map to test 8 players.
+- airport - Much more interesting map to test 8 players.
+
+----
+
 Network info:
 TCP port 2014. More robust than it was in Alpha 2. Let me know if you get any horrible desyncs. Thanks!
+Networking protocol hasn't changed since Alpha 3 from my understanding.
 
 ----
 
@@ -35,6 +42,7 @@ Playing instructions:
   * Left click either selects or deselects a unit.
   * Right click either moves your unit, or attempts to throw a tomato at an enemy player.
 * Enter ends your turn and moves onto the next player.
+* Escape "pauses" the game, mostly so you can move your mouse elsewhere.
 * Your units get 7 "steps" each.
   * Moving by 1 tile  uses up 1 step.
   * Throwing a tomato uses up 2 steps.

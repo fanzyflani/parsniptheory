@@ -417,7 +417,7 @@ int options_dialogue(const char *title, const char *opt1, const char *opt2)
 {
 #ifdef __EMSCRIPTEN__
 	if(1) {
-		return -1;
+		return -2;
 	}
 #endif
 	int titlelen = strlen(title);
