@@ -690,7 +690,7 @@ int audio_init(void)
 	);
 
 	// Play music
-	music_play(mod_trk1);
+	//music_play(mod_trk1);
 
 	// Play sound
 	snd_play_splat(0, 0, 0);

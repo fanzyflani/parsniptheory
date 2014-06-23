@@ -16,7 +16,6 @@ int game_pause = 0;
 int game_press_to_move = 1;
 int game_1button = 0;
 int game_mscroll = 1;
-int game_scrollkeys = 0;
 
 static void game_draw_player(int x, int y, int team, int face)
 {
@@ -540,10 +539,10 @@ int game_tick_playing(game_t *game)
 			if(game->my >= ((screen->h*7)>>3)) game->camy += 4;
 		}
 
-		if((game_scrollkeys & 3) == 1) game->camx -= 4;
-		if((game_scrollkeys & 3) == 2) game->camx += 4;
-		if((game_scrollkeys & 12) == 4) game->camy -= 4;
-		if((game_scrollkeys & 12) == 8) game->camy += 4;
+		if(key_state[SDLK_w] || key_state[SDLK_UP]) game->camy -= 4;
+		if(key_state[SDLK_s] || key_state[SDLK_DOWN]) game->camy += 4;
+		if(key_state[SDLK_a] || key_state[SDLK_LEFT]) game->camx -= 4;
+		if(key_state[SDLK_d] || key_state[SDLK_RIGHT]) game->camx += 4;
 
 	}
 
@@ -738,41 +737,6 @@ int game_input_playing(game_t *game)
 
 			break;
 
-		case SDLK_a:
-		case SDLK_LEFT:
-			game_scrollkeys |= 1;
-			break;
-		case SDLK_a | 0x8000:
-		case SDLK_LEFT | 0x8000:
-			game_scrollkeys &= ~1;
-			break;
-
-		case SDLK_d:
-		case SDLK_RIGHT:
-			game_scrollkeys |= 2;
-			break;
-		case SDLK_d | 0x8000:
-		case SDLK_RIGHT | 0x8000:
-			game_scrollkeys &= ~2;
-			break;
-
-		case SDLK_w:
-		case SDLK_UP:
-			game_scrollkeys |= 4;
-			break;
-		case SDLK_w | 0x8000:
-		case SDLK_UP | 0x8000:
-			game_scrollkeys &= ~4;
-			break;
-
-		case SDLK_s:
-		case SDLK_DOWN:
-			game_scrollkeys |= 8;
-			break;
-		case SDLK_s | 0x8000:
-		case SDLK_DOWN | 0x8000:
-			game_scrollkeys &= ~8;
-			break;
 	}
 
 	if((mouse_b & ~mouse_ob) & 1)

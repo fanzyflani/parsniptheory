@@ -15,7 +15,7 @@ int mouse_ob = 0;
 // We are not a key charity. (NO PUN THERE)
 // Also, you only get 31 chars.
 // If it overflows, tough.
-#define KEY_QUEUE_SIZE 32
+#define KEY_QUEUE_SIZE 64
 
 // is_released:1, key_sym:15, key_unicode:16
 uint8_t key_state[SDLK_LAST];
@@ -25,8 +25,17 @@ int key_queue_tail = 0;
 
 void input_key_queue_flush(void)
 {
-	// Easy.
+	// Clear the list
 	key_queue_tail = key_queue_head;
+
+	// Also clear the key_state array
+	memset(key_state, 0, sizeof(key_state));
+
+	// ALT: Turn everything into an unpress
+	//int i;
+	//for(i = key_queue_head; i != key_queue_tail; i = (i+1) % KEY_QUEUE_SIZE)
+	//	key_queue[i] |= 0x80000000;
+
 }
 
 void input_key_queue_push(uint32_t key)
@@ -36,7 +45,7 @@ void input_key_queue_push(uint32_t key)
 	if(((key>>16) & 0x7FFF) >= SDLK_LAST) key &= 0x8000FFFF;
 
 	// Add to queue
-	key_queue[key_queue_tail] = key;
+	key_queue[key_queue_head] = key;
 
 	// Advance head
 	key_queue_head = (key_queue_head + 1) % KEY_QUEUE_SIZE;
@@ -77,6 +86,7 @@ uint32_t input_key_queue_pop(void)
 int input_poll(void)
 {
 	SDL_Event ev;
+	int ret = 0;
 
 	mouse_ox = mouse_x;
 	mouse_oy = mouse_y;
@@ -86,7 +96,8 @@ int input_poll(void)
 	switch(ev.type)
 	{
 		case SDL_QUIT:
-			return 1;
+			ret = 1;
+			break;
 
 		case SDL_KEYDOWN:
 			if(ev.key.keysym.sym < SDLK_LAST)
@@ -139,6 +150,6 @@ int input_poll(void)
 
 	}
 
-	return 0;
+	return ret;
 }
 
