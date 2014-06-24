@@ -1,5 +1,8 @@
 Changelog:
 
+Alpha 5a:
+* Fixed issues with keyboard input being terrible and whatnot.
+
 Alpha 5:
 * Added a new map: 'airport'
 * You are now required to click before you move (should fix the many "where the hell am I" issues)
