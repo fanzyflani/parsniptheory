@@ -544,6 +544,11 @@ int game_tick_playing(game_t *game)
 		if(key_state[SDLK_a] || key_state[SDLK_LEFT]) game->camx -= 4;
 		if(key_state[SDLK_d] || key_state[SDLK_RIGHT]) game->camx += 4;
 
+		if(game->camx < game->lv->layers[0]->x*32) game->camx = game->lv->layers[0]->x*32;
+		if(game->camy < game->lv->layers[0]->y*24) game->camy = game->lv->layers[0]->y*24;
+		if(game->camx+screen->w > (game->lv->layers[0]->x + game->lv->layers[0]->w)*32) game->camx = (game->lv->layers[0]->x + game->lv->layers[0]->w)*32-screen->w;
+		if(game->camy+screen->h > (game->lv->layers[0]->y + game->lv->layers[0]->h)*24) game->camy = (game->lv->layers[0]->y + game->lv->layers[0]->h)*24-screen->h;
+
 	}
 
 	return 0;
