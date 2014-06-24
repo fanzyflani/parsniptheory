@@ -2,6 +2,7 @@ Changelog:
 
 Alpha 5a:
 * Fixed issues with keyboard input being terrible and whatnot.
+* Music updated.
 
 Alpha 5:
 * Added a new map: 'airport'
