@@ -13,7 +13,7 @@ Windows users: Run "parsniptheory-windows-i386.exe".
 Linux users: Run "./parsniptheory-linux.sh". Alternatively, if you just so happen to have all the right libs installed, you can try running "./parsniptheory-linux-i386".
 LET ME KNOW IF THIS IS MISSING ANY LIBRARIES! (They're from a version of Debian.)
 
-Raspberry Pi users: Run "./parsniptheory-linux.sh". Alternatively, if you just so happen to have all the right libs installed, you can try running "./parsniptheory-linux-i386".
+Raspberry Pi users: Run "./parsniptheory-linux.sh". You will need the correct libraries to run this (SDL, SDL_net, and some others you ALREADY HAVE). This was built on Raspbian. Prod me if you need help or are missing libraries.
 
 FreeBSD users: You can work this one out. Alternatively, you can try emulation.
 
