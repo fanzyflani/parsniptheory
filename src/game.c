@@ -36,15 +36,17 @@ void game_free(game_t *game)
 {
 	int i;
 
+	printf("Game freeing!\n");
+
 	// Free structures
-	if(game->lv != NULL) free(game->lv);
+	if(game->lv != NULL) level_free(game->lv);
 
 	// Free action buffers
-	if(game->ab_local == NULL)
-		free(game->ab_local);
+	if(game->ab_local != NULL)
+		abuf_free(game->ab_local);
 	for(i = 0; i < TEAM_MAX; i++)
 		if(game->ab_teams[i] != NULL)
-			free(game->ab_teams[i]);
+			abuf_free(game->ab_teams[i]);
 
 	// Free
 	free(game);
@@ -75,6 +77,7 @@ game_t *game_new(int net_mode)
 		= game->time_next
 		= game->time_next_hover
 		= SDL_GetTicks();
+	game->tick_next_pulse = 1;
 
 	game->selob = NULL;
 	game->lv = NULL;
@@ -357,7 +360,7 @@ void gameloop_draw_playing(game_t *game)
 			0,
 			0*32, i*48, 32, 48,
 			0, teams[game->curplayer]->cm_player);
-		
+
 	if(game->claim_team[game->curplayer] == game->netid)
 		draw_printf(screen, i_font16, 16, 32, 0, 1, "* PLAYER %i TURN *", game->curplayer+1);
 	else
@@ -376,6 +379,11 @@ void gameloop_draw_playing(game_t *game)
 		screen_dim_halftone();
 		draw_printf(screen, i_font16, 16, screen->w/2-8*8-4, screen->h/2-16, 1, "PLAYER %i", game->curplayer+1);
 		draw_printf(screen, i_font16, 16, screen->w/2-8*12, screen->h/2, 1, "CLICK TO MOVE");
+
+	} else if(game_press_to_move && game->claim_team[game->curplayer] == 0xFF && game->net_mode != NET_SERVER) {
+		screen_dim_halftone();
+		draw_printf(screen, i_font16, 16, screen->w/2-8*8-4, screen->h/2-16, 1, "PLAYER %i", game->curplayer+1);
+		draw_printf(screen, i_font16, 16, screen->w/2-8*12, screen->h/2, 1, "CLICK TO STEAL");
 
 	}
 
@@ -556,11 +564,67 @@ int game_tick_playing(game_t *game)
 
 int game_tick(game_t *game)
 {
+	int i;
 
 	// Check if game over
 	if(game->main_state == GAME_OVER)
-		return 2;
+	{
+		game->main_state = GAME_SETUP;
+		printf("Game over! Returning to lobby.\n");
+	}
 
+	if(game->net_mode == NET_SERVER)
+	{
+		// Clear any claims from dead connections
+		for(i = 0; i < TEAM_MAX; i++)
+		{
+			if(game->claim_team[i] < TEAM_MAX
+				&& game->ab_teams[game->claim_team[i]]->state == CLIENT_DEAD)
+			{
+				abuf_bc_u8(ACT_UNCLAIM, game);
+				abuf_bc_u8(0xFF, game);
+				abuf_bc_u8(i, game);
+				game->claim_team[i] = 0xFF;
+
+			} else if(game->claim_team[i] == 0xFE
+				&& game->ab_local->state == CLIENT_DEAD) {
+
+				abuf_bc_u8(ACT_UNCLAIM, game);
+				abuf_bc_u8(0xFF, game);
+				abuf_bc_u8(i, game);
+				game->claim_team[i] = 0xFF;
+
+			}
+		}
+
+		if(game->claim_admin < TEAM_MAX
+			&& game->ab_teams[game->claim_admin]->state == CLIENT_DEAD)
+		{
+			abuf_bc_u8(ACT_UNCLAIM, game);
+			abuf_bc_u8(0xFF, game);
+			abuf_bc_u8(0xFF, game);
+			game->claim_admin = 0xFF;
+
+		} else if(game->claim_admin == 0xFE
+			&& game->ab_local->state == CLIENT_DEAD) {
+
+			abuf_bc_u8(ACT_UNCLAIM, game);
+			abuf_bc_u8(0xFF, game);
+			abuf_bc_u8(0xFF, game);
+			game->claim_admin = 0xFF;
+
+		}
+
+		// Keepalive
+		if(--game->tick_next_pulse <= 0)
+		{
+			game->tick_next_pulse = 40;
+			abuf_bc_u8(ACT_NOP, game);
+		}
+
+	}
+
+	// Branch out
 	switch(game->main_state)
 	{
 		case GAME_LOGIN0:
@@ -683,8 +747,9 @@ int game_input_setup(game_t *game)
 
 int game_input_playing(game_t *game)
 {
-	// Block input if this isn't your team
-	if(game->claim_team[game->curplayer] != game->netid)
+	// Block input if this isn't your team (or if it's unclaimed)
+	if(game->claim_team[game->curplayer] != game->netid
+		&& (game->claim_team[game->curplayer] != 0xFF || game->net_mode == NET_SERVER))
 	{
 		input_key_queue_flush();
 		return 0;
@@ -708,11 +773,19 @@ int game_input_playing(game_t *game)
 	}
 
 	// Block input if waiting for move
-	if(game_press_to_move)
+	if(game_press_to_move || (game->claim_team[game->curplayer] == 0xFF))
 	{
 		input_key_queue_flush();
+
 		if((mouse_ob & ~mouse_b) & 7)
 		{
+			// Try claiming the player first
+			if(game->claim_team[game->curplayer] == 0xFF)
+			{
+				game_push_claim(game, game->ab_local, game->netid, game->curplayer);
+				return 0;
+			}
+
 			game_press_to_move = 0;
 			game_pause = 0;
 		}
@@ -922,7 +995,7 @@ int gameloop(int net_mode, TCPsocket sock)
 			: 4);
 
 		// TODO: pick random map
-		strcpy(game_m->settings.map_name, "genesis");
+		strcpy(game_m->settings.map_name, "airport");
 	}
 
 	// Prepare view

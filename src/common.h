@@ -68,7 +68,7 @@ typedef void *IPaddress;
 
 // Versions
 #define MAP_FVERSION 1
-#define NET_VERSION 2
+#define NET_VERSION 3
 
 // Other things
 #define NET_PORT 2014
@@ -497,6 +497,7 @@ void game_free(game_t *game);
 int gameloop_player_can_play(game_t *game, int tid);
 void gameloop_start_turn(game_t *game, int steps_added);
 int gameloop_next_turn(game_t *game, int tid, int steps_added);
+int game_tick(game_t *game);
 int gameloop(int net_mode, TCPsocket sock);
 
 // gui.c

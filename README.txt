@@ -13,11 +13,12 @@ Windows users: Run "parsniptheory-windows-i386.exe".
 Linux users: Run "./parsniptheory-linux.sh". Alternatively, if you just so happen to have all the right libs installed, you can try running "./parsniptheory-linux-i386".
 LET ME KNOW IF THIS IS MISSING ANY LIBRARIES! (They're from a version of Debian.)
 
+Raspberry Pi users: Run "./parsniptheory-linux.sh". Alternatively, if you just so happen to have all the right libs installed, you can try running "./parsniptheory-linux-i386".
+
 FreeBSD users: You can work this one out. Alternatively, you can try emulation.
 
 Mac OS X users: I have no plans for a native port to this platform. If you want there to be a port, I'll need you to test, and also help me set up a cross-compiler. Otherwise, use Wine.
 
-Raspberry Pi users: I haven't got a build for this yet. If you really want one, prod me on Twitter and I'll whip one up. Otherwise... use your other computer.
 
 ----
 
@@ -29,8 +30,7 @@ Map list:
 ----
 
 Network info:
-TCP port 2014. More robust than it was in Alpha 2. Let me know if you get any horrible desyncs. Thanks!
-Networking protocol hasn't changed since Alpha 3 from my understanding.
+TCP port 2014. New protocol since Alpha 6 - older clients will not be able to connect.
 
 ----
 

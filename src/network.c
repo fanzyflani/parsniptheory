@@ -76,6 +76,120 @@ void game_push_startbutton(game_t *game, abuf_t *ab)
 
 }
 
+void game_push_map(game_t *game, abuf_t *ab, int global)
+{
+	FILE *fp;
+	char buf[MAP_BUFFER_SIZE];
+	char *mbuf = NULL;
+	int len;
+	int buf_offs;
+
+	// Save the map to a temporary file
+	//
+	// getpid(2) states:
+	// Though the ID is guaranteed to be unique, it should NOT be used for con‐
+	// structing temporary file names, for security reasons; see mkstemp(3)
+	// instead.
+	//
+	// But because Windows is a thing, I have no choice.
+#ifdef WIN32
+	sprintf(buf, "svr-psl.%i", getpid());
+#else
+	strcpy(buf, "/tmp/svr-psl.XXXXXX");
+	mktemp(buf);
+#endif
+	printf("fname \"%s\"\n", buf);
+	if(!level_save(game->lv, buf))
+	{
+		// TODO: Be more graceful
+		printf("LEVEL FAILED TO SAVE - ABORTING.\n");
+		abort();
+	}
+
+	// Reload the map
+	if(global)
+	{
+		level_free(game->lv);
+		game->lv = level_load(buf);
+		assert(game->lv != NULL); // TODO: Be more graceful
+		game->lv->game = game;
+	}
+
+	// Load it as a file
+	fp = fopen(buf, "rb");
+	buf_offs = 0;
+	for(;;)
+	{
+		len = fread(buf, 1, MAP_BUFFER_SEND, fp);
+		assert(len >= 0); // TODO: Be more graceful
+		if(len == 0) break;
+		mbuf = realloc(mbuf, buf_offs + len);
+		memcpy(mbuf + buf_offs, buf, len);
+		buf_offs += len;
+	}
+	fclose(fp);
+
+	// Now send the map
+	len = buf_offs;
+	assert(len <= 0xFFFFFF);
+	if(global)
+	{
+		abuf_bc_u8(ACT_MAPBEG, game);
+		abuf_bc_u16(len & 0xFFFF, game);
+		abuf_bc_u8((len>>16) & 0xFFFF, game);
+
+		buf_offs = 0;
+		while(buf_offs < len)
+		{
+			abuf_bc_u8(ACT_MAPDATA, game);
+			if(len - buf_offs >= MAP_BUFFER_SEND)
+			{
+				abuf_bc_u16(MAP_BUFFER_SEND, game);
+				abuf_bc_block(mbuf + buf_offs, MAP_BUFFER_SEND, game);
+				buf_offs += MAP_BUFFER_SEND;
+
+			} else {
+				abuf_bc_u16(len - buf_offs, game);
+				abuf_bc_block(mbuf + buf_offs, len - buf_offs, game);
+				break;
+
+			}
+		}
+
+		// Free and end
+		free(mbuf);
+		abuf_bc_u8(ACT_MAPEND, game);
+
+	} else {
+		abuf_write_u8(ACT_MAPBEG, ab);
+		abuf_write_u16(len & 0xFFFF, ab);
+		abuf_write_u8((len>>16) & 0xFFFF, ab);
+
+		buf_offs = 0;
+		while(buf_offs < len)
+		{
+			abuf_write_u8(ACT_MAPDATA, ab);
+			if(len - buf_offs >= MAP_BUFFER_SEND)
+			{
+				abuf_write_u16(MAP_BUFFER_SEND, ab);
+				abuf_write_block(mbuf + buf_offs, MAP_BUFFER_SEND, ab);
+				buf_offs += MAP_BUFFER_SEND;
+
+			} else {
+				abuf_write_u16(len - buf_offs, ab);
+				abuf_write_block(mbuf + buf_offs, len - buf_offs, ab);
+				break;
+
+			}
+		}
+
+		// Free and end
+		free(mbuf);
+		abuf_write_u8(ACT_MAPEND, ab);
+	}
+
+}
+
 void game_push_hover(game_t *game, abuf_t *ab, int mx, int my, int camx, int camy)
 {
 	abuf_write_u8(ACT_HOVER, ab);
@@ -197,10 +311,10 @@ void game_handle_version(game_t *game, abuf_t *ab, int typ, int ver)
 
 	} else if(typ == NET_C2S) {
 		// Check if we're in the right state
-		if(game->main_state != GAME_SETUP)
+		if(game->main_state == GAME_OVER)
 		{
 			// Nope. Kick!
-			game_push_quit(game, ab, "Game started");
+			game_push_quit(game, ab, "Game over");
 			return;
 
 		}
@@ -227,9 +341,23 @@ void game_handle_version(game_t *game, abuf_t *ab, int typ, int ver)
 		if(game->claim_admin != 0xFF)
 			game_push_claim(game, ab, game->claim_admin, 0xFF);
 
-		// Move to setup mode
-		// TODO: Push current setup state
-		ab->state = CLIENT_SETUP;
+		// If in setup mode, move to setup mode
+		if(game->main_state == GAME_SETUP)
+		{
+			ab->state = CLIENT_SETUP;
+			return;
+		}
+
+		// Otherwise, send map
+		abuf_write_u8(ACT_STARTBUTTON, ab);
+		game_push_map(game, ab, 0);
+		game_push_newturn(game, ab, game->curplayer, STEPS_PER_TURN);
+		if(game->selob != NULL)
+		{
+			abuf_write_u8(ACT_SELECT, ab);
+			abuf_write_s16(game->selob->f.cx, ab);
+			abuf_write_s16(game->selob->f.cy, ab);
+		}
 
 	} else if(typ == NET_S2C) {
 		// Acknowledge, and move to the setup phase
@@ -293,7 +421,7 @@ void game_handle_unclaim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 
 	} else {
 		assert((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF);
-		assert((netid >= 0 && netid < TEAM_MAX) || netid == 0xFE);
+		//assert((netid >= 0 && netid < TEAM_MAX) || netid == 0xFE);
 
 	}
 
@@ -313,11 +441,7 @@ void game_handle_unclaim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 void game_handle_startbutton(game_t *game, abuf_t *ab, int typ)
 {
 	char buf[MAP_BUFFER_SIZE];
-	char *mbuf = NULL;
-	int buf_offs;
 	int i;
-	int len;
-	FILE *fp;
 	obj_t *ob;
 
 	assert(typ == NET_C2S || typ == NET_S2C);
@@ -368,76 +492,8 @@ void game_handle_startbutton(game_t *game, abuf_t *ab, int typ)
 			}
 		}
 
-		// Save the map to a temporary file
-		//
-		// getpid(2) states:
-		// Though the ID is guaranteed to be unique, it should NOT be used for con‐
-		// structing temporary file names, for security reasons; see mkstemp(3)
-		// instead.
-		//
-		// But because Windows is a thing, I have no choice.
-#ifdef WIN32
-		sprintf(buf, "svr-psl.%i", getpid());
-#else
-		strcpy(buf, "/tmp/svr-psl.XXXXXX");
-		mktemp(buf);
-#endif
-		printf("fname \"%s\"\n", buf);
-		if(!level_save(game->lv, buf))
-		{
-			// TODO: Be more graceful
-			printf("LEVEL FAILED TO SAVE - ABORTING.\n");
-			abort();
-		}
-
-		// Reload the map
-		level_free(game->lv);
-		game->lv = level_load(buf);
-		assert(game->lv != NULL); // TODO: Be more graceful
-		game->lv->game = game;
-
-		// Load it as a file
-		fp = fopen(buf, "rb");
-		buf_offs = 0;
-		for(;;)
-		{
-			len = fread(buf, 1, MAP_BUFFER_SEND, fp);
-			assert(len >= 0); // TODO: Be more graceful
-			if(len == 0) break;
-			mbuf = realloc(mbuf, buf_offs + len);
-			memcpy(mbuf + buf_offs, buf, len);
-			buf_offs += len;
-		}
-		fclose(fp);
-
-		// Now send the map
-		len = buf_offs;
-		assert(len <= 0xFFFFFF);
-		abuf_bc_u8(ACT_MAPBEG, game);
-		abuf_bc_u16(len & 0xFFFF, game);
-		abuf_bc_u8((len>>16) & 0xFFFF, game);
-
-		buf_offs = 0;
-		while(buf_offs < len)
-		{
-			abuf_bc_u8(ACT_MAPDATA, game);
-			if(len - buf_offs >= MAP_BUFFER_SEND)
-			{
-				abuf_bc_u16(MAP_BUFFER_SEND, game);
-				abuf_bc_block(mbuf + buf_offs, MAP_BUFFER_SEND, game);
-				buf_offs += MAP_BUFFER_SEND;
-
-			} else {
-				abuf_bc_u16(len - buf_offs, game);
-				abuf_bc_block(mbuf + buf_offs, len - buf_offs, game);
-				break;
-
-			}
-		}
-
-		// Free and end
-		free(mbuf);
-		abuf_bc_u8(ACT_MAPEND, game);
+		// Push map
+		game_push_map(game, ab, 1);
 
 		// Start turn
 		printf("starting turn!\n");
@@ -622,7 +678,7 @@ void game_handle_newturn(game_t *game, abuf_t *ab, int typ, int tid, int steps_a
 	} else return;
 
 	// Next player
-	if(!gameloop_next_turn(game, tid, steps_added))
+	if(tid == 0xFF || !gameloop_next_turn(game, tid, steps_added))
 	{
 		game->main_state = GAME_OVER;
 		printf("Game over!\n");
@@ -644,6 +700,9 @@ void game_handle_newturn(game_t *game, abuf_t *ab, int typ, int tid, int steps_a
 			abuf_bc_u8(game->curplayer, game);
 			abuf_bc_s16(steps_added, game);
 		}
+
+		// Give an extra tick
+		game_tick(game);
 	}
 
 }

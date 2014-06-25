@@ -166,6 +166,7 @@ void abuf_poll_write(abuf_t *ab)
 
 		if(len == 0)
 		{
+			//printf("len is 0\n");
 			// Do nothing
 
 		} else if(len < 0) {

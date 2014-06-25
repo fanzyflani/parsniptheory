@@ -1,6 +1,13 @@
 #!/bin/sh
 export ARCH=i386
-# TODO: Other architectures
+
+case `uname -m` in
+	armv6l)
+		export ARCH=armv6l
+		;;
+	*)
+		echo "Defaulting to i386."
+esac
 
 cd "$(dirname $0)"
 

@@ -276,7 +276,7 @@ widget_t *menu_gen_widget(struct menu_data *mdat, const char *name)
 	g->sx = groot->w/2 - 8*strlen(name);
 	g->sy = groot->h/2 - 8;
 
-	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 5a - SHAREWARE - Spread to all your friends! Even though it's not finished!");
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 6 - SHAREWARE - Spread to all your friends! Even though it's not finished!");
 	g->sx = 0;
 	g->sy = 0;
 
@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
 
 	// Set up basic video mode
 	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 5a)", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 6)", NULL);
 	loadicon("dat/icon.tga");
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
 	printf("screen %p %i %i\n", screen_surface, screen_surface->w, screen_surface->h);
