@@ -51,9 +51,12 @@ void screen_plasma(void)
 
 void screen_clear(uint8_t col)
 {
+#ifdef NO_PLASMA
 	// Easy.
-	//memset(screen->data, col, screen->w * screen->h);
+	memset(screen->data, col, screen->w * screen->h);
+#else
 	screen_plasma();
+#endif
 }
 
 void screen_dim_halftone(void)
