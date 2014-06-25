@@ -601,7 +601,6 @@ extern team_t *teams[TEAM_MAX];
 extern uint8_t pal_src[256][4];
 extern cmap_t *cmaps;
 extern uint8_t pal_main[256][4];
-extern uint16_t pal_dither[256][2][2]; // For 16bpp modes
 
 #endif
 

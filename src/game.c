@@ -494,7 +494,7 @@ void gameloop_draw(game_t *game)
 	// Flip
 	screen_flip();
 #ifndef __EMSCRIPTEN__
-	SDL_Delay(20);
+	SDL_Delay(10);
 #endif
 
 }
