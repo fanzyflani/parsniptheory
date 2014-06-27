@@ -20,6 +20,7 @@ IMAGES_PNG = \
 	dat/tiles1.img
 
 OBJS_COMMON = \
+	$(OBJDIR)/ai.o \
 	$(OBJDIR)/action.o \
 	$(OBJDIR)/audio.o \
 	$(OBJDIR)/cdefs.o \

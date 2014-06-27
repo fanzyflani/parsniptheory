@@ -12,6 +12,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #define SETUP_MOUSE(x,y,w,h) (mouse_x >= (x) && mouse_y >= (y) && mouse_x < (x)+(w) && mouse_y < (y)+(h) \
 	? 0 : 2)
 
+ai_t *test_ai = NULL;
+
 int game_pause = 0;
 int game_press_to_move = 1;
 int game_1button = 0;
@@ -747,6 +749,14 @@ int game_input_setup(game_t *game)
 
 int game_input_playing(game_t *game)
 {
+	// XXX: AI TEST CODE
+	game_pause = 0;
+	game_press_to_move = 0;
+	if(test_ai == NULL) test_ai = ai_new(game, game->curplayer);
+	test_ai->tid = game->curplayer;
+	test_ai->f_do_move(test_ai);
+	if(1) return 0;
+
 	// Block input if this isn't your team (or if it's unclaimed)
 	if(game->claim_team[game->curplayer] != game->netid
 		&& (game->claim_team[game->curplayer] != 0xFF || game->net_mode == NET_SERVER))
@@ -984,6 +994,8 @@ int gameloop(int net_mode, TCPsocket sock)
 	if(game_m != NULL) { game_free(game_m); game_m = NULL; }
 	game_pause = 0;
 	game_press_to_move = 1;
+
+	if(test_ai != NULL) { ai_free(test_ai); test_ai = NULL; }
 
 	// Prepare model
 	if(net_mode == NET_LOCAL || net_mode == NET_SERVER)

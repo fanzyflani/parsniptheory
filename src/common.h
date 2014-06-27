@@ -93,6 +93,8 @@ struct img
 	int cmidx;
 };
 
+#define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
+
 typedef struct cmap
 {
 	char *fname;
@@ -278,7 +280,16 @@ struct level
 	obj_t **objects;
 };
 
-#define IMG8(img, x, y)  ((x) +  (uint8_t *)(img->w * (y) + (uint8_t *)(img->data)))
+
+typedef struct ai ai_t;
+
+struct ai
+{
+	game_t *game; // Tie this to the model.
+	int tid;
+
+	void (*f_do_move)(ai_t *ai);
+};
 
 enum
 {
@@ -443,6 +454,10 @@ void abuf_bc_s16(int16_t v, game_t *game);
 void abuf_bc_block(const void *buf, int len, game_t *game);
 int abuf_bc_get_wspace(game_t *game);
 
+// ai.c
+void ai_free(ai_t *ai);
+ai_t *ai_new(game_t *game, int tid);
+
 // audio.c
 extern snd_t *snd_splat[];
 extern snd_t *snd_step[];
@@ -574,6 +589,7 @@ int sdiv(int n, int d);
 int smod(int n, int d);
 int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2, int y2);
 int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2);
+int find_free_neighbour_layer(layer_t *ar, int sx, int sy, int *rx, int *ry);
 void errorloop(const char *error);
 int options_dialogue(const char *title, const char *opt1, const char *opt2);
 char *text_dialogue(const char *title, const char *def);

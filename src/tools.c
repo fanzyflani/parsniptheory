@@ -363,6 +363,30 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 
 }
 
+int find_free_neighbour_layer(layer_t *ar, int sx, int sy, int *rx, int *ry)
+{
+	cell_t *c;
+	int dx, dy;
+	int i, t;
+
+	dx = 0; dy = 1;
+	for(i = 0; i < 4; i++)
+	{
+		c = layer_cell_ptr(ar, sx+dx, sy+dy);
+
+		if(c != NULL && c->f.ctyp == CELL_FLOOR && c->ob == NULL)
+		{
+			*rx = sx + dx;
+			*ry = sy + dy;
+			return 1;
+		}
+
+		t = dx; dx = dy; dy = -t;
+	}
+
+	return 0;
+}
+
 // Error message loop
 void errorloop(const char *error)
 {
