@@ -64,6 +64,7 @@ typedef void *IPaddress;
 #define MAP_BUFFER_SIZE 2048
 #define MAP_BUFFER_SEND 2048
 #define SND_SPLAT_COUNT 3
+#define SND_STEP_COUNT 4
 #define ACHN_COUNT 32
 
 // Versions
@@ -444,8 +445,10 @@ int abuf_bc_get_wspace(game_t *game);
 
 // audio.c
 extern snd_t *snd_splat[];
+extern snd_t *snd_step[];
 achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs, int lockme);
 void snd_play_splat(int use_world, int sx, int sy);
+void snd_play_step(int use_world, int stepcls, int sx, int sy);
 void music_free(it_module_t *mod);
 it_module_t *music_load_it(const char *fname);
 int audio_init(void);

@@ -29,6 +29,7 @@ int audio_age = 0;
 SDL_mutex *audio_mutex = NULL;
 
 snd_t *snd_splat[SND_SPLAT_COUNT];
+snd_t *snd_step[SND_STEP_COUNT];
 it_module_t *mod_trk1;
 sackit_playback_t *sackit = NULL;
 achn_t *ac_sackit = NULL;
@@ -544,6 +545,19 @@ void snd_play_splat(int use_world, int sx, int sy)
 
 }
 
+void snd_play_step(int use_world, int step_cls, int sx, int sy)
+{
+	int vol = 0x80 - (rand() % 53);
+	int fmul = 0x100 - 53/2 + (rand() % 53);
+	rand(); // Try not to do groups of 3 in a row
+	int smp = (rand()>>12) % 2;
+	smp = (smp*2) + (step_cls%2);
+	rand(); // Try not to do groups of 3 in a row
+
+	snd_play(snd_step[smp], vol, use_world, sx, sy, fmul, 0, 1);
+
+}
+
 void achn_reset(achn_t *ac)
 {
 	ac->age = audio_age;
@@ -658,6 +672,12 @@ int audio_init(void)
 		snd_splat[i] = snd_load_wav(buf);
 	}
 
+	for(i = 0; i < SND_STEP_COUNT; i++)
+	{
+		sprintf(buf, "dat/step%i.snd", i+1);
+		snd_step[i] = snd_load_wav(buf);
+	}
+
 	// Load music
 	mod_trk1 = music_load_it("dat/trk1.it");
 
@@ -672,7 +692,8 @@ int audio_init(void)
 	desired.freq = 48000;
 	desired.format = AUDIO_S16SYS;
 	desired.channels = 2;
-	desired.samples = 4096; // This is usually long enough
+	//desired.samples = 4096; // This is usually long enough
+	desired.samples = 2048;
 	desired.callback = audio_callback;
 	desired.userdata = NULL;
 
