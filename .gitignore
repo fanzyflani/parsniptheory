@@ -4,11 +4,13 @@
 # final binaries
 parsniptheory
 parsniptheory-linux-i386
+parsniptheory-linux-armv6
 parsniptheory-freebsd-i386
 parsniptheory-freebsd-amd64
 parsniptheory-windows-i386.exe
 parsnipserver
 parsnipserver-linux-i386
+parsnipserver-linux-armv6
 parsnipserver-freebsd-i386
 parsnipserver-freebsd-amd64
 parsnipserver-windows-i386.exe
@@ -22,6 +24,7 @@ rel/
 # other stuff
 tga/pixra
 tga/dat/font8.tga
+dat/*.img
 crap/
 *.tmp
 svr-psl.*
