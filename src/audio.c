@@ -547,7 +547,7 @@ void snd_play_splat(int use_world, int sx, int sy)
 
 void snd_play_step(int use_world, int step_cls, int sx, int sy)
 {
-	int vol = 0x80 - (rand() % 53);
+	int vol = 0x100 - (rand() % 53);
 	int fmul = 0x100 - 53/2 + (rand() % 53);
 	rand(); // Try not to do groups of 3 in a row
 	int smp = (rand()>>12) % 2;

@@ -3,6 +3,8 @@ Copyright (c) 2014 fanzyflani. All rights reserved.
 CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 */
 
+//define DEBUG_AI
+
 #include "common.h"
 
 void ai_free(ai_t *ai)
@@ -17,15 +19,22 @@ void ai_normal_do_move(ai_t *ai)
 	int i, j;
 	int asx, asy;
 	obj_t *best_tob;
+	obj_t *best_sob;
 	int best_tob_dist;
+	int best_sob_dist;
 	int dirbuf[512];
+
+	// Wait
+	if(--ai->wait > 0) return;
 
 	// Get stuff
 	game_t *game = ai->game;
 
 	// Block input if waiting for object
 	if(level_obj_waiting(game->lv) != NULL)
+	{
 		return;
+	}
 
 	// Scan for objects that belong to us
 
@@ -44,6 +53,8 @@ void ai_normal_do_move(ai_t *ai)
 		// Find a player to harrass
 		best_tob_dist = 0x10000000;
 		best_tob = NULL;
+		best_sob_dist = 0x10000000;
+		best_sob = NULL;
 		for(j = 0; j < game->lv->ocount; j++)
 		{
 			// Get object
@@ -56,79 +67,126 @@ void ai_normal_do_move(ai_t *ai)
 			if(fde->team == ai->tid) continue;
 
 			// Find nearby tile we can touch
-			if(!find_free_neighbour_layer(game->lv->layers[ob->f.layer],
-				tob->f.cx, tob->f.cy, &asx, &asy)) continue;
-			if(1 > astar_layer(game->lv->layers[ob->f.layer], dirbuf, 1024,
-				ob->f.cx, ob->f.cy, asx, asy)) continue;
+			int tob_candidate = 0;
+			if(find_free_neighbour_layer(game->lv->layers[ob->f.layer],
+				tob->f.cx, tob->f.cy, &asx, &asy))
+			if(astar_layer(game->lv->layers[ob->f.layer], dirbuf, 1024,
+				ob->f.cx, ob->f.cy, asx, asy) >= 1) tob_candidate = 1;
+
+			// Find if there's a line of sight
+			int sob_candidate = 0;
+			int rx, ry;
+			if(line_layer(game->lv->layers[ob->f.layer], &rx, &ry,
+				ob->f.cx, ob->f.cy, tob->f.cx, tob->f.cy))
+					sob_candidate = 1;
 
 			// Get distance to object
 			int dx = tob->f.cx - ob->f.cx;
 			int dy = tob->f.cy - ob->f.cy;
 			int dist = dx*dx + dy*dy;
+			dist *= dist * tob->health;
 
+			if(tob_candidate)
 			if(best_tob == NULL || dist < best_tob_dist)
 			{
 				best_tob_dist = dist;
 				best_tob = tob;
+			}
 
+			dist = tob->health;
+			if(sob_candidate)
+			if(best_sob == NULL || dist < best_sob_dist)
+			{
+				best_sob_dist = dist;
+				best_sob = tob;
 			}
 		}
-
-		// If we don't have a "best object" to harass, continue
-		if(best_tob == NULL) continue;
-		tob = best_tob;
 
 		//printf("found enemy %i\n", best_tob_dist);
 
 		// Check if we have a line of sight toward this object
 		// (as well as enough turns to throw stuff)
+		// Also check if we are going for the guy we have a LoS for
 		int rx, ry;
-		if(ob->steps_left >= STEPS_ATTACK+1)
+		if(best_sob != NULL && line_layer(game->lv->layers[ob->f.layer], &rx, &ry,
+			ob->f.cx, ob->f.cy, best_sob->f.cx, best_sob->f.cy))
+				tob = best_sob;
+		else
+			tob = best_tob;
+		// If we don't have a "best object" to harass, continue
+		if(tob == NULL) continue;
+
+
+		if(ob->steps_left >= STEPS_ATTACK+1 && tob->health > 0)
 		if(line_layer(game->lv->layers[ob->f.layer], &rx, &ry,
-			ob->f.cx, ob->f.cy, asx, asy))
+			ob->f.cx, ob->f.cy, tob->f.cx, tob->f.cy))
 		{
 			// Throw!
 
+#ifdef DEBUG_AI
 			printf("enemy LoS\n");
+#endif
 
-			game_push_hover(game, game->ab_local, 160, 100,
-				tob->f.cx*32+16 - 160, tob->f.cy*24+12 - 100);
+			game->camx = tob->f.cx*32+16 - 160;
+			game->camy = tob->f.cy*24+12 - 100;
+			if(game->camx < 0) game->camx = 0;
+			if(game->camy < 0) game->camy = 0;
+			// TODO: not hardcode this
+			if(game->camx > 32*40 - 320) game->camx = 32*40 - 320;
+			if(game->camy > 32*40 - 320) game->camy = 32*40 - 320;
+			game->mx = tob->f.cx*32+16 - game->camx;
+			game->my = tob->f.cy*24+12 - game->camy;
+			game_push_hover(game, ai->ab, game->mx, game->my, game->camx, game->camy);
 
-			abuf_write_u8(ACT_SELECT, game->ab_local);
-			abuf_write_s16(ob->f.cx, game->ab_local);
-			abuf_write_s16(ob->f.cy, game->ab_local);
+			abuf_write_u8(ACT_SELECT, ai->ab);
+			abuf_write_s16(ob->f.cx, ai->ab);
+			abuf_write_s16(ob->f.cy, ai->ab);
 
+#ifdef DEBUG_AI
 			printf("attack %i %i -> %i %i\n", ob->f.cx, ob->f.cy, tob->f.cx, tob->f.cy);
-			abuf_write_u8(ACT_ATTACK, game->ab_local);
-			abuf_write_s16(ob->f.cx, game->ab_local);
-			abuf_write_s16(ob->f.cy, game->ab_local);
-			abuf_write_s16(tob->f.cx, game->ab_local);
-			abuf_write_s16(tob->f.cy, game->ab_local);
-			abuf_write_s16(STEPS_ATTACK, game->ab_local);
-			abuf_write_s16(ob->steps_left - STEPS_ATTACK, game->ab_local);
+#endif
+			abuf_write_u8(ACT_ATTACK, ai->ab);
+			abuf_write_s16(ob->f.cx, ai->ab);
+			abuf_write_s16(ob->f.cy, ai->ab);
+			abuf_write_s16(tob->f.cx, ai->ab);
+			abuf_write_s16(tob->f.cy, ai->ab);
+			abuf_write_s16(STEPS_ATTACK, ai->ab);
+			abuf_write_s16(ob->steps_left - STEPS_ATTACK, ai->ab);
+
+			ai->wait = 15;
 
 			return;
 		}
 		
 		// Check if we can move to this object
+		tob = best_tob;
+		if(tob == NULL) continue;
 		if(!find_free_neighbour_layer(game->lv->layers[ob->f.layer],
 			tob->f.cx, tob->f.cy, &asx, &asy)) continue;
 		int asl = astar_layer(game->lv->layers[ob->f.layer], dirbuf, 512,
 			ob->f.cx, ob->f.cy, asx, asy);
 
+#ifdef DEBUG_AI
 		printf("A* trace: %i\n", asl);
+#endif
 
 		if(asl >= 1)
 		{
-			game_push_hover(game, game->ab_local, 160, 100,
-				ob->f.cx*32+16 - 160, ob->f.cy*24+12 - 100);
+			game->camx = ob->f.cx*32+16 - 160;
+			game->camy = ob->f.cy*24+12 - 100;
+			if(game->camx < 0) game->camx = 0;
+			if(game->camy < 0) game->camy = 0;
+			// TODO: not hardcode this
+			if(game->camx > 32*40 - 320) game->camx = 32*40 - 320;
+			if(game->camy > 32*40 - 320) game->camy = 32*40 - 320;
 
+			asl = 1;
 			if(asl > ob->steps_left)
 				asl = ob->steps_left;
 
-			abuf_write_u8(ACT_SELECT, game->ab_local);
-			abuf_write_s16(ob->f.cx, game->ab_local);
-			abuf_write_s16(ob->f.cy, game->ab_local);
+			abuf_write_u8(ACT_SELECT, ai->ab);
+			abuf_write_s16(ob->f.cx, ai->ab);
+			abuf_write_s16(ob->f.cy, ai->ab);
 
 			int tx = ob->f.cx;
 			int ty = ob->f.cy;
@@ -142,14 +200,20 @@ void ai_normal_do_move(ai_t *ai)
 				case DIR_WEST:  tx--; break;
 			}
 
+			game->mx = tx*32+16 - game->camx;
+			game->my = ty*24+12 - game->camy;
+			game_push_hover(game, ai->ab, game->mx, game->my, game->camx, game->camy);
+
+#ifdef DEBUG_AI
 			printf("move %i %i -> %i %i\n", ob->f.cx, ob->f.cy, tx, ty);
-			abuf_write_u8(ACT_MOVE, game->ab_local);
-			abuf_write_s16(ob->f.cx, game->ab_local);
-			abuf_write_s16(ob->f.cy, game->ab_local);
-			abuf_write_s16(tx, game->ab_local);
-			abuf_write_s16(ty, game->ab_local);
-			abuf_write_s16(asl, game->ab_local);
-			abuf_write_s16(ob->steps_left - asl, game->ab_local);
+#endif
+			abuf_write_u8(ACT_MOVE, ai->ab);
+			abuf_write_s16(ob->f.cx, ai->ab);
+			abuf_write_s16(ob->f.cy, ai->ab);
+			abuf_write_s16(tx, ai->ab);
+			abuf_write_s16(ty, ai->ab);
+			abuf_write_s16(asl, ai->ab);
+			abuf_write_s16(ob->steps_left - asl, ai->ab);
 
 			return;
 
@@ -158,10 +222,10 @@ void ai_normal_do_move(ai_t *ai)
 	}
 
 	// All done! Force a change.
-	game_push_newturn(game, game->ab_local, -1, ai->tid);
+	game_push_newturn(game, ai->ab, -1, ai->tid);
 }
 
-ai_t *ai_new(game_t *game, int tid)
+ai_t *ai_new(game_t *game, abuf_t *ab, int tid)
 {
 	// Allocate AI
 	ai_t *ai = malloc(sizeof(ai_t));
@@ -169,8 +233,10 @@ ai_t *ai_new(game_t *game, int tid)
 	// Drop in arguments
 	ai->game = game;
 	ai->tid = tid;
+	ai->ab = ab;
 
 	// Fill in the defaults
+	ai->wait = 0;
 
 	// Fill in function pointers
 	ai->f_do_move = ai_normal_do_move;

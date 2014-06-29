@@ -235,10 +235,13 @@ void obj_player_f_tick(obj_t *ob)
 		{
 			ob->steps_left--;
 
-			if(((ob->f.cx^ob->f.cy)&1) != 0)
-				snd_play_step(1, 1, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
-			else
-				snd_play_step(1, 0, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
+			if(ob->level->game->net_mode != NET_SERVER)
+			{
+				if(((ob->f.cx^ob->f.cy)&1) != 0)
+					snd_play_step(1, 1, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
+				else
+					snd_play_step(1, 0, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
+			}
 		}
 	}
 }

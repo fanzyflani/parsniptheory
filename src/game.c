@@ -12,8 +12,6 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #define SETUP_MOUSE(x,y,w,h) (mouse_x >= (x) && mouse_y >= (y) && mouse_x < (x)+(w) && mouse_y < (y)+(h) \
 	? 0 : 2)
 
-ai_t *test_ai = NULL;
-
 int game_pause = 0;
 int game_press_to_move = 1;
 int game_1button = 0;
@@ -49,6 +47,11 @@ void game_free(game_t *game)
 	for(i = 0; i < TEAM_MAX; i++)
 		if(game->ab_teams[i] != NULL)
 			abuf_free(game->ab_teams[i]);
+
+	// Free AIs
+	for(i = 0; i < TEAM_MAX; i++)
+		if(game->ai_teams[i] != NULL)
+			ai_free(game->ai_teams[i]);
 
 	// Free
 	free(game);
@@ -89,6 +92,10 @@ game_t *game_new(int net_mode)
 	game->ab_local = NULL;
 	for(i = 0; i < TEAM_MAX; i++)
 		game->ab_teams[i] = NULL;
+	
+	// Clear AIs
+	for(i = 0; i < TEAM_MAX; i++)
+		game->ai_teams[i] = NULL;
 
 	// Prep claims
 	game->netid = 0xFD;
@@ -438,6 +445,9 @@ void gameloop_draw_setup(game_t *game)
 		if(game->claim_team[i] == 0xFF)
 			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
 				64+8*2+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*40,32,42));
+		else if(game->claim_team[i] == 0xFC)
+			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
+				64+8*3+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*40,32,42));
 		else if(game->claim_team[i] == game->netid)
 			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
 				64+8*1+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42));
@@ -449,6 +459,8 @@ void gameloop_draw_setup(game_t *game)
 
 		if(game->claim_team[i] == 0xFE)
 			draw_57_printf(screen, 4 + (i&7)*36, 80+(i>>3)*44, 1, "LOC");
+		else if(game->claim_team[i] == 0xFC)
+			draw_57_printf(screen, 4 + (i&7)*36, 80+(i>>3)*44, 1, "AI");
 		else if(game->claim_team[i] != 0xFF)
 			draw_57_printf(screen, 4 + (i&7)*36, 80+(i>>3)*44, 1, "%03i", game->claim_team[i]);
 	}
@@ -749,14 +761,6 @@ int game_input_setup(game_t *game)
 
 int game_input_playing(game_t *game)
 {
-	// XXX: AI TEST CODE
-	game_pause = 0;
-	game_press_to_move = 0;
-	if(test_ai == NULL) test_ai = ai_new(game, game->curplayer);
-	test_ai->tid = game->curplayer;
-	test_ai->f_do_move(test_ai);
-	if(1) return 0;
-
 	// Block input if this isn't your team (or if it's unclaimed)
 	if(game->claim_team[game->curplayer] != game->netid
 		&& (game->claim_team[game->curplayer] != 0xFF || game->net_mode == NET_SERVER))
@@ -905,6 +909,30 @@ int gameloop_core(game_t *game)
 
 			}
 
+			// Poll AI
+			if(game == game_m && game->main_state == GAME_PLAYING && game->claim_team[game->curplayer] == 0xFC)
+			{
+				ai_t *ai = game->ai_teams[game->curplayer];
+				if(ai == NULL)
+				{
+					ai = game->ai_teams[game->curplayer] = ai_new(game,
+						abuf_new(),
+						game->curplayer);
+					
+					ai->ab->loc_chain = abuf_new();
+					ai->ab->loc_chain->loc_chain = ai->ab;
+					ai->ab->netid = 0xFC;
+					ai->ab->loc_chain->netid = 0xFC;
+				}
+
+				// ai->wait = 20;
+				//ai->tid = game->curplayer;
+				ai->f_do_move(ai);
+
+				abuf_poll(ai->ab);
+				while(game_parse_actions(game, ai->ab->loc_chain, NET_C2S));
+			}
+
 			// Poll
 			abuf_poll(game->ab_local); // moved out so the write buffer can be emptied
 			if(game->ab_local->loc_chain != NULL)
@@ -994,8 +1022,6 @@ int gameloop(int net_mode, TCPsocket sock)
 	if(game_m != NULL) { game_free(game_m); game_m = NULL; }
 	game_pause = 0;
 	game_press_to_move = 1;
-
-	if(test_ai != NULL) { ai_free(test_ai); test_ai = NULL; }
 
 	// Prepare model
 	if(net_mode == NET_LOCAL || net_mode == NET_SERVER)
@@ -1088,6 +1114,12 @@ int gameloop(int net_mode, TCPsocket sock)
 		{
 			game_v->claim_team[i] = 0xFE;
 			game_m->claim_team[i] = 0xFE;
+		}
+
+		for(i = 1; i < TEAM_MAX; i++)
+		{
+			game_v->claim_team[i] = 0xFC;
+			game_m->claim_team[i] = 0xFC;
 		}
 	}
 

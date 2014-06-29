@@ -388,7 +388,7 @@ void game_handle_claim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 	} else {
 		//assert((tid >= 0 && tid < game->settings.player_count) || tid == 0xFF);
 		assert((tid >= 0 && tid < TEAM_MAX) || tid == 0xFF);
-		assert((netid >= 0 && netid < TEAM_MAX) || netid == 0xFE);
+		assert((netid >= 0 && netid < TEAM_MAX) || netid == 0xFE || netid == 0xFC);
 
 	}
 
@@ -426,6 +426,7 @@ void game_handle_unclaim(game_t *game, abuf_t *ab, int typ, int netid, int tid)
 	}
 
 	if(tid == 0xFF) game->claim_admin = 0xFF;
+	else if(game->claim_admin == netid && game->claim_team[tid] == netid) game->claim_team[tid] = 0xFC;
 	else game->claim_team[tid] = 0xFF;
 
 	// Relay

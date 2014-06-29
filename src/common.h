@@ -69,7 +69,7 @@ typedef void *IPaddress;
 
 // Versions
 #define MAP_FVERSION 1
-#define NET_VERSION 3
+#define NET_VERSION 4
 
 // Other things
 #define NET_PORT 2014
@@ -190,6 +190,7 @@ enum
 	FOOD_COUNT
 };
 
+typedef struct ai ai_t;
 typedef struct cell cell_t;
 typedef struct obj obj_t;
 typedef struct layer layer_t;
@@ -280,16 +281,6 @@ struct level
 	obj_t **objects;
 };
 
-
-typedef struct ai ai_t;
-
-struct ai
-{
-	game_t *game; // Tie this to the model.
-	int tid;
-
-	void (*f_do_move)(ai_t *ai);
-};
 
 enum
 {
@@ -413,6 +404,7 @@ struct game
 
 	abuf_t *ab_local;
 	abuf_t *ab_teams[TEAM_MAX];
+	ai_t *ai_teams[TEAM_MAX];
 
 	// 0xFF == unclaimed, 0xFE == ab_local
 	uint8_t claim_team[TEAM_MAX];
@@ -423,6 +415,18 @@ struct game
 	level_t *lv;
 	FILE *mapfp;
 };
+
+struct ai
+{
+	game_t *game; // Tie this to the model.
+	abuf_t *ab;
+	int tid;
+
+	int wait;
+
+	void (*f_do_move)(ai_t *ai);
+};
+
 
 // other includes
 #include "obj.h"
@@ -456,7 +460,7 @@ int abuf_bc_get_wspace(game_t *game);
 
 // ai.c
 void ai_free(ai_t *ai);
-ai_t *ai_new(game_t *game, int tid);
+ai_t *ai_new(game_t *game, abuf_t *ab, int tid);
 
 // audio.c
 extern snd_t *snd_splat[];
