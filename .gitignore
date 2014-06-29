@@ -4,13 +4,13 @@
 # final binaries
 parsniptheory
 parsniptheory-linux-i386
-parsniptheory-linux-armv6
+parsniptheory-linux-armv6l
 parsniptheory-freebsd-i386
 parsniptheory-freebsd-amd64
 parsniptheory-windows-i386.exe
 parsnipserver
 parsnipserver-linux-i386
-parsnipserver-linux-armv6
+parsnipserver-linux-armv6l
 parsnipserver-freebsd-i386
 parsnipserver-freebsd-amd64
 parsnipserver-windows-i386.exe

@@ -1,5 +1,9 @@
 Changelog:
 
+Alpha 7:
+* AI support! Friends no longer required! (But still highly recommended)
+* Step sounds!
+
 Alpha 6:
 * NETWORKING VERSION BUMP - lots of networking improvements (return to lobby after game, claim disconnected players, join while still running)
 * Raspberry Pi support!
