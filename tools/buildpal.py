@@ -21,6 +21,22 @@ def rgb_lerp_chain(sz, l):
 	# This line tends to help.
 	return m
 
+def rgb_gen_player(r,g,b):
+	return [
+		(min(255, r+85), min(255, g+85), min(255, b+85)),
+		(r*1//1, g*1//1, b*1//1),
+		(r*3//4, g*3//4, b*3//4),
+		(r*1//2, g*1//2, b*1//2),
+	]
+
+def rgb_playerise(l):
+	ret = []
+
+	for k in l[7::3][:8]:
+		ret += rgb_gen_player(*k)
+
+	return ret
+
 files = {
 	"player": [ "tga/player.tga" ],
 	"tiles": [ "tga/tiles1.tga" ],
@@ -35,10 +51,10 @@ pranges["player"] = [
 	("trans", 0),
 	("exact", 1, 255, 255, 255),
 	("exact", 2, 0, 0, 0),
-	("map", "pskin", 16, 8),
-	("map", "pteam", 24, 8), # Body
-	("map", "pteam", 32, 8), # Hair
-	("map", "pteam", 40, 8), # Feet
+	("map", "pskin", 16, 4),
+	("map", "pteam", 24, 4), # Body
+	("map", "pteam", 32, 4), # Hair
+	("map", "pteam", 40, 4), # Feet
 ]
 
 pranges["tiles"] = [
@@ -61,28 +77,28 @@ base_prange = [
 	("exact", 2, 0, 0, 0),
 	("any", 3, 16-3),
 	("map", "pskin", 32, 32),
-	("map", "pteam", 64, 64),
-	("any", 128, 256-128),
+	("map", "pteam", 64, 32),
+	("any", 96, 256-96),
 ]
 
 
 pmaps = {}
 pmap_locs = {}
 
-pmaps["pskin"] = rgb_lerp_chain(32, [
+pmaps["pskin"] = rgb_playerise(rgb_lerp_chain(32, [
 	(0, 255, 255, 255),
 	(11, 255, 255, 0),
 	(22, 255, 85, 0),
 	(31, 85, 31, 0),
-])
+]))
 
-pmaps["pteam"] = reduce(lambda x, y : x+y, [rgb_lerp_chain(8, [(0, r,g,b), (8, 0,0,0)]) for (r,g,b) in [
-	(255, 128, 128),
-	(128, 255, 128),
-	(128, 128, 255),
-	(0, 255, 255),
-	(255, 0, 255),
-	(255, 128, 64),
+pmaps["pteam"] = reduce(lambda x, y : x+y, [rgb_gen_player(r,g,b) for (r,g,b) in [
+	(255, 0, 0),
+	(0, 255, 0),
+	(0, 0, 255),
+	(0, 180, 180),
+	(180, 0, 180),
+	(255, 128, 0),
 	(64, 128, 255),
 	(170, 170, 170),
 ]], [])

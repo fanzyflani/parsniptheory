@@ -27,6 +27,8 @@ int obj_player_f_init(obj_t *ob)
 
 	ob->health = PLAYER_HEALTH;
 
+	ob->skintone = 32+((rand()>>12)&7)*4;
+
 	return 1;
 }
 
@@ -251,6 +253,10 @@ void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 	int i;
 	struct fd_player *fde = (struct fd_player *)ob->f.fd;
 
+	// Set skin tone
+	for(i = 0; i < 4; i++)
+		ob->cmap[16+i] = ob->skintone+i;
+
 	// Draw parts
 	for(i = 6; i >= 0; i--)
 		draw_img_trans_cmap_d_sd(dst, ob->img,
@@ -368,7 +374,12 @@ void obj_food_tomato_f_tick(obj_t *ob)
 
 		// Do damage
 		ce = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->f.cx, ob->f.cy);
-		ce->splatters[FOOD_TOMATO] |= 1<<((rand()>>12)&3);
+		int splatidx = ((rand()>>12)&3);
+		if((ce->splatters[FOOD_TOMATO] & (1<<splatidx)) == 0)
+		{
+			ce->splatters[FOOD_TOMATO] |= 1<<splatidx;
+			ce->splatpos[FOOD_TOMATO][splatidx] = (rand()>>5)&255;
+		}
 
 		if(ob->level->game->net_mode != NET_SERVER)
 			snd_play_splat(1, ob->f.cx*32+16, ob->f.cy*24+12);
@@ -543,6 +554,7 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	ob->f_free = obj_fptrs[otyp].f_free;
 
 	// Fill in extra crap
+	ob->skintone = 0;
 	ob->please_wait = 0;
 	ob->steps_left = 0;
 	ob->health = 1;

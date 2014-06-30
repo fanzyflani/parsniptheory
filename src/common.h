@@ -210,6 +210,7 @@ struct cell
 	cell_file_t f;
 	obj_t *ob;
 	uint8_t splatters[FOOD_COUNT];
+	uint8_t splatpos[FOOD_COUNT][4];
 };
 
 typedef struct obj_file
@@ -249,6 +250,7 @@ struct obj
 
 	// Extra state for anything to use
 	// THIS IS TOTALLY A GOOD IDEA
+	int skintone;
 	int please_wait;
 	int steps_left;
 	int health;

@@ -147,8 +147,8 @@ static void screen_flip_32(void)
 {
 	int x, y;
 	uint8_t *palp;
-#ifdef __EMSCRIPTEN__
 	int i;
+#ifdef __EMSCRIPTEN__
 	uint8_t t;
 #endif
 
@@ -159,6 +159,14 @@ static void screen_flip_32(void)
 	int dpitch = pitch - screen_scale * screen->w * 4;
 	uint8_t *src = screen->data;
 	uint8_t *dst = screen_surface->pixels + pitch * screen_ofy + 4 * screen_ofx;
+
+	// Clamp palette to mode 13h range
+	for(i = 0; i < 256; i++)
+	{
+		pal_main[i][0] = ((pal_main[i][0]&0xFC)*0x41)>>6;
+		pal_main[i][1] = ((pal_main[i][1]&0xFC)*0x41)>>6;
+		pal_main[i][2] = ((pal_main[i][2]&0xFC)*0x41)>>6;
+	}
 
 #ifdef __EMSCRIPTEN__
 	// Swap R/B

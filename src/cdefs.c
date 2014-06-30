@@ -11,7 +11,7 @@ cell_file_t ce_defaults_tiles1[] = {
 	{CELL_TABLE, 0, 0, 0}, {CELL_TABLE, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0},
 	{CELL_SOLID, 0, 0, 0}, {CELL_SOLID, 0, 0, 0}, {CELL_SOLID, 0, 0, 0}, {CELL_SOLID, 0, 0, 0},
 
-	{CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0},
+	{CELL_FLOOR, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0},
 	{CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0},
 	{CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0}, {CELL_OOB, 0, 0, 0},
 	{CELL_SOLID, 0, 0, 0}, {CELL_SOLID, 0, 0, 0}, {CELL_SOLID, 0, 0, 0}, {CELL_SOLID, 0, 0, 0},

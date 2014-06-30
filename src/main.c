@@ -231,7 +231,7 @@ static void menu_widget_f_draw(widget_t *g, int sx, int sy)
 	int sel = (mx >= 0 && my >= 0 && mx < g->w && my < g->h);
 
 	// Draw rectangle
-	draw_rect_d(screen, sx, sy, g->w, g->h, 64 + (sel ? 0 : 2) + 8*g->i1);
+	draw_rect_d(screen, sx, sy, g->w, g->h, 64 + (sel ? 0 : 1) + 4*g->i1);
 
 	// Draw GUI contents
 	struct menu_data *md = (struct menu_data *)(g->v1);

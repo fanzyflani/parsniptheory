@@ -19,12 +19,14 @@ team_t *team_new(int idx)
 	memcpy(tm->cm_player, cm_player, 256);
 
 	// Modify colourmap
-	for(i = 0; i < 8; i++)
+	int skintone = 32+((rand()>>12)&7)*4;
+	//int skintone = 32+((idx)&7)*4;
+	for(i = 0; i < 4; i++)
 	{
-		tm->cm_player[16+i] = 37+i; // TODO: Variable skin tones
-		tm->cm_player[24+i] = 64+i + 8*((idx + 1 + (idx>>3))&7);
-		tm->cm_player[32+i] = 64+i + 8*((idx)&7);
-		tm->cm_player[40+i] = 64+i + 8*((idx + 3 + 2*(idx>>3) + (idx>>6))&7);
+		tm->cm_player[16+i] = skintone+i; // This will be varied per-player.
+		tm->cm_player[24+i] = 64+i + 4*((idx + 1 + (idx>>3))&7);
+		tm->cm_player[32+i] = 64+i + 4*((idx)&7);
+		tm->cm_player[40+i] = 64+i + 4*((idx + 3 + 2*(idx>>3) + (idx>>6))&7);
 	}
 
 	// Return team

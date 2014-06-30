@@ -455,13 +455,13 @@ int options_dialogue(const char *title, const char *opt1, const char *opt2)
 	for(;;)
 	{
 		// Determine selection
-		hl1 = (mouse_y >= screen->h/2-4-1 && mouse_y < screen->h/2-4-1+18 ? 0 : 2);
-		hl2 = (mouse_y >= screen->h/2+16-1 && mouse_y < screen->h/2+16-1+18 ? 0 : 2);
+		hl1 = (mouse_y >= screen->h/2-4-1 && mouse_y < screen->h/2-4-1+18 ? 0 : 1);
+		hl2 = (mouse_y >= screen->h/2+16-1 && mouse_y < screen->h/2+16-1+18 ? 0 : 1);
 
 		// Draw text
 		screen_clear(0);
-		draw_rect_d(screen, screen->w/2-8*opt1len-1, screen->h/2-4-1, opt1len*16+2, 18, 64+8*2+hl1);
-		draw_rect_d(screen, screen->w/2-8*opt2len-1, screen->h/2+16-1, opt2len*16+2, 18, 64+8*2+hl2);
+		draw_rect_d(screen, screen->w/2-8*opt1len-1, screen->h/2-4-1, opt1len*16+2, 18, 64+4*2+hl1);
+		draw_rect_d(screen, screen->w/2-8*opt2len-1, screen->h/2+16-1, opt2len*16+2, 18, 64+4*2+hl2);
 		draw_printf(screen, i_font16, 16, screen->w/2-8*titlelen, screen->h/2-30, 1, "%s", title);
 		draw_printf(screen, i_font16, 16, screen->w/2-8*opt1len, screen->h/2-4, 1, "%s", opt1);
 		draw_printf(screen, i_font16, 16, screen->w/2-8*opt2len, screen->h/2+16, 1, "%s", opt2);

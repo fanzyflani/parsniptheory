@@ -10,7 +10,7 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 #endif
 
 #define SETUP_MOUSE(x,y,w,h) (mouse_x >= (x) && mouse_y >= (y) && mouse_x < (x)+(w) && mouse_y < (y)+(h) \
-	? 0 : 2)
+	? 0 : 1)
 
 int game_pause = 0;
 int game_press_to_move = 1;
@@ -229,12 +229,13 @@ void gameloop_draw_playing(game_t *game)
 		if(ob == NULL) continue;
 
 		// Cell occupancy
+		/*
 		draw_border_d(screen,
 			ob->f.cx*32 - game->camx,
 			ob->f.cy*24 - game->camy,
 			32,
 			24,
-			1);
+			1);*/
 
 		// Bounding box
 		if(ob == game->selob)
@@ -407,36 +408,45 @@ void gameloop_draw_setup(game_t *game)
 		screen->w/2 - 8*10, 0, 1,
 		"GAME SETUP");
 
-	draw_rect_d(screen, 16*5, 20, 16, 16, 64+8*2+SETUP_MOUSE(16*5, 20, 16, 16));
-	draw_printf(screen, i_font16, 16,
-		0, 20, 1,
-		"LVL: * %s", game->settings.map_name);
-
-	draw_rect_d(screen, 16*4, 40, 16, 16, 64+8*0+SETUP_MOUSE(16*4, 40, 16, 16));
-	draw_rect_d(screen, 16*5, 40, 16, 16, 64+8*1+SETUP_MOUSE(16*5, 40, 16, 16));
-	draw_printf(screen, i_font16, 16,
-		0, 40, 1,
-		"PLR:-+ %i", game->settings.player_count);
 
 	// Admin check
 	if(game->claim_admin == game->netid)
 	{
 		// Might as well add the "GO" button
 		draw_rect_d(screen, screen->w-16*4, screen->h-32, 16*4, 32,
-			64+8*1+SETUP_MOUSE(screen->w-16*4,screen->h-32, 16*4, 32));
+			64+4*1+SETUP_MOUSE(screen->w-16*4,screen->h-32, 16*4, 32));
 		draw_printf(screen, i_font16, 16, screen->w-4-16*3, screen->h-24, 1, "GO!");
 
+		draw_rect_d(screen, 16*5, 20, 16, 16, 64+4*2+SETUP_MOUSE(16*5, 20, 16, 16));
+
+		draw_rect_d(screen, 16*4, 40, 16, 16, 64+4*0+SETUP_MOUSE(16*4, 40, 16, 16));
+		draw_rect_d(screen, 16*5, 40, 16, 16, 64+4*1+SETUP_MOUSE(16*5, 40, 16, 16));
+
+		draw_printf(screen, i_font16, 16,
+			0, 20, 1,
+			"LVL: * %s", game->settings.map_name);
+
+		draw_printf(screen, i_font16, 16,
+			0, 40, 1,
+			"PLR:-+ %i", game->settings.player_count);
+
 	} else {
-		draw_rect_d(screen, 16*4, 20, 32, 36, 0);
+		draw_printf(screen, i_font16, 16,
+			0, 20, 1,
+			"LVL:   %s", game->settings.map_name);
+
+		draw_printf(screen, i_font16, 16,
+			0, 40, 1,
+			"PLR:   %i", game->settings.player_count);
 	}
 
 	if(game->netid != 0xFD && game->claim_admin == 0xFF)
 	{
-		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+8*5+SETUP_MOUSE(20-1,60-1,16*12+2,16+2));
+		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+4*5+SETUP_MOUSE(20-1,60-1,16*12+2,16+2));
 		draw_printf(screen, i_font16, 16, 20+8, 60, 1, "CLAIM ADMIN");
 	} else if(game->netid == game->claim_admin)
 	{
-		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+8*0+SETUP_MOUSE(20-1,60-1,16*12+2,16+2));
+		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+4*0+SETUP_MOUSE(20-1,60-1,16*12+2,16+2));
 		draw_printf(screen, i_font16, 16, 20, 60, 1, "REVOKE ADMIN");
 	}
 
@@ -444,16 +454,16 @@ void gameloop_draw_setup(game_t *game)
 	{
 		if(game->claim_team[i] == 0xFF)
 			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
-				64+8*2+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*40,32,42));
+				64+4*2+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*40,32,42));
 		else if(game->claim_team[i] == 0xFC)
 			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
-				64+8*3+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*40,32,42));
+				64+4*3+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*40,32,42));
 		else if(game->claim_team[i] == game->netid)
 			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
-				64+8*1+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42));
+				64+4*1+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42));
 		else
 			draw_rect_d(screen, 4 + (i&7)*36, 80+(i>>3)*44, 32, 42,
-				64+8*0+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42));
+				64+4*0+SETUP_MOUSE(4+(i&7)*36,80+(i>>3)*44,32,42));
 
 		game_draw_player(4 + (i&7)*36, 80+(i>>3)*44, i, 0);
 

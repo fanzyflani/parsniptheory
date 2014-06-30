@@ -268,7 +268,8 @@ void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 		if(ce->splatters[j] & (1<<i))
 		{
 			draw_img_trans_cmap_d_sd(dst, i_food1,
-				x*32-dx, y*24-dy-4,
+				x*32-dx+(ce->splatpos[j][i]&15)-8,
+				y*24-dy-4+(ce->splatpos[j][i]>>4)-8,
 				i*32 + 128,
 				j*64,
 				32, 32, 0, cm_food1);
