@@ -1049,7 +1049,7 @@ int gameloop(int net_mode, TCPsocket sock)
 			: 4);
 
 		// TODO: pick random map
-		strcpy(game_m->settings.map_name, "airport");
+		strcpy(game_m->settings.map_name, "genesis");
 	}
 
 	// Prepare view

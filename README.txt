@@ -15,7 +15,7 @@ LET ME KNOW IF THIS IS MISSING ANY LIBRARIES! (They're from a version of Debian.
 
 Raspberry Pi users: Run "./parsniptheory-linux.sh". You will need the correct libraries to run this (SDL, SDL_net, and some others you ALREADY HAVE). This was built on Raspbian. Prod me if you need help or are missing libraries.
 
-FreeBSD users: You can work this one out. Alternatively, you can try emulation.
+FreeBSD users: You can work this one out. Alternatively, you can try emulating the Windows or Linux i386 versions.
 
 Mac OS X users: I have no plans for a native port to this platform. If you want there to be a port, I'll need you to test, and also help me set up a cross-compiler. Otherwise, use Wine.
 
@@ -23,14 +23,14 @@ Mac OS X users: I have no plans for a native port to this platform. If you want 
 ----
 
 Map list:
-- genesis - The first map ever.
+- genesis - The first map ever. Actually a cafeteria!
 - layer8 - Simple, boring map to test 8 players.
 - airport - Much more interesting map to test 8 players.
 
 ----
 
 Network info:
-TCP port 2014. New protocol since Alpha 6 - older clients will not be able to connect.
+TCP port 2014. New protocol since Alpha 7 - older clients will not be able to connect.
 
 ----
 

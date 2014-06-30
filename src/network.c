@@ -647,6 +647,9 @@ void game_handle_mapend(game_t *game, abuf_t *ab, int typ)
 	assert(game->lv != NULL); // TODO: Be more graceful
 	game->lv->game = game;
 
+	// Run a tick
+	game_tick_playing(game);
+
 	// Start turn
 	printf("starting turn!\n");
 	game->curplayer = game->settings.player_count-1;

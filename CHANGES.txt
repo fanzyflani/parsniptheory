@@ -1,6 +1,15 @@
 Changelog:
 
+Alpha 8:
+* Graphics now SUBSTANTIALLY better. (shaded, animated, fixed the draw order)
+* Default map changed back to "genesis" because this IS supposed to take place in a cafeteria
+* Main menu reworked
+* Simple "setup" menu that lets you enable/disable music
+* Fixed "click to steal" when player 1 slot was unoccupied
+* Fixed a crash when trying to start a netgame with AI
+
 Alpha 7:
+* Network version bump (forgot to mention this in the Alpha 7 changelog + readme - sorry about that!)
 * AI support! Friends no longer required! (But still highly recommended)
 * Step sounds!
 

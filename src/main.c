@@ -157,10 +157,10 @@ struct menu_data
 
 		{
 			"CREATE", MAIN_MENU_ACTION, 0x105, {
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
+				{menu_draw_tile, -32-28*1-16, -28, 1, 0},
+				{menu_draw_tile, -32-28*1+16, -28, 1, 0},
+				{menu_draw_tile, -32-28*1-16, -52, 5, 0},
+				{menu_draw_tile, -32-28*1+16, -52, 5, 0},
 			}
 		},
 
