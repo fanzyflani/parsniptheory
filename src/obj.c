@@ -232,38 +232,123 @@ void obj_player_f_tick(obj_t *ob)
 		if(ob->f.oy > 0) ob->f.oy -= 1;
 		if(ob->f.oy > 0) ob->f.oy -= 1;
 
+		if(ob->level->game->net_mode != NET_SERVER)
+		if(ob->f.ox == 17 || ob->f.ox == -17 || ob->f.oy == 12 || ob->f.oy == -12)
+		{
+			if(((ob->f.cx^ob->f.cy)&1) != 0)
+				snd_play_step(1, 1, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
+			else
+				snd_play_step(1, 0, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
+		}
+
 		// Decrease steps at end
 		if(ob->f.ox == 0 && ob->f.oy == 0)
 		{
 			ob->steps_left--;
-
-			if(ob->level->game->net_mode != NET_SERVER)
-			{
-				if(((ob->f.cx^ob->f.cy)&1) != 0)
-					snd_play_step(1, 1, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
-				else
-					snd_play_step(1, 0, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
-			}
 		}
 	}
 }
 
 void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 {
-	int i;
+	int i, ii;
+	int pox, poy;
+	int aox, aoy, aot;
+	int dox, doy;
+	int dflip;
 	struct fd_player *fde = (struct fd_player *)ob->f.fd;
 
 	// Set skin tone
 	for(i = 0; i < 4; i++)
 		ob->cmap[16+i] = ob->skintone+i;
 
+	// Get abs offset + direction
+	dox = (ob->f.ox < 0 ? -1 : ob->f.ox > 0 ? 1 : 0);
+	doy = (ob->f.oy < 0 ? -1 : ob->f.oy > 0 ? 1 : 0);
+	aox = (ob->f.ox < 0 ? -ob->f.ox : ob->f.ox);
+	aoy = (ob->f.oy < 0 ? -ob->f.oy : ob->f.oy);
+	aot = aox*24 + aoy*32;
+
 	// Draw parts
-	for(i = 6; i >= 0; i--)
+	for(ii = 6; ii >= 0; ii--)
+	{
+		i = ii;
+
+		if(fde->face == DIR_EAST)
+			i = (i == 3 ? 2 : i == 2 ? 3 : i);
+		if(fde->face == DIR_WEST)
+			i = (i == 4 ? 2 : i == 2 ? 4 : i);
+
+		pox = 0;
+		poy = 0;
+		dflip = 1;
+		int ramp = (aot-32*24/2);
+		ramp = (ramp < 0 ? -ramp : ramp);
+		ramp -= 32*24/4;
+		ramp *= ramp;
+		ramp = 32*24*32*24/4/4 - ramp;
+		ramp >>= 14;
+
+		switch(i)
+		{
+			case 0:
+			case 1:
+			case 2:
+				poy -= ramp;
+				break;
+		}
+
+		int isel = (i+1)^(1&(ob->f.cx^ob->f.cy));
+		switch(isel)
+		{
+			case 5:
+				dflip = -1;
+			case 4:
+
+				if(aot <= 24*32/2)
+				{
+					pox = ob->f.ox;
+					poy = ob->f.oy;
+
+				} else {
+					pox = dox*32-ob->f.ox;
+					poy = doy*24-ob->f.oy;
+				}
+
+				pox >>= 2;
+				poy >>= 2;
+				pox *= dflip;
+				poy *= dflip;
+				break;
+
+			case 6:
+				dflip = -1;
+			case 7:
+
+				if(aot <= 24*32/2)
+				{
+					pox = ob->f.ox;
+					poy = ob->f.oy;
+
+				} else {
+					pox = dox*32-ob->f.ox;
+					poy = doy*24-ob->f.oy;
+				}
+
+				pox *= dflip;
+				poy *= dflip;
+
+				if((aot <= 24*32/2 ? isel == 7 : isel == 6))
+					poy -= ramp;
+				break;
+		}
+
 		draw_img_trans_cmap_d_sd(dst, ob->img,
-			camx + ob->f.cx*32 + ob->f.ox,
-			camy + ob->f.cy*24 + ob->f.oy - 21,
+			camx + ob->f.cx*32 + ob->f.ox + pox,
+			camy + ob->f.cy*24 + ob->f.oy + poy - 21,
 			(fde->face&3)*32, i*48, 32, 48,
 			0, ob->cmap);
+	}
 
 	// TEST: Draw tomato
 	/*

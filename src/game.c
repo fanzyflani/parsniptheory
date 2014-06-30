@@ -120,6 +120,12 @@ int gameloop_player_can_play(game_t *game, int tid)
 	{
 		// Get object
 		ob = game->lv->objects[i];
+
+		// Check if player
+		if(ob->f.otyp != OBJ_PLAYER)
+			continue;
+
+		// Get player structure
 		fde = (struct fd_player *)(ob->f.fd);
 		
 		// Do the compare

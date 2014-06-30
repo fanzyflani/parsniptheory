@@ -277,6 +277,19 @@ void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 
 	}
 
+	// Draw player objects
+	cx1 -= 1; if(cx1 < 0) cx1 = 0;
+	cx2 += 1; if(cx2 >= ar->w) cx2 = ar->w-1;
+	cy1 -= 1; if(cy1 < 0) cy1 = 0;
+	cy2 += 1; if(cy2 >= ar->h) cy2 = ar->h-1;
+
+	cestep = ar->w - (cx2-cx1+1);
+	ce = ar->data + cx1 + cy1*ar->w;
+	for(y = cy1; y <= cy2+1; y++, ce += cestep)
+	for(x = cx1; x <= cx2; x++, ce++)
+		if(ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER)
+			ce->ob->f_draw(ce->ob, dst, -dx, -dy);
+
 }
 
 void draw_level(img_t *dst, level_t *lv, int dx, int dy, int ayidx)
@@ -291,7 +304,7 @@ void draw_level(img_t *dst, level_t *lv, int dx, int dy, int ayidx)
 	{
 		obj_t *ob = lv->objects[i];
 
-		if(ob->f.layer == ayidx && ob->f_draw != NULL)
+		if(ob->f.layer == ayidx && ob->f_draw != NULL && ob->f.otyp != OBJ_PLAYER)
 			ob->f_draw(ob, dst, -dx, -dy);
 	}
 

@@ -51,20 +51,20 @@ struct menu_data
 	// Main menu
 	{
 		{
-			"NETWORK", MAIN_MENU_MOVETO, 2, {
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
-				{NULL, 0, 0, 0, 0},
+			"PLAY", MAIN_MENU_MOVETO, 2, {
+				{menu_draw_player, -32-28*2-30, -31-18, 1, 0},
+				{menu_draw_player, -32-28*2+30, -31-18, 6, 0},
+				{menu_draw_player, -32-28*2+0, -31-18, 0, 0},
 				{NULL, 0, 0, 0, 0},
 			}
 		},
 
 		{
-			"HOT SEAT", MAIN_MENU_ACTION, 2, {
-				{menu_draw_tile, -32-28*2, -31, 1, 0},
-				{menu_draw_player, -32-28*2-10, -31-23, 1, 0},
-				{menu_draw_player, -32-28*2+10, -31-23, 2, 0},
-				{menu_draw_player, -32-28*2+0, -31-18, 0, 0},
+			"SETUP", MAIN_MENU_ACTION, 0x5E7, {
+				{menu_draw_player, -32-28*2+0, -37-18, 5, 0},
+				{menu_draw_tile, -32-28*2-32, -31, 7, 0},
+				{menu_draw_tile, -32-28*2+0,  -31, 8, 0},
+				{menu_draw_tile, -32-28*2+32, -31, 9, 0},
 			}
 		},
 
@@ -126,8 +126,9 @@ struct menu_data
 		},
 	},
 
-	// Network menu
+	// Play menu
 	{
+		/*
 		{
 			"SERVERS", MAIN_MENU_ACTION, 0x101, {
 				{menu_draw_tile, -32-28*2, -31, 1, 0},
@@ -135,12 +136,20 @@ struct menu_data
 				{NULL, 0, 0, 0, 0},
 				{NULL, 0, 0, 0, 0},
 			}
+		},*/
+		{
+			"HOT SEAT", MAIN_MENU_ACTION, 2, {
+				{menu_draw_tile, -32-28*2, -31, 1, 0},
+				{menu_draw_player, -32-28*2-10, -31-23, 1, 0},
+				{menu_draw_player, -32-28*2+10, -31-23, 2, 0},
+				{menu_draw_player, -32-28*2+0, -31-18, 0, 0},
+			}
 		},
 
 		{
 			"CONNECT", MAIN_MENU_ACTION, 0x10C, {
-				{menu_draw_player, 20, -44, 0, 0},
-				{menu_draw_player, -20-32, -44, 1, 0},
+				{menu_draw_player, 20, -44, 0, DIR_EAST},
+				{menu_draw_player, -20-32, -44, 1, DIR_WEST},
 				{NULL, 0, 0, 0, 0},
 				{NULL, 0, 0, 0, 0},
 			}
@@ -207,7 +216,7 @@ struct menu_data
 const char *menu_names[] = {
 	"PARSNIP THEORY ",
 	" HOT SEAT",
-	"NETWORK GAME   ",
+	"PLAY GAME",
 };
 
 static void menu_widget_f_free(widget_t *g)
@@ -462,6 +471,21 @@ int main(int argc, char *argv[])
 	{
 		case 2:
 			gameloop(NET_LOCAL, NULL);
+			break;
+
+		case 0x5E7:
+			switch(options_dialogue("ENABLE MUSIC?", "YES", "NO"))
+			{
+				case 0:
+					music_play(mod_trk1);
+					break;
+
+				case 1:
+					music_play(NULL);
+					break;
+
+			}
+
 			break;
 
 		case 0x101: {

@@ -248,7 +248,7 @@ snd_t *snd_load_wav(const char *fname)
 			adlen *= (balign-4*channels)*2;
 			snd = snd_alloc(adlen,
 				channels >= 2, freq);
-			printf("len %i %i\n", snd->len, len);
+			//printf("len %i %i\n", snd->len, len);
 			break;
 
 		default:
@@ -711,7 +711,7 @@ int audio_init(void)
 	);
 
 	// Play music
-	//music_play(mod_trk1);
+	music_play(mod_trk1);
 
 	// Play sound
 	snd_play_splat(0, 0, 0);

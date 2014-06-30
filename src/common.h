@@ -467,11 +467,14 @@ ai_t *ai_new(game_t *game, abuf_t *ab, int tid);
 // audio.c
 extern snd_t *snd_splat[];
 extern snd_t *snd_step[];
+extern it_module_t *mod_trk1;
+
 achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs, int lockme);
 void snd_play_splat(int use_world, int sx, int sy);
 void snd_play_step(int use_world, int stepcls, int sx, int sy);
 void music_free(it_module_t *mod);
 it_module_t *music_load_it(const char *fname);
+void music_play(it_module_t *mod);
 int audio_init(void);
 
 // cdefs.c
