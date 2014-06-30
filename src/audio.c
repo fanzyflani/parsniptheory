@@ -508,6 +508,10 @@ void music_play(it_module_t *mod)
 			snd_sackit = NULL;
 		}
 
+		// Unlock audio
+		mutret = SDL_mutexV(audio_mutex);
+		assert(mutret != -1);
+
 		return;
 	}
 
