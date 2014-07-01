@@ -465,8 +465,11 @@ void ai_free(ai_t *ai);
 ai_t *ai_new(game_t *game, abuf_t *ab, int tid);
 
 // audio.c
+extern sackit_playback_t *sackit;
+
 extern snd_t *snd_splat[];
 extern snd_t *snd_step[];
+extern it_module_t *mod_titleff1;
 extern it_module_t *mod_trk1;
 
 achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs, int lockme);
@@ -582,8 +585,8 @@ int game_parse_actions(game_t *game, abuf_t *ab, int typ);
 
 // obj.c
 void obj_free(obj_t *ob);
-obj_t *obj_new(int otyp, int flags, int cx, int cy, int layer);
-obj_t *obj_load(FILE *fp);
+obj_t *obj_new(level_t *lv, int otyp, int flags, int cx, int cy, int layer);
+obj_t *obj_load(level_t *lv, FILE *fp);
 int obj_save(FILE *fp, obj_t *ob);
 
 // screen.c
@@ -593,6 +596,9 @@ void screen_flip(void);
 
 // team.c
 team_t *team_new(int idx);
+
+// title.c
+int titleloop(void);
 
 // tools.c
 int sdiv(int n, int d);
@@ -622,6 +628,7 @@ extern img_t *i_food1;
 extern img_t *i_icons1;
 extern img_t *i_font16;
 extern img_t *i_font57;
+extern img_t *i_titleff1;
 extern uint8_t *cm_player;
 extern uint8_t *cm_tiles1;
 extern uint8_t *cm_food1;

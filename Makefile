@@ -17,6 +17,7 @@ IMAGES_PNG = \
 	dat/food1.img \
 	dat/icons1.img \
 	dat/player.img \
+	dat/titleff1.img \
 	dat/tiles1.img
 
 OBJS_COMMON = \
@@ -38,6 +39,7 @@ OBJS_COMMON = \
 	$(OBJDIR)/server.o \
 	$(OBJDIR)/shared.o \
 	$(OBJDIR)/team.o \
+	$(OBJDIR)/title.o \
 	$(OBJDIR)/tools.o
 	#
 

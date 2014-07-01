@@ -30,6 +30,7 @@ SDL_mutex *audio_mutex = NULL;
 
 snd_t *snd_splat[SND_SPLAT_COUNT];
 snd_t *snd_step[SND_STEP_COUNT];
+it_module_t *mod_titleff1;
 it_module_t *mod_trk1;
 sackit_playback_t *sackit = NULL;
 achn_t *ac_sackit = NULL;
@@ -683,6 +684,7 @@ int audio_init(void)
 	}
 
 	// Load music
+	mod_titleff1 = music_load_it("dat/titleff1.it");
 	mod_trk1 = music_load_it("dat/trk1.it");
 
 	// Create mutex
@@ -713,12 +715,6 @@ int audio_init(void)
 		, audio_spec.samples
 		, audio_spec.format
 	);
-
-	// Play music
-	//music_play(mod_trk1);
-
-	// Play sound
-	snd_play_splat(0, 0, 0);
 
 	// Unpause audio and return
 	SDL_PauseAudio(0);

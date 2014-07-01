@@ -12,10 +12,15 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 int obj_player_f_init(obj_t *ob)
 {
 	struct fd_player *fde = (struct fd_player *)ob->f.fd;
+	cell_t *ce;
 
 	assert(fde->team >= 0 && fde->team < TEAM_MAX);
 	ob->img = i_player;
 	ob->cmap = teams[fde->team]->cm_player;
+
+	ce = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->f.cx, ob->f.cy);
+	if(ce != NULL)
+		ce->ob = ob;
 
 	ob->bx =   6;
 	ob->by = -16;
@@ -586,6 +591,17 @@ struct {
 
 void obj_free(obj_t *ob)
 {
+	cell_t *ce;
+
+	// Detach from level
+	if(ob->level != NULL)
+	{
+		ce = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->f.cx, ob->f.cy);
+		if(ce != NULL && ce->ob == ob)
+			ce->ob = NULL;
+
+	}
+
 	// Free internal object data if necessary
 	if(ob->f_free != NULL)
 		ob->f_free(ob);
@@ -669,10 +685,11 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	return ob;
 }
 
-obj_t *obj_new(int otyp, int flags, int cx, int cy, int layer)
+obj_t *obj_new(level_t *lv, int otyp, int flags, int cx, int cy, int layer)
 {
 	// Allocate
 	obj_t *ob = obj_alloc(otyp, flags, cx, cy, 0, 0, layer, NULL, obj_fptrs[otyp].fdlen);
+	ob->level = lv;
 
 	// Call init_fd
 	if(ob->f_init_fd != NULL && !ob->f_init_fd(ob))
@@ -697,7 +714,7 @@ obj_t *obj_new(int otyp, int flags, int cx, int cy, int layer)
 
 }
 
-obj_t *obj_load(FILE *fp)
+obj_t *obj_load(level_t *lv, FILE *fp)
 {
 	// Load info
 	int otyp = fgetc(fp);
@@ -710,6 +727,7 @@ obj_t *obj_load(FILE *fp)
 
 	// Allocate
 	obj_t *ob = obj_alloc(otyp, flags, cx, cy, ox, oy, layer, NULL, obj_fptrs[otyp].fdlen);
+	ob->level = lv;
 
 	// Call load_fd
 	if(ob->f_load_fd != NULL && !ob->f_load_fd(ob, fp))

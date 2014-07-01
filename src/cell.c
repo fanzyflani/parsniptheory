@@ -149,7 +149,7 @@ obj_t *level_obj_add(level_t *lv, int otyp, int flags, int cx, int cy, int layer
 	// Not just this function... I really want to see the objects in a linked list
 
 	// Allocate
-	obj_t *ob = obj_new(otyp, flags, cx, cy, layer);
+	obj_t *ob = obj_new(lv, otyp, flags, cx, cy, layer);
 	if(ob == NULL) return NULL;
 	ob->level = lv;
 
@@ -313,7 +313,7 @@ level_t *level_load(const char *fname)
 	// Load objects
 	for(i = 0; i < lv->ocount; i++)
 	{
-		lv->objects[i] = obj_load(fp);
+		lv->objects[i] = obj_load(lv, fp);
 		if(lv->objects[i] == NULL)
 			goto fail_delevel;
 

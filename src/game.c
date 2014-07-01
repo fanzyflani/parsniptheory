@@ -274,7 +274,7 @@ void gameloop_draw_playing(game_t *game)
 	*/
 
 	// Draw A* route for selected object
-	if(game->selob != NULL)
+	if(game->selob != NULL && game->claim_team[game->curplayer] != 0xFC)
 	{
 		// Get coordinates
 		int asendx = (game->mx + game->camx)/32;
@@ -290,12 +290,17 @@ void gameloop_draw_playing(game_t *game)
 			22,
 			2);
 
+		int pointself = (asendx == game->selob->f.cx && asendy == game->selob->f.cy);
+		int shifts = (key_state[SDLK_LSHIFT] || key_state[SDLK_RSHIFT]);
+		canattack |= shifts;
+		canattack = canattack && !pointself;
+
 		// Draw attack icon if that would make sense
 		if(canattack)
 		{
 			ce = layer_cell_ptr(game->lv->layers[0], x, y);
-			if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
-				&& ((struct fd_player *)(ce->ob->f.fd))->team != game->curplayer)
+			if(shifts || (ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
+				&& ((struct fd_player *)(ce->ob->f.fd))->team != game->curplayer))
 			{
 				if(game->selob->steps_left >= STEPS_ATTACK)
 				{
@@ -311,6 +316,14 @@ void gameloop_draw_playing(game_t *game)
 
 				}
 			}
+
+		} else if(pointself && (game->selob->f.ox == 0 && game->selob->f.oy == 0)) {
+			// Crouch/stand icon
+			draw_img_trans_d_sd(screen, i_icons1,
+				x*32 - game->camx,
+				y*24 - game->camy,
+				32*2, 24*1, 32, 24, 0);
+
 		}
 
 		// Do A* trace
@@ -319,7 +332,7 @@ void gameloop_draw_playing(game_t *game)
 			game->selob->f.cx, game->selob->f.cy, asendx, asendy);
 
 		// Trace
-		if(dirlen >= 1)
+		if((!shifts) && dirlen >= 1)
 		{
 			// Get start pos
 			x = game->selob->f.cx;

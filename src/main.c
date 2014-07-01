@@ -436,6 +436,7 @@ int main(int argc, char *argv[])
 	i_icons1 = img_load_tga("tga/icons1.tga"); 
 	i_font16 = img_load_tga("tga/font16.tga"); 
 	i_font57 = img_load_tga("tga/font57.tga"); 
+	i_titleff1 = img_load_tga("tga/titleff1.tga"); 
 #else
 	i_player = img_load_png("dat/player.img"); 
 	i_tiles1 = img_load_png("dat/tiles1.img"); 
@@ -443,6 +444,7 @@ int main(int argc, char *argv[])
 	i_icons1 = img_load_png("dat/icons1.img"); 
 	i_font16 = img_load_png("dat/font16.img"); 
 	i_font57 = img_load_png("dat/font57.img"); 
+	i_titleff1 = img_load_png("dat/titleff1.img"); 
 #endif
 	cm_player = cmaps[i_player->cmidx].data;
 	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
@@ -460,10 +462,26 @@ int main(int argc, char *argv[])
 		teams[i] = team_new(i);
 
 #ifdef __EMSCRIPTEN__
+	// Play music
+	music_play(mod_trk1);
+
+	// Play sound
+	snd_play_splat(0, 0, 0);
+
 	// Force a hotseat game
 	printf("forcing hotseat game\n");
 	switch(2)
 #else
+	// Do title
+	if(titleloop())
+		return 0;
+
+	// Play music
+	music_play(mod_trk1);
+
+	// Play sound
+	snd_play_splat(0, 0, 0);
+
 	// Enter menu loop
 	for(;;)
 	switch(menuloop(0))
