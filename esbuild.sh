@@ -5,6 +5,7 @@ export EMCC_FAST_COMPILER=0
 export SRCDIR="src"
 
 export OBJS_COMMON="\
+	${SRCDIR}/ai.c \
 	${SRCDIR}/action.c \
 	${SRCDIR}/audio.c \
 	${SRCDIR}/cdefs.c \
@@ -53,5 +54,5 @@ export OBJS_SACKIT="\
 	#
 
 #/usr/home/ben/Downloads/emscripten/emcc -o index.js -O2 -DNO_NET $OBJS_CLIENT -Isrc -Isackit -Izlib $OBJS_SACKIT udeflate.c $(for A in dat/* lvl/*; do echo --preload-file "${A}"; done)
-/usr/home/ben/Downloads/emscripten/emcc -o index.js -O2 -DNO_ZLIB -DNO_NET $OBJS_CLIENT -Isrc -Isackit -Izlib $OBJS_SACKIT udeflate.c $(for A in dat/* lvl/* tga/*.tga; do echo --preload-file "${A}"; done)
+/usr/home/ben/Downloads/emscripten/emcc -s TOTAL_MEMORY=33554432 -o index.js -O2 -DNO_ZLIB -DNO_NET $OBJS_CLIENT -Isrc -Isackit -Izlib $OBJS_SACKIT udeflate.c $(for A in dat/* lvl/* tga/*.tga; do echo --preload-file "${A}"; done)
 

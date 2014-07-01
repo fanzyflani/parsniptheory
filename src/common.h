@@ -254,7 +254,7 @@ struct obj
 	int please_wait;
 	int steps_left;
 	int health;
-	int tx, ty;
+	int tx, ty, tmode;
 	int vx, vy;
 	int *asdir;
 	int aslen, asidx;
@@ -524,6 +524,7 @@ void game_free(game_t *game);
 int gameloop_player_can_play(game_t *game, int tid);
 void gameloop_start_turn(game_t *game, int steps_added);
 int gameloop_next_turn(game_t *game, int tid, int steps_added);
+int game_tick_playing(game_t *game);
 int game_tick(game_t *game);
 int gameloop(int net_mode, TCPsocket sock);
 

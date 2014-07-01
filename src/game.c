@@ -1049,7 +1049,11 @@ int gameloop(int net_mode, TCPsocket sock)
 			: 4);
 
 		// TODO: pick random map
+#ifdef __EMSCRIPTEN__
+		strcpy(game_m->settings.map_name, "airport");
+#else
 		strcpy(game_m->settings.map_name, "genesis");
+#endif
 	}
 
 	// Prepare view
@@ -1152,7 +1156,7 @@ int gameloop(int net_mode, TCPsocket sock)
 
 #ifdef __EMSCRIPTEN__
 	//printf("inf loop begin\n");
-	emscripten_set_main_loop(gameloop_core_cradle, 100.0f, 0);
+	emscripten_set_main_loop(gameloop_core_cradle, 0, 0);
 	//printf("cradle set\n");
 #else
 	for(;;)

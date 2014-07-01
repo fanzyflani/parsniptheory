@@ -41,6 +41,7 @@ Playing instructions:
 * For "L select, R act":
   * Left click either selects or deselects a unit.
   * Right click either moves your unit, or attempts to throw a tomato at an enemy player.
+* Shift + click on a tile attempts to attack that tile.
 * Enter ends your turn and moves onto the next player.
 * Escape "pauses" the game, mostly so you can move your mouse elsewhere.
 * Your units get 7 "steps" each.

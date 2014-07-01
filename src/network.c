@@ -257,7 +257,9 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 			// Check destination
 			dce = layer_cell_ptr(game->lv->layers[0], mx, my);
 
-			if(dce != NULL && dce->ob == NULL)
+			int shifts = key_state[SDLK_LSHIFT] | key_state[SDLK_RSHIFT];
+
+			if((!shifts) && dce != NULL && dce->ob == NULL)
 			{
 				// Do A* trace
 				int dirlist[1024];
@@ -277,7 +279,7 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 					abuf_write_u16(game->selob->steps_left, ab);
 				}
 
-			} else if(dce != NULL) {
+			} else if(shifts || dce != NULL) {
 				// Attack it
 				abuf_write_u8(ACT_ATTACK, ab);
 				abuf_write_s16(game->selob->f.cx, ab);
@@ -735,6 +737,7 @@ void game_handle_move(game_t *game, abuf_t *ab, int typ, int sx, int sy, int dx,
 	} else return;
 
 	// Move it
+	ce->ob->tmode = 1;
 	ce->ob->tx = dx;
 	ce->ob->ty = dy;
 
@@ -777,18 +780,19 @@ void game_handle_attack(game_t *game, abuf_t *ab, int typ, int sx, int sy, int d
 		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
 		if(!(ce != NULL)) return;
 		if(!(ce->ob != NULL)) return;
-		if(!(dce != NULL)) return;
-		if(!(dce->ob != NULL)) return;
+		//if(!(dce != NULL)) return;
+		//if(!(dce->ob != NULL)) return;
 
 	} else if(typ == NET_S2C) {
 		assert(ce != NULL);
 		assert(ce->ob != NULL);
-		assert(dce != NULL);
-		assert(dce->ob != NULL);
+		//assert(dce != NULL);
+		//assert(dce->ob != NULL);
 
 	} else return;
 
 	// Fire an attack
+	ce->ob->tmode = 2;
 	ce->ob->tx = dx;
 	ce->ob->ty = dy;
 
@@ -857,12 +861,17 @@ void game_handle_deselect(game_t *game, abuf_t *ab, int typ)
 	if(typ == NET_C2S)
 	{
 		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
+		if(!(game->selob == NULL || !game->selob->please_wait)) return;
 		//
 
 	} else if(typ == NET_S2C) {
 		//
 
 	} else return;
+
+	// Clear target mode if deselected
+	if(game->selob != NULL)
+		game->selob->tmode = 0;
 
 	// Deselect
 	game->selob = NULL;

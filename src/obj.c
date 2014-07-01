@@ -24,6 +24,7 @@ int obj_player_f_init(obj_t *ob)
 
 	ob->tx = ob->f.cx;
 	ob->ty = ob->f.cy;
+	ob->tmode = 0;
 
 	ob->health = PLAYER_HEALTH;
 
@@ -102,6 +103,7 @@ void obj_player_f_tick(obj_t *ob)
 
 		// Forfeit lock
 		ob->please_wait = 0;
+		ob->tmode = 0;
 		return;
 	}
 
@@ -111,8 +113,10 @@ void obj_player_f_tick(obj_t *ob)
 		// If we're attacking something, attack it (if possible)
 		ce = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->tx, ob->ty);
 
-		if(ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER)
-		if(((struct fd_player *)(ce->ob->f.fd))->team != fde->team)
+		if(ob->tmode == 2)
+		if(ce == NULL || ce->ob == NULL ||
+			(ce->ob->f.otyp == OBJ_PLAYER &&
+			((struct fd_player *)(ce->ob->f.fd))->team != fde->team))
 		{
 			// Step check
 			if(ob->steps_left >= STEPS_ATTACK)
@@ -139,6 +143,7 @@ void obj_player_f_tick(obj_t *ob)
 			// Clear target and stuff
 			ob->tx = ob->f.cx;
 			ob->ty = ob->f.cy;
+			ob->tmode = 0;
 			ob->please_wait = 0;
 
 			// Don't bother with the rest of this block
@@ -147,6 +152,7 @@ void obj_player_f_tick(obj_t *ob)
 		}
 		
 		// If A* works, follow
+		if(ob->tmode == 1)
 		if(ob->asdir != NULL) do
 		{
 			// Check if at end
@@ -215,6 +221,7 @@ void obj_player_f_tick(obj_t *ob)
 				
 			} else {
 				// Release "please wait" flag
+				ob->tmode = 0;
 				ob->please_wait = 0;
 
 			}
@@ -398,6 +405,7 @@ int obj_food_tomato_f_init(obj_t *ob)
 
 	ob->tx = ob->f.cx;
 	ob->ty = ob->f.cy;
+	ob->tmode = 0;
 
 	ob->please_wait = 1;
 
@@ -645,6 +653,7 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	ob->health = 1;
 	ob->tx = 0;
 	ob->ty = 0;
+	ob->tmode = 0;
 	ob->vx = 0;
 	ob->vy = 0;
 	ob->asdir = NULL;
