@@ -285,7 +285,7 @@ void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 
 	cestep = ar->w - (cx2-cx1+1);
 	ce = ar->data + cx1 + cy1*ar->w;
-	for(y = cy1; y <= cy2+1; y++, ce += cestep)
+	for(y = cy1; y <= cy2; y++, ce += cestep)
 	for(x = cx1; x <= cx2; x++, ce++)
 		if(ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER)
 			ce->ob->f_draw(ce->ob, dst, -dx, -dy);
