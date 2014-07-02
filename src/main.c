@@ -240,7 +240,10 @@ static void menu_widget_f_draw(widget_t *g, int sx, int sy)
 	int sel = (mx >= 0 && my >= 0 && mx < g->w && my < g->h);
 
 	// Draw rectangle
-	draw_rect_d(screen, sx, sy, g->w, g->h, 64 + (sel ? 0 : 1) + 4*g->i1);
+	if(sel)
+		draw_rect_d(screen, sx, sy, g->w, g->h, 64 + (sel ? 0 : 1) + 4*g->i1);
+	else
+		draw_border_d(screen, sx, sy, g->w, g->h, 64 + (sel ? 0 : 1) + 4*g->i1);
 
 	// Draw GUI contents
 	struct menu_data *md = (struct menu_data *)(g->v1);
@@ -285,11 +288,11 @@ widget_t *menu_gen_widget(struct menu_data *mdat, const char *name)
 	g->sx = groot->w/2 - 8*strlen(name);
 	g->sy = groot->h/2 - 8;
 
-	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 9 - SHAREWARE - Spread to all your friends! Even though it's not finished!");
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 9 - SHAREWARE - Spread to all your friends!");
 	g->sx = 0;
 	g->sy = 0;
 
-	g = gui_new(gui_label57_init, groot, groot->w, 7, "Copyright (C) 2014, fanzyflani. All rights reserved. More text can go here.");
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Copyright (C) 2014, fanzyflani. All rights reserved. https://fanzyflani.itch.io");
 	g->sx = 0;
 	g->sy = groot->h-7;
 
@@ -327,7 +330,13 @@ int menuloop(int menuid)
 	for(;;)
 	{
 		// Clear the screen
-		screen_clear(0);
+		screen_plasma();
+
+		// Draw title card
+		/**/ if(menuid == 0) draw_img_trans_cmap_d_sd(screen, i_title[1],
+			0, 0, 160, 200, 320, 200, 0, cmaps[i_title[1]->cmidx].data);
+		else if(menuid == 2) draw_img_trans_cmap_d_sd(screen, i_title[0],
+			0, 0, 0, 0, 320, 200, 0, cmaps[i_title[0]->cmidx].data);
 
 
 		// Pick menu
@@ -426,29 +435,10 @@ int main(int argc, char *argv[])
 
 	// Load palette and colourmaps
 	load_palette("dat/pal1.pal");
-	pal_main[0][0] = 255/5;
 
 	// Load images
-#ifdef NO_ZLIB
-	i_player = img_load_tga("tga/player.tga"); 
-	i_tiles1 = img_load_tga("tga/tiles1.tga"); 
-	i_food1 = img_load_tga("tga/food1.tga"); 
-	i_icons1 = img_load_tga("tga/icons1.tga"); 
-	i_font16 = img_load_tga("tga/font16.tga"); 
-	i_font57 = img_load_tga("tga/font57.tga"); 
-	i_titleff1 = img_load_tga("tga/titleff1.tga"); 
-#else
-	i_player = img_load_png("dat/player.img"); 
-	i_tiles1 = img_load_png("dat/tiles1.img"); 
-	i_food1 = img_load_png("dat/food1.img"); 
-	i_icons1 = img_load_png("dat/icons1.img"); 
-	i_font16 = img_load_png("dat/font16.img"); 
-	i_font57 = img_load_png("dat/font57.img"); 
-	i_titleff1 = img_load_png("dat/titleff1.img"); 
-#endif
-	cm_player = cmaps[i_player->cmidx].data;
-	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
-	cm_food1 = cmaps[i_food1->cmidx].data;
+	if(!load_graphics())
+		return 0;
 
 	// Load sound
 	if(!audio_init())
@@ -477,6 +467,7 @@ int main(int argc, char *argv[])
 		return 0;
 
 	// Play music
+	//music_play(NULL);
 	music_play(mod_trk1);
 
 	// Play sound

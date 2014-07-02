@@ -69,7 +69,7 @@ typedef void *IPaddress;
 
 // Versions
 #define MAP_FVERSION 1
-#define NET_VERSION 4
+#define NET_VERSION 5
 
 // Other things
 #define NET_PORT 2014
@@ -224,6 +224,8 @@ typedef struct obj_file
 	uint8_t layer;
 } obj_file_t;
 
+#define OF_CROUCH 0x0001
+
 struct obj
 {
 	// Links
@@ -250,6 +252,7 @@ struct obj
 
 	// Extra state for anything to use
 	// THIS IS TOTALLY A GOOD IDEA
+	int crouch_trans;
 	int skintone;
 	int please_wait;
 	int steps_left;
@@ -328,6 +331,9 @@ enum
 	ACT_SELECT, // BIDI (s16 sx, s16 sy)
 	ACT_DESELECT, // BIDI ()
 	ACT_HOVER, // BIDI (s16 mx, s16 my, s16 camx, s16 camy)
+
+	ACT_CROUCH, // BIDI (s16 sx, s16 sy)
+	ACT_STAND, // BIDI (s16 sx, s16 sy)
 
 	ACT_COUNT
 };
@@ -590,6 +596,7 @@ obj_t *obj_load(level_t *lv, FILE *fp);
 int obj_save(FILE *fp, obj_t *ob);
 
 // screen.c
+void screen_plasma(void);
 void screen_clear(uint8_t col);
 void screen_dim_halftone(void);
 void screen_flip(void);
@@ -628,6 +635,8 @@ extern img_t *i_food1;
 extern img_t *i_icons1;
 extern img_t *i_font16;
 extern img_t *i_font57;
+#define TITLE_IMAGES 2
+extern img_t *i_title[TITLE_IMAGES];
 extern img_t *i_titleff1;
 extern uint8_t *cm_player;
 extern uint8_t *cm_tiles1;
@@ -637,6 +646,8 @@ extern team_t *teams[TEAM_MAX];
 extern uint8_t pal_src[256][4];
 extern cmap_t *cmaps;
 extern uint8_t pal_main[256][4];
+
+int load_graphics(void);
 
 #endif
 

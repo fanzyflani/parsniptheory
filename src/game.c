@@ -319,10 +319,25 @@ void gameloop_draw_playing(game_t *game)
 
 		} else if(pointself && (game->selob->f.ox == 0 && game->selob->f.oy == 0)) {
 			// Crouch/stand icon
-			draw_img_trans_d_sd(screen, i_icons1,
-				x*32 - game->camx,
-				y*24 - game->camy,
-				32*2, 24*1, 32, 24, 0);
+			if(game->selob->steps_left < 1)
+			{
+				draw_img_trans_d_sd(screen, i_icons1,
+					x*32 - game->camx,
+					y*24 - game->camy,
+					32*4, 24*0, 32, 24, 0);
+
+			} else if(game->selob->f.flags & OF_CROUCH) {
+				draw_img_trans_d_sd(screen, i_icons1,
+					x*32 - game->camx,
+					y*24 - game->camy,
+					32*3, 24*1, 32, 24, 0);
+
+			} else {
+				draw_img_trans_d_sd(screen, i_icons1,
+					x*32 - game->camx,
+					y*24 - game->camy,
+					32*2, 24*1, 32, 24, 0);
+			}
 
 		}
 
@@ -334,6 +349,9 @@ void gameloop_draw_playing(game_t *game)
 		// Trace
 		if((!shifts) && dirlen >= 1)
 		{
+			int moves_left = game->selob->steps_left;
+			if(game->selob->f.flags & OF_CROUCH) moves_left >>= 1;
+
 			// Get start pos
 			x = game->selob->f.cx;
 			y = game->selob->f.cy;
@@ -345,12 +363,12 @@ void gameloop_draw_playing(game_t *game)
 				int dy = face_dir[dirlist[i]][1];
 
 				// Draw line
-				if(i == game->selob->steps_left)
+				if(i == moves_left)
 					draw_img_trans_d_sd(screen, i_icons1,
 						x*32 - game->camx,
 						y*24 - game->camy,
 						32*0, 24*1, 32, 24, 0);
-				else if(i < game->selob->steps_left)
+				else if(i < moves_left)
 					draw_img_trans_d_sd(screen, i_icons1,
 						x*32 - game->camx,
 						y*24 - game->camy,
@@ -368,7 +386,7 @@ void gameloop_draw_playing(game_t *game)
 			}
 
 			// Show position
-			if(dirlen <= game->selob->steps_left)
+			if(dirlen <= moves_left)
 				draw_img_trans_d_sd(screen, i_icons1,
 					x*32 - game->camx,
 					y*24 - game->camy,
@@ -498,7 +516,7 @@ void gameloop_draw_setup(game_t *game)
 void gameloop_draw(game_t *game)
 {
 	// Clear the screen
-	screen_clear(0);
+	screen_plasma();
 
 	// Check game mode
 	switch(game->main_state)

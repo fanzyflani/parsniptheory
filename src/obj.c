@@ -96,6 +96,36 @@ void obj_player_f_tick(obj_t *ob)
 		return;
 	}
 
+	// Check if crouching / standing
+	if(ob->f.flags & OF_CROUCH)
+	{
+		if(ob->crouch_trans != 8)
+		{
+			ob->crouch_trans++;
+			if(ob->crouch_trans >= 8)
+			{
+				ob->crouch_trans = 8;
+				ob->please_wait = 0;
+			}
+
+			return;
+		}
+
+	} else {
+		if(ob->crouch_trans != 0)
+		{
+			ob->crouch_trans--;
+			if(ob->crouch_trans <= 0)
+			{
+				ob->crouch_trans = 0;
+				ob->please_wait = 0;
+			}
+
+			return;
+		}
+
+	}
+
 	// Check if we have steps left
 	if(ob->steps_left == 0)
 	{
@@ -233,19 +263,19 @@ void obj_player_f_tick(obj_t *ob)
 		}
 
 
-	} while(0); else {
+	} while(0); else if(ob->steps_left >= (ob->f.flags & OF_CROUCH ? 2 : 1)) {
 		// Move
-		if(ob->f.ox < 0) ob->f.ox += 3;
+		if(ob->f.ox < 0) ob->f.ox += (ob->f.flags & OF_CROUCH ? 2 : 3);
 		if(ob->f.ox > 0) ob->f.ox -= 1;
 		if(ob->f.ox > 0) ob->f.ox -= 1;
-		if(ob->f.ox > 0) ob->f.ox -= 1;
+		if(ob->f.ox > 0 && !(ob->f.flags & OF_CROUCH)) ob->f.ox -= 1;
 
-		if(ob->f.oy < 0) ob->f.oy += 2;
+		if(ob->f.oy < 0) ob->f.oy += (ob->f.flags & OF_CROUCH ? 1 : 2);
 		if(ob->f.oy > 0) ob->f.oy -= 1;
-		if(ob->f.oy > 0) ob->f.oy -= 1;
+		if(ob->f.oy > 0 && !(ob->f.flags & OF_CROUCH)) ob->f.oy -= 1;
 
 		if(ob->level->game->net_mode != NET_SERVER)
-		if(ob->f.ox == 17 || ob->f.ox == -17 || ob->f.oy == 12 || ob->f.oy == -12)
+		if(ob->f.ox == 14 || ob->f.ox == -14 || ob->f.oy == 12 || ob->f.oy == -12)
 		{
 			if(((ob->f.cx^ob->f.cy)&1) != 0)
 				snd_play_step(1, 1, ob->f.cx*32+16 + ob->f.ox, ob->f.cy*24+12 + ob->f.oy);
@@ -256,7 +286,7 @@ void obj_player_f_tick(obj_t *ob)
 		// Decrease steps at end
 		if(ob->f.ox == 0 && ob->f.oy == 0)
 		{
-			ob->steps_left--;
+			ob->steps_left -= (ob->f.flags & OF_CROUCH ? 2 : 1);
 		}
 	}
 }
@@ -355,6 +385,19 @@ void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 				break;
 		}
 
+		switch(i)
+		{
+			case 0:
+			case 1:
+				poy += ob->crouch_trans>>0;
+				break;
+			case 2:
+			case 3:
+			case 4:
+				poy += ob->crouch_trans>>1;
+				break;
+		}
+
 		draw_img_trans_cmap_d_sd(dst, ob->img,
 			camx + ob->f.cx*32 + ob->f.ox + pox,
 			camy + ob->f.cy*24 + ob->f.oy + poy - 21,
@@ -374,13 +417,13 @@ void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 	// Draw health
 	draw_57_printf(dst,
 		camx + 32*ob->f.cx + ob->f.ox,
-		camy + 24*ob->f.cy + ob->f.oy - 24,
+		camy + 24*ob->f.cy + ob->f.oy + ob->crouch_trans - 24,
 		1, "%i", ob->health);
 
 	// Draw team number (because colourblind people are a thing)
 	draw_57_printf(dst,
 		camx + 32*ob->f.cx + ob->f.ox + 30 - 4*3,
-		camy + 24*ob->f.cy + ob->f.oy - 24,
+		camy + 24*ob->f.cy + ob->f.oy + ob->crouch_trans - 24,
 		1, "%3i", fde->team+1);
 }
 
@@ -663,6 +706,7 @@ obj_t *obj_alloc(int otyp, int flags, int cx, int cy, int ox, int oy, int layer,
 	ob->f_free = obj_fptrs[otyp].f_free;
 
 	// Fill in extra crap
+	ob->crouch_trans = 0;
 	ob->skintone = 0;
 	ob->please_wait = 0;
 	ob->steps_left = 0;

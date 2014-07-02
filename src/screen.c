@@ -10,6 +10,14 @@ float screen_plasma_ang2 = 0.0;
 int screen_plasma_x = 160;
 int screen_plasma_y = 100;
 
+#ifdef NO_PLASMA
+void screen_plasma(void)
+{
+	// Easy.
+	memset(screen->data, 0, screen->w * screen->h);
+}
+
+#else
 void screen_plasma(void)
 {
 	int x, y, i, v;
@@ -48,15 +56,12 @@ void screen_plasma(void)
 		}
 	}
 }
+#endif
 
 void screen_clear(uint8_t col)
 {
-#ifdef NO_PLASMA
 	// Easy.
 	memset(screen->data, col, screen->w * screen->h);
-#else
-	screen_plasma();
-#endif
 }
 
 void screen_dim_halftone(void)

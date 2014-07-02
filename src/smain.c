@@ -32,15 +32,8 @@ int main(int argc, char *argv[])
 	pal_main[0][0] = 255/5;
 
 	// Load images
-	i_player = img_load_png("dat/player.img"); 
-	i_tiles1 = img_load_png("dat/tiles1.img"); 
-	i_food1 = img_load_png("dat/food1.img"); 
-	i_icons1 = img_load_png("dat/icons1.img"); 
-	i_font16 = img_load_png("dat/font16.img"); 
-	i_font57 = img_load_png("dat/font57.img"); 
-	cm_player = cmaps[i_player->cmidx].data;
-	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
-	cm_food1 = cmaps[i_food1->cmidx].data;
+	if(!load_graphics())
+		return 0;
 
 	// Prepare teams
 	for(i = 0; i < TEAM_MAX; i++)

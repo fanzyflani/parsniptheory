@@ -291,6 +291,28 @@ int astar_layer(layer_t *ar, int *dirbuf, int dirbuflen, int x1, int y1, int x2,
 
 }
 
+static int has_tables(layer_t *ar, int cx, int cy, int gx, int gy)
+{
+	cell_t *ce;
+
+	// If it's not a floor, return false (we can hit tables / back walls).
+	ce = layer_cell_ptr(ar, cx, cy);
+	if(ce != NULL && ce->f.ctyp != CELL_FLOOR) return 0;
+
+	// If it's got a standing player, return false (we can hit standing players).
+	if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
+		&& !(ce->ob->f.flags & OF_CROUCH))
+			return 0;
+
+	// Check neighbours, return true if any of them are tables
+	ce = layer_cell_ptr(ar, cx-gx, cy   ); if(ce != NULL && ce->f.ctyp == CELL_TABLE) return 1;
+	ce = layer_cell_ptr(ar, cx,    cy-gy); if(ce != NULL && ce->f.ctyp == CELL_TABLE) return 1;
+	ce = layer_cell_ptr(ar, cx-gx, cy-gy); if(ce != NULL && ce->f.ctyp == CELL_TABLE) return 1;
+
+	// No tables. Return false.
+	return 0;
+}
+
 int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 {
 	int trx, try;
@@ -299,15 +321,24 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 	int dx, dy;
 	int cx, cy;
 	int lcx, lcy;
+	int hasnt_hit_end;
 	cell_t *ce;
+
+	// If same cell, return false
+	if(x1 == x2 && y1 == y2)
+	{
+		*rx = x1;
+		*ry = y1;
+		return 0;
+	}
 
 	// Shove some dummies in
 	if(rx == NULL) rx = &trx;
 	if(ry == NULL) ry = &try;
 
 	// Get velocity + direction
-	gx = (x2 < x1 ? -1 : 1);
-	gy = (y2 < y1 ? -1 : 1);
+	gx = (x2 < x1 ? -1 : x2 != x1 ? 1 : 0);
+	gy = (y2 < y1 ? -1 : y2 != y1 ? 1 : 0);
 	vx = (x2 < x1 ? x1-x2 : x2-x1);
 	vy = (y2 < y1 ? y1-y2 : y2-y1);
 
@@ -318,7 +349,8 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 	lcy = cy = y1;
 
 	// Trace
-	while(cx != x2 || cy != y2)
+	hasnt_hit_end = (cx != x2 || cy != y2);
+	while(hasnt_hit_end || has_tables(ar, cx, cy, gx, gy))
 	{
 		// Get cell
 		ce = layer_cell_ptr(ar, cx, cy);
@@ -337,7 +369,8 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 		// Advance
 		//if(dx/vx < dy/vy) // What's actually happening.
 		//if(time_to_x < time_to_y) // What I'm trying to actually calculate.
-		if(cy == y2 || (cx != x2 && dx*vy < dy*vx))
+		if((hasnt_hit_end && cy == y2) || ((cx != x2 || !hasnt_hit_end)
+			&& (vy == 0 || (vx != 0 && dx*vy < dy*vx))))
 		{
 			// Advance X
 			dy -= (dx*vy)/vx;
@@ -352,14 +385,20 @@ int line_layer(layer_t *ar, int *rx, int *ry, int x1, int y1, int x2, int y2)
 
 		}
 
+		// Check
+		hasnt_hit_end = hasnt_hit_end && (cx != x2 || cy != y2);
+
+		// Get next cell
+		ce = layer_cell_ptr(ar, cx, cy);
 	}
 
 	// Return
-	int ret = (cx == x2 && cy == y2);
-	*rx = (ret ? cx : lcx);
-	*ry = (ret ? cy : lcy);
+	int ret = (!hasnt_hit_end);
+	int cret = (ret || has_tables(ar, cx, cy, gx, gy));
+	*rx = (cret ? cx : lcx);
+	*ry = (cret ? cy : lcy);
 
-	return ret;
+	return (cx == x2 && cy == y2);
 
 }
 
@@ -401,7 +440,7 @@ void errorloop(const char *error)
 	for(;;)
 	{
 		// Draw text
-		screen_clear(0);
+		screen_plasma();
 		draw_printf(screen, i_font16, 16, screen->w/2-8*6, screen->h/2-24, 1, "ERROR:");
 		draw_printf(screen, i_font16, 16, screen->w/2-8*strlen(error), screen->h/2-8, 1, "%s", error);
 		draw_printf(screen, i_font16, 16, screen->w/2-8*19, screen->h/2+8, 1,
@@ -459,7 +498,7 @@ int options_dialogue(const char *title, const char *opt1, const char *opt2)
 		hl2 = (mouse_y >= screen->h/2+16-1 && mouse_y < screen->h/2+16-1+18 ? 0 : 1);
 
 		// Draw text
-		screen_clear(0);
+		screen_plasma();
 		draw_rect_d(screen, screen->w/2-8*opt1len-1, screen->h/2-4-1, opt1len*16+2, 18, 64+4*2+hl1);
 		draw_rect_d(screen, screen->w/2-8*opt2len-1, screen->h/2+16-1, opt2len*16+2, 18, 64+4*2+hl2);
 		draw_printf(screen, i_font16, 16, screen->w/2-8*titlelen, screen->h/2-30, 1, "%s", title);
@@ -524,7 +563,7 @@ char *text_dialogue(const char *title, const char *def)
 	for(;;)
 	{
 		// Draw text
-		screen_clear(0);
+		screen_plasma();
 		draw_printf(screen, i_font16, 16, screen->w/2-8*titlelen, screen->h/2-18, 1, "%s", title);
 		draw_printf(screen, i_font16, 16, screen->w/2-8*tlen, screen->h/2+2, 1, "%s", tbuf);
 

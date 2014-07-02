@@ -31,14 +31,17 @@ int titleloop(void)
 		if(row == 65534)
 		{
 			// do nothing
+			memset(pal_main, 0, sizeof(pal_main));
 
+		} else if(row < 16) {
+			memset(pal_main, 0, sizeof(pal_main));
 		} else if(row < 48) {
 			for(i = 0; i < 8; i++)
 			for(j = 0; j < 4; j++)
-				pal_main[i][j] = (((int)i_titleff1->pal[i][j])*row)/48;
+				pal_main[i][j] = (((int)i_titleff1->pal[i][j])*(row-16))/32;
 			for(i = 8; i < 256; i++)
 			for(j = 0; j < 4; j++)
-				pal_main[i][j] = (((int)i_titleff1->pal[0][j])*row)/48;
+				pal_main[i][j] = (((int)i_titleff1->pal[0][j])*(row-16))/32;
 
 		} else if(row < 64) {
 			memcpy(pal_main, i_titleff1->pal, 4*8);
@@ -90,6 +93,9 @@ int titleloop(void)
 
 	// Switch to game palette
 	memcpy(pal_main, pal_src, sizeof(pal_main));
+	pal_main[0][0] = 255/5;
+	pal_main[0][1] = 0;
+	pal_main[0][2] = 0;
 
 	return 0;
 }

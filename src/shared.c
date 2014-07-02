@@ -42,6 +42,7 @@ img_t *i_icons1 = NULL;
 img_t *i_font16 = NULL;
 img_t *i_font57 = NULL;
 img_t *i_titleff1 = NULL;
+img_t *i_title[TITLE_IMAGES];
 
 // Colourmaps
 uint8_t *cm_player = NULL;
@@ -50,4 +51,48 @@ uint8_t *cm_food1 = NULL;
 
 // Teams
 team_t *teams[TEAM_MAX];
+
+int load_graphics(void)
+{
+	char buf[128];
+	int i;
+
+#ifdef NO_ZLIB
+	i_player = img_load_tga("tga/player.tga"); 
+	i_tiles1 = img_load_tga("tga/tiles1.tga"); 
+	i_food1 = img_load_tga("tga/food1.tga"); 
+	i_icons1 = img_load_tga("tga/icons1.tga"); 
+	i_font16 = img_load_tga("tga/font16.tga"); 
+	i_font57 = img_load_tga("tga/font57.tga"); 
+	i_titleff1 = img_load_tga("tga/titleff1.tga"); 
+
+	for(i = 0; i < TITLE_IMAGES; i++)
+	{
+		sprintf(buf, "tga/title%i.tga", i+1);
+		i_title[i] = img_load_tga(buf);
+	}
+
+#else
+	i_player = img_load_png("dat/player.img"); 
+	i_tiles1 = img_load_png("dat/tiles1.img"); 
+	i_food1 = img_load_png("dat/food1.img"); 
+	i_icons1 = img_load_png("dat/icons1.img"); 
+	i_font16 = img_load_png("dat/font16.img"); 
+	i_font57 = img_load_png("dat/font57.img"); 
+	i_titleff1 = img_load_png("dat/titleff1.img"); 
+
+	for(i = 0; i < TITLE_IMAGES; i++)
+	{
+		sprintf(buf, "dat/title%i.img", i+1);
+		i_title[i] = img_load_png(buf);
+	}
+
+#endif
+	cm_player = cmaps[i_player->cmidx].data;
+	cm_tiles1 = cmaps[i_tiles1->cmidx].data;
+	cm_food1 = cmaps[i_food1->cmidx].data;
+
+	return 1;
+}
+
 

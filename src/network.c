@@ -226,11 +226,15 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 		if(ce != NULL && ce->ob != NULL && ce->ob->f.otyp == OBJ_PLAYER
 			&& ((struct fd_player *)(ce->ob->f.fd))->team == game->curplayer)
 		{
-			// Select object
-			abuf_write_u8(ACT_SELECT, ab);
-			abuf_write_s16(mx, ab);
-			abuf_write_s16(my, ab);
-			return;
+			if(ce->ob != game->selob)
+			{
+				// Select object
+				abuf_write_u8(ACT_SELECT, ab);
+				abuf_write_s16(mx, ab);
+				abuf_write_s16(my, ab);
+
+				return;
+			}
 
 		} else if(!game_1button) {
 			// Deselect objects
@@ -252,8 +256,14 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 	{
 		// Check if we have an object selected
 
-		if(game->selob != NULL)
+		if(ce->ob == game->selob)
 		{
+			// Crouch/uncrouch
+			abuf_write_u8(ce->ob->f.flags & OF_CROUCH ? ACT_STAND : ACT_CROUCH, ab);
+			abuf_write_s16(mx, ab);
+			abuf_write_s16(my, ab);
+
+		} else if(game->selob != NULL) {
 			// Check destination
 			dce = layer_cell_ptr(game->lv->layers[0], mx, my);
 
@@ -266,8 +276,17 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 				int dirlen = astar_layer(game->lv->layers[0], dirlist, 1024,
 					game->selob->f.cx, game->selob->f.cy, mx, my);
 
+				int moves_left = game->selob->steps_left;
+				int moves_used = dirlen;
+
+				if(game->selob->f.flags & OF_CROUCH)
+				{
+					moves_left >>= 1;
+					moves_used <<= 1;
+				}
+
 				// Check if in range
-				if(dirlen <= game->selob->steps_left)
+				if(dirlen <= moves_left)
 				{
 					// Move it
 					abuf_write_u8(ACT_MOVE, ab);
@@ -275,8 +294,8 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 					abuf_write_s16(game->selob->f.cy, ab);
 					abuf_write_s16(mx, ab);
 					abuf_write_s16(my, ab);
-					abuf_write_u16(0, ab);
-					abuf_write_u16(game->selob->steps_left, ab);
+					abuf_write_u16(moves_used, ab);
+					abuf_write_u16(game->selob->steps_left - moves_used, ab);
 				}
 
 			} else if(shifts || dce != NULL) {
@@ -286,8 +305,8 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 				abuf_write_s16(game->selob->f.cy, ab);
 				abuf_write_s16(mx, ab);
 				abuf_write_s16(my, ab);
-				abuf_write_u16(0, ab);
-				abuf_write_u16(game->selob->steps_left, ab);
+				abuf_write_u16(2, ab);
+				abuf_write_u16(game->selob->steps_left - 2, ab);
 
 				//game_handle_attack(game, ab, NET_S2C, game->selob->f.cx, game->selob->f.cy, mx, my,
 				//	0, game->selob->steps_left);
@@ -914,6 +933,50 @@ void game_handle_hover(game_t *game, abuf_t *ab, int typ, int mx, int my, int ca
 	}
 }
 
+void game_handle_crouch(game_t *game, abuf_t *ab, int typ, int cx, int cy, int cdir)
+{
+	cell_t *ce;
+
+	assert(typ == NET_C2S || typ == NET_S2C);
+
+	ce = layer_cell_ptr(game->lv->layers[0], cx, cy);
+
+	if(typ == NET_C2S)
+	{
+		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
+		if(!(ce != NULL)) return;
+		if(!(ce->ob != NULL)) return;
+		if(!(game->selob == ce->ob)) return;
+		if(!(ce->ob->f.flags & OF_CROUCH ? !cdir : cdir)) return;
+		if(!(ce->ob->steps_left >= 1)) return;
+
+	} else if(typ == NET_S2C) {
+		assert(ce != NULL);
+		assert(ce->ob != NULL);
+
+	} else return;
+
+	// Set crouch flag appropriately
+	int oldflags = ce->ob->f.flags;
+	if(cdir)  ce->ob->f.flags |=  OF_CROUCH;
+	else /**/ ce->ob->f.flags &= ~OF_CROUCH;
+
+	if(oldflags != ce->ob->f.flags)
+	{
+		ce->ob->steps_left--;
+		ce->ob->please_wait = 1;
+	}
+
+	// Broadcast
+	if(typ == NET_C2S)
+	{
+		abuf_bc_u8(cdir ? ACT_CROUCH : ACT_STAND, game);
+		abuf_bc_s16(cx, game);
+		abuf_bc_s16(cy, game);
+	}
+
+}
+
 int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 {
 	// Make sure we have a byte
@@ -1096,6 +1159,22 @@ int game_parse_actions(game_t *game, abuf_t *ab, int typ)
 			camx = abuf_read_s16(ab);
 			camy = abuf_read_s16(ab);
 			game_handle_hover(game, ab, typ, mx, my, camx, camy);
+			return 1;
+
+		case ACT_CROUCH:
+			if(bsiz < 4) return 0;
+			abuf_read_u8(ab);
+			cx = abuf_read_s16(ab);
+			cy = abuf_read_s16(ab);
+			game_handle_crouch(game, ab, typ, cx, cy, 1);
+			return 1;
+
+		case ACT_STAND:
+			if(bsiz < 4) return 0;
+			abuf_read_u8(ab);
+			cx = abuf_read_s16(ab);
+			cy = abuf_read_s16(ab);
+			game_handle_crouch(game, ab, typ, cx, cy, 0);
 			return 1;
 
 		default:

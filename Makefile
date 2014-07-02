@@ -8,6 +8,8 @@ BINNAME_SERVER = parsnipserver
 IMAGES = \
 	tga/food1.tga \
 	tga/player.tga \
+	tga/title1.tga \
+	tga/title2.tga \
 	tga/tiles1.tga
 
 IMAGES_PNG = \
@@ -18,6 +20,8 @@ IMAGES_PNG = \
 	dat/icons1.img \
 	dat/player.img \
 	dat/titleff1.img \
+	dat/title1.img \
+	dat/title2.img \
 	dat/tiles1.img
 
 OBJS_COMMON = \

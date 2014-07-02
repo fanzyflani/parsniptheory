@@ -41,11 +41,17 @@ files = {
 	"player": [ "tga/player.tga" ],
 	"tiles": [ "tga/tiles1.tga" ],
 	"food": [ "tga/food1.tga" ],
+	"title": [ "tga/title%i.tga" % (i+1,) for i in xrange(2) ],
 }
 
 cmaps = {}
 
 pranges = {}
+
+pranges["title"] = [
+	("trans", 0),
+	("any", 1, 256-1),
+]
 
 pranges["player"] = [
 	("trans", 0),
