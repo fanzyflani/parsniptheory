@@ -695,6 +695,8 @@ void game_handle_newturn(game_t *game, abuf_t *ab, int typ, int tid, int steps_a
 	if(typ == NET_C2S)
 	{
 		if(!(game->claim_team[game->curplayer] == ab->netid)) return;
+		if(!(level_obj_waiting(game->lv) == NULL)) return;
+		if(!(game->turn_change_cooldown <= 0)) return;
 		tid = -1;
 		steps_added = STEPS_PER_TURN;
 

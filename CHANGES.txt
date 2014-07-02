@@ -1,5 +1,13 @@
 Changelog:
 
+Alpha 9:
+* GAMEPLAY CHANGE: Added in crouch/stand mechanic. Now you can hide behind tables!
+* Added in a title screen - please let me know if I need to punch Windows in the face repeatedly to make it not crash!
+* Added in some artwork which should eventually be polished up and used in a title sequence.
+* Fixed a bug where more than one unit could move at once
+* Fixed a bug where the AI could end turn before fully finishing, breaking other players (enforced a 1/4 second delay after last move before turn end available)
+* Fixed a rendering bug which made the level editor unusable, which probably fixed some other things too
+
 Alpha 8:
 * Graphics now SUBSTANTIALLY better. (shaded, animated, fixed the draw order)
 * Default map changed back to "genesis" because this IS supposed to take place in a cafeteria

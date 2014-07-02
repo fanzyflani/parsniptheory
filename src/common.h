@@ -409,6 +409,7 @@ struct game
 	int time_next;
 	int time_next_hover;
 	int tick_next_pulse;
+	int turn_change_cooldown;
 
 	abuf_t *ab_local;
 	abuf_t *ab_teams[TEAM_MAX];

@@ -83,6 +83,7 @@ game_t *game_new(int net_mode)
 		= game->time_next_hover
 		= SDL_GetTicks();
 	game->tick_next_pulse = 1;
+	game->turn_change_cooldown = 0;
 
 	game->selob = NULL;
 	game->lv = NULL;
@@ -576,6 +577,12 @@ int game_tick_playing(game_t *game)
 {
 	int i;
 	obj_t *ob;
+
+	// Update cooldown
+	if(level_obj_waiting(game->lv) != NULL)
+		game->turn_change_cooldown = 15;
+	else if(game->turn_change_cooldown > 0)
+		game->turn_change_cooldown--;
 
 	// Get coordinates
 	game->cmx = (game->mx + game->camx)/32;

@@ -97,6 +97,18 @@ int titleloop(void)
 	pal_main[0][1] = 0;
 	pal_main[0][2] = 0;
 
+	// Flip
+	screen_flip();
+
+	// Stop music
+	music_play(NULL);
+
+#ifdef WIN32
+	// Delay as a workaround for a Windows crash bug
+	// DO YOU EVEN MUTEX NO YOU DON'T BECAUSE YOU'RE *WINDOWS*
+	SDL_Delay(300);
+#endif
+
 	return 0;
 }
 

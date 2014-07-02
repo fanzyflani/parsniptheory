@@ -30,23 +30,25 @@ Map list:
 ----
 
 Network info:
-TCP port 2014. New protocol since Alpha 7 - older clients will not be able to connect.
+TCP port 2014. New protocol since Alpha 9 - older clients will not be able to connect.
 
 ----
 
 Playing instructions:
-* For "L for all":
-  * Left click either selects a unit, moves your unit, or attempts to throw a tomato at an enemy player.
-  * Right click deselects.
 * For "L select, R act":
   * Left click either selects or deselects a unit.
-  * Right click either moves your unit, or attempts to throw a tomato at an enemy player.
+  * Right click either moves your unit, stands/crouches your unit, or attempts to throw a tomato at an enemy player.
+* For "L for all":
+  * Left click either selects a unit, moves your unit, stands/crouches your unit, or attempts to throw a tomato at an enemy player.
+  * Right click deselects.
 * Shift + click on a tile attempts to attack that tile.
 * Enter ends your turn and moves onto the next player.
 * Escape "pauses" the game, mostly so you can move your mouse elsewhere.
 * Your units get 7 "steps" each.
-  * Moving by 1 tile  uses up 1 step.
+  * Moving by 1 tile  uses up 1 step when standing or 2 when crouching.
   * Throwing a tomato uses up 2 steps.
+  * Switching between crouching and standing uses up 1 step.
+* When crouched directly behind a table, shots coming from that direction will miss you.
 * Getting hit by a tomato takes 10 points off that unit's tolerance meter.
 * Once the tolerance meter hits 0, that unit is out!
 * When a player has no more units, they are out of the game!
