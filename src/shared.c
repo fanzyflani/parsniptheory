@@ -21,7 +21,11 @@ int screen_bpp = SCREEN_BPP;
 #else
 int screen_bpp = 32;
 #endif
+#ifdef SCREEN_SCALE
+int screen_scale = SCREEN_SCALE;
+#else
 int screen_scale = 2;
+#endif
 int screen_ofx = 0;
 int screen_ofy = 0;
 

@@ -188,7 +188,7 @@ void draw_57_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ...)
 }
 
 
-void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, const char *fmt, ...)
+void draw_printf(img_t *dst, img_t *font, int fsize, int align, int dx, int dy, uint8_t c, const char *fmt, ...)
 {
 	va_list va;
 	char buf[1024];
@@ -203,6 +203,29 @@ void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, 
 	va_start(va, fmt);
 	vsnprintf(buf, 1023, fmt, va);
 	buf[1023] = '\x00';
+
+	// Set the alignment up properly.
+	switch(align)
+	{
+		case 1:
+			// Left
+			break;
+
+		case 0:
+			// Centre
+			dx -= (strlen(buf)*fsize)/2;
+			break;
+
+		case -1:
+			// Right
+			dx -= (strlen(buf)*fsize);
+			break;
+
+		default:
+			printf("EDOOFUS: alignment %i not supported\n", align);
+			fflush(stdout);
+			abort();
+	}
 
 	// Finally, start drawing it.
 	// TODO: Support multiple colours! (i.e. use cmap)

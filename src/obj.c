@@ -316,10 +316,20 @@ void obj_player_f_draw(obj_t *ob, img_t *dst, int camx, int camy)
 	{
 		i = ii;
 
+		// Fix rendering order
 		if(fde->face == DIR_EAST)
 			i = (i == 3 ? 2 : i == 2 ? 3 : i);
 		if(fde->face == DIR_WEST)
 			i = (i == 4 ? 2 : i == 2 ? 4 : i);
+		if(fde->face == DIR_NORTH)
+		{
+			switch(i)
+			{
+				case 0: i = 2; break;
+				case 1: i = 0; break;
+				case 2: i = 1; break;
+			}
+		}
 
 		pox = 0;
 		poy = 0;

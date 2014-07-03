@@ -441,9 +441,9 @@ void errorloop(const char *error)
 	{
 		// Draw text
 		screen_plasma();
-		draw_printf(screen, i_font16, 16, screen->w/2-8*6, screen->h/2-24, 1, "ERROR:");
-		draw_printf(screen, i_font16, 16, screen->w/2-8*strlen(error), screen->h/2-8, 1, "%s", error);
-		draw_printf(screen, i_font16, 16, screen->w/2-8*19, screen->h/2+8, 1,
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*6, screen->h/2-24, 1, "ERROR:");
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*strlen(error), screen->h/2-8, 1, "%s", error);
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*19, screen->h/2+8, 1,
 			"Click / Press ENTER");
 
 		// Flip
@@ -501,9 +501,9 @@ int options_dialogue(const char *title, const char *opt1, const char *opt2)
 		screen_plasma();
 		draw_rect_d(screen, screen->w/2-8*opt1len-1, screen->h/2-4-1, opt1len*16+2, 18, 64+4*2+hl1);
 		draw_rect_d(screen, screen->w/2-8*opt2len-1, screen->h/2+16-1, opt2len*16+2, 18, 64+4*2+hl2);
-		draw_printf(screen, i_font16, 16, screen->w/2-8*titlelen, screen->h/2-30, 1, "%s", title);
-		draw_printf(screen, i_font16, 16, screen->w/2-8*opt1len, screen->h/2-4, 1, "%s", opt1);
-		draw_printf(screen, i_font16, 16, screen->w/2-8*opt2len, screen->h/2+16, 1, "%s", opt2);
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*titlelen, screen->h/2-30, 1, "%s", title);
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*opt1len, screen->h/2-4, 1, "%s", opt1);
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*opt2len, screen->h/2+16, 1, "%s", opt2);
 
 		// Flip
 		screen_flip();
@@ -564,8 +564,8 @@ char *text_dialogue(const char *title, const char *def)
 	{
 		// Draw text
 		screen_plasma();
-		draw_printf(screen, i_font16, 16, screen->w/2-8*titlelen, screen->h/2-18, 1, "%s", title);
-		draw_printf(screen, i_font16, 16, screen->w/2-8*tlen, screen->h/2+2, 1, "%s", tbuf);
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*titlelen, screen->h/2-18, 1, "%s", title);
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*tlen, screen->h/2+2, 1, "%s", tbuf);
 
 		// Flip
 		screen_flip();

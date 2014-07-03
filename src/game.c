@@ -410,28 +410,28 @@ void gameloop_draw_playing(game_t *game)
 			0, teams[game->curplayer]->cm_player);
 
 	if(game->claim_team[game->curplayer] == game->netid)
-		draw_printf(screen, i_font16, 16, 32, 0, 1, "* PLAYER %i TURN *", game->curplayer+1);
+		draw_printf(screen, i_font16, 16, 1, 32, 0, 1, "* PLAYER %i TURN *", game->curplayer+1);
 	else
-		draw_printf(screen, i_font16, 16, 32, 0, 1, "PLAYER %i TURN", game->curplayer+1);
+		draw_printf(screen, i_font16, 16, 1, 32, 0, 1, "PLAYER %i TURN", game->curplayer+1);
 
 	if(game->selob != NULL)
-		draw_printf(screen, i_font16, 16, 32, 16, 1, "STEPS %i", game->selob->steps_left);
+		draw_printf(screen, i_font16, 16, 1, 32, 16, 1, "STEPS %i", game->selob->steps_left);
 
 	// Check if paused
 	if(game_pause)
 	{
 		screen_dim_halftone();
-		draw_printf(screen, i_font16, 16, screen->w/2-8*6, screen->h/2-8, 1, "PAUSED");
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*6, screen->h/2-8, 1, "PAUSED");
 
 	} else if(game_press_to_move && game->claim_team[game->curplayer] == game->netid) {
 		screen_dim_halftone();
-		draw_printf(screen, i_font16, 16, screen->w/2-8*8-4, screen->h/2-16, 1, "PLAYER %i", game->curplayer+1);
-		draw_printf(screen, i_font16, 16, screen->w/2-8*12, screen->h/2, 1, "CLICK TO MOVE");
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*8-4, screen->h/2-16, 1, "PLAYER %i", game->curplayer+1);
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*12, screen->h/2, 1, "CLICK TO MOVE");
 
 	} else if(game_press_to_move && game->claim_team[game->curplayer] == 0xFF && game->net_mode != NET_SERVER) {
 		screen_dim_halftone();
-		draw_printf(screen, i_font16, 16, screen->w/2-8*8-4, screen->h/2-16, 1, "PLAYER %i", game->curplayer+1);
-		draw_printf(screen, i_font16, 16, screen->w/2-8*12, screen->h/2, 1, "CLICK TO STEAL");
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*8-4, screen->h/2-16, 1, "PLAYER %i", game->curplayer+1);
+		draw_printf(screen, i_font16, 16, 1, screen->w/2-8*12, screen->h/2, 1, "CLICK TO STEAL");
 
 	}
 
@@ -442,7 +442,7 @@ void gameloop_draw_setup(game_t *game)
 	int i;
 
 	// TODO: Get GUI framework working
-	draw_printf(screen, i_font16, 16,
+	draw_printf(screen, i_font16, 16, 1,
 		screen->w/2 - 8*10, 0, 1,
 		"GAME SETUP");
 
@@ -453,27 +453,27 @@ void gameloop_draw_setup(game_t *game)
 		// Might as well add the "GO" button
 		draw_rect_d(screen, screen->w-16*4, screen->h-32, 16*4, 32,
 			64+4*1+SETUP_MOUSE(screen->w-16*4,screen->h-32, 16*4, 32));
-		draw_printf(screen, i_font16, 16, screen->w-4-16*3, screen->h-24, 1, "GO!");
+		draw_printf(screen, i_font16, 16, 1, screen->w-4-16*3, screen->h-24, 1, "GO!");
 
 		draw_rect_d(screen, 16*5, 20, 16, 16, 64+4*2+SETUP_MOUSE(16*5, 20, 16, 16));
 
 		draw_rect_d(screen, 16*4, 40, 16, 16, 64+4*0+SETUP_MOUSE(16*4, 40, 16, 16));
 		draw_rect_d(screen, 16*5, 40, 16, 16, 64+4*1+SETUP_MOUSE(16*5, 40, 16, 16));
 
-		draw_printf(screen, i_font16, 16,
+		draw_printf(screen, i_font16, 16, 1,
 			0, 20, 1,
 			"LVL: * %s", game->settings.map_name);
 
-		draw_printf(screen, i_font16, 16,
+		draw_printf(screen, i_font16, 16, 1,
 			0, 40, 1,
 			"PLR:-+ %i", game->settings.player_count);
 
 	} else {
-		draw_printf(screen, i_font16, 16,
+		draw_printf(screen, i_font16, 16, 1,
 			0, 20, 1,
 			"LVL:   %s", game->settings.map_name);
 
-		draw_printf(screen, i_font16, 16,
+		draw_printf(screen, i_font16, 16, 1,
 			0, 40, 1,
 			"PLR:   %i", game->settings.player_count);
 	}
@@ -481,11 +481,11 @@ void gameloop_draw_setup(game_t *game)
 	if(game->netid != 0xFD && game->claim_admin == 0xFF)
 	{
 		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+4*5+SETUP_MOUSE(20-1,60-1,16*12+2,16+2));
-		draw_printf(screen, i_font16, 16, 20+8, 60, 1, "CLAIM ADMIN");
+		draw_printf(screen, i_font16, 16, 1, 20+8, 60, 1, "CLAIM ADMIN");
 	} else if(game->netid == game->claim_admin)
 	{
 		draw_rect_d(screen, 20-1, 60-1, 16*12+2, 16+2, 64+4*0+SETUP_MOUSE(20-1,60-1,16*12+2,16+2));
-		draw_printf(screen, i_font16, 16, 20, 60, 1, "REVOKE ADMIN");
+		draw_printf(screen, i_font16, 16, 1, 20, 60, 1, "REVOKE ADMIN");
 	}
 
 	for(i = 0; i < game->settings.player_count; i++)
@@ -523,16 +523,16 @@ void gameloop_draw(game_t *game)
 	switch(game->main_state)
 	{
 		case GAME_LOGIN0:
-			draw_printf(screen, i_font16, 16,
+			draw_printf(screen, i_font16, 16, 1,
 				8*1, screen->h/2-32, 1,
 				"CHECKING IF THIS IS");
-			draw_printf(screen, i_font16, 16,
+			draw_printf(screen, i_font16, 16, 1,
 				8*2, screen->h/2-16, 1,
 				"ACTUALLY A PARSNIP");
-			draw_printf(screen, i_font16, 16,
+			draw_printf(screen, i_font16, 16, 1,
 				8*6, screen->h/2, 1,
 				"THEORY SERVER,");
-			draw_printf(screen, i_font16, 16,
+			draw_printf(screen, i_font16, 16, 1,
 				8*7, screen->h/2+16, 1,
 				"PLEASE WAIT...");
 			break;
@@ -547,7 +547,7 @@ void gameloop_draw(game_t *game)
 			break;
 
 		default:
-			draw_printf(screen, i_font16, 16, 0, 0, 1, "STATE %i", game->main_state);
+			draw_printf(screen, i_font16, 16, 1, 0, 0, 1, "STATE %i", game->main_state);
 			break;
 			
 	}

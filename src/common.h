@@ -478,6 +478,7 @@ extern snd_t *snd_splat[];
 extern snd_t *snd_step[];
 extern it_module_t *mod_titleff1;
 extern it_module_t *mod_trk1;
+extern it_module_t *mod_trk2;
 
 achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs, int lockme);
 void snd_play_splat(int use_world, int sx, int sy);
@@ -521,7 +522,7 @@ void draw_dot_hline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_dot_vline_d(img_t *dst, int x, int y, int len, uint8_t c);
 void draw_border_d(img_t *dst, int x, int y, int w, int h, uint8_t c);
 void draw_57_printf(img_t *dst, int dx, int dy, uint8_t c, const char *fmt, ...);
-void draw_printf(img_t *dst, img_t *font, int fsize, int dx, int dy, uint8_t c, const char *fmt, ...);
+void draw_printf(img_t *dst, img_t *font, int fsize, int align, int dx, int dy, uint8_t c, const char *fmt, ...);
 
 // edit.c
 int editloop(void);
@@ -601,6 +602,7 @@ void screen_plasma(void);
 void screen_clear(uint8_t col);
 void screen_dim_halftone(void);
 void screen_flip(void);
+int screen_setup(void);
 
 // team.c
 team_t *team_new(int idx);
@@ -636,7 +638,7 @@ extern img_t *i_food1;
 extern img_t *i_icons1;
 extern img_t *i_font16;
 extern img_t *i_font57;
-#define TITLE_IMAGES 2
+#define TITLE_IMAGES 3
 extern img_t *i_title[TITLE_IMAGES];
 extern img_t *i_titleff1;
 extern uint8_t *cm_player;

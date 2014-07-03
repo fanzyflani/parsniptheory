@@ -26,12 +26,12 @@ int ima_step_table[89] = {
 achn_t achns[ACHN_COUNT];
 SDL_AudioSpec audio_spec;
 int audio_age = 0;
-SDL_mutex *audio_mutex = NULL;
 
 snd_t *snd_splat[SND_SPLAT_COUNT];
 snd_t *snd_step[SND_STEP_COUNT];
 it_module_t *mod_titleff1;
 it_module_t *mod_trk1;
+it_module_t *mod_trk2;
 sackit_playback_t *sackit = NULL;
 achn_t *ac_sackit = NULL;
 snd_t *snd_sackit = NULL;
@@ -357,7 +357,6 @@ fail_fp:
 achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs, int lockme)
 {
 	int i;
-	int mutret;
 	achn_t *ac;
 	achn_t *ac_oldest = achns;
 	int oldest_age = 0;
@@ -389,10 +388,7 @@ achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, i
 
 	// Lock audio
 	if(lockme)
-	{
-		mutret = SDL_mutexP(audio_mutex);
-		assert(mutret != -1);
-	}
+		SDL_LockAudio();
 
 	// Play a sound
 	ac->age = audio_age++;
@@ -408,10 +404,7 @@ achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, i
 
 	// Unlock audio
 	if(lockme)
-	{
-		mutret = SDL_mutexV(audio_mutex);
-		assert(mutret != -1);
-	}
+		SDL_UnlockAudio();
 
 	// Return channel
 	return ac;
@@ -480,11 +473,8 @@ it_module_t *music_load_it(const char *fname)
 
 void music_play(it_module_t *mod)
 {
-	int mutret;
-
 	// Lock audio
-	mutret = SDL_mutexP(audio_mutex);
-	assert(mutret != -1);
+	SDL_LockAudio();
 
 	// Destroy sackit playback object if need be
 	if(sackit != NULL)
@@ -510,8 +500,7 @@ void music_play(it_module_t *mod)
 		}
 
 		// Unlock audio
-		mutret = SDL_mutexV(audio_mutex);
-		assert(mutret != -1);
+		SDL_UnlockAudio();
 
 		return;
 	}
@@ -534,8 +523,7 @@ void music_play(it_module_t *mod)
 	music_buffer_free = snd_sackit->len;
 
 	// Unlock audio
-	mutret = SDL_mutexV(audio_mutex);
-	assert(mutret != -1);
+	SDL_UnlockAudio();
 }
 
 void snd_play_splat(int use_world, int sx, int sy)
@@ -594,13 +582,8 @@ static void audio_callback(void *userdata, Uint8 *stream, int len_samples)
 	int bias = 0;
 	int lvol, rvol;
 	achn_t *ac;
-	int mutret;
 
 	len_samples /= chns;
-
-	// Lock audio
-	mutret = SDL_mutexP(audio_mutex);
-	assert(mutret != -1);
 
 	// Update music
 	music_update();
@@ -654,10 +637,6 @@ static void audio_callback(void *userdata, Uint8 *stream, int len_samples)
 
 	}
 
-	// Unlock audio
-	mutret = SDL_mutexV(audio_mutex);
-	assert(mutret != -1);
-
 }
 
 int audio_init(void)
@@ -686,10 +665,7 @@ int audio_init(void)
 	// Load music
 	mod_titleff1 = music_load_it("dat/titleff1.it");
 	mod_trk1 = music_load_it("dat/trk1.it");
-
-	// Create mutex
-	audio_mutex = SDL_CreateMutex();
-	assert(audio_mutex != NULL);
+	mod_trk2 = music_load_it("dat/trk2.it");
 
 	// Set up SDL audio
 	// Note, some systems hate 44100Hz, so we'll go for 48000Hz

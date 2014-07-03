@@ -10,6 +10,7 @@ IMAGES = \
 	tga/player.tga \
 	tga/title1.tga \
 	tga/title2.tga \
+	tga/title3.tga \
 	tga/tiles1.tga
 
 IMAGES_PNG = \
@@ -22,6 +23,7 @@ IMAGES_PNG = \
 	dat/titleff1.img \
 	dat/title1.img \
 	dat/title2.img \
+	dat/title3.img \
 	dat/tiles1.img
 
 OBJS_COMMON = \
@@ -77,7 +79,7 @@ LDFLAGS_SERVER = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) $(LIBS_SACKIT) -lm
 all: $(BINNAME) $(BINNAME_SERVER) dat/pal1.pal $(IMAGES_PNG)
 
 clean:
-	rm -r $(OBJDIR)
+	rm -r $(OBJDIR) || true
 
 dat/pal1.pal: tools/buildpal.py $(IMAGES)
 	python2 tools/buildpal.py

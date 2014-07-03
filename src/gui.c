@@ -38,7 +38,7 @@ int gui_bag_init(widget_t *g, void *ud)
 static void gui_label_f_draw(widget_t *g, int sx, int sy)
 {
 	// TODO: clip this
-	draw_printf(screen, i_font16, 16, sx, sy, 1, "%s", (const char *)g->v1);
+	draw_printf(screen, i_font16, 16, 1, sx, sy, 1, "%s", (const char *)g->v1);
 }
 
 static void gui_label_f_free(widget_t *g)
