@@ -647,7 +647,7 @@ void obj_free(obj_t *ob)
 	cell_t *ce;
 
 	// Detach from level
-	if(ob->level != NULL)
+	if(ob->level != NULL && ob->level->layers[ob->f.layer] != NULL)
 	{
 		ce = layer_cell_ptr(ob->level->layers[ob->f.layer], ob->f.cx, ob->f.cy);
 		if(ce != NULL && ce->ob == ob)

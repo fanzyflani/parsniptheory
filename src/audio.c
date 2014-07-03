@@ -356,6 +356,7 @@ fail_fp:
 
 achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, int offs, int lockme)
 {
+#ifndef NO_AUDIO
 	int i;
 	achn_t *ac;
 	achn_t *ac_oldest = achns;
@@ -408,6 +409,7 @@ achn_t *snd_play(snd_t *snd, int vol, int use_world, int sx, int sy, int fmul, i
 
 	// Return channel
 	return ac;
+#endif
 }
 
 // WARNING: MUST HAVE AUDIO LOCK BEFORE CALLING!
@@ -473,6 +475,8 @@ it_module_t *music_load_it(const char *fname)
 
 void music_play(it_module_t *mod)
 {
+#ifndef NO_AUDIO
+#ifndef NO_MUSIC
 	// Lock audio
 	SDL_LockAudio();
 
@@ -508,7 +512,11 @@ void music_play(it_module_t *mod)
 	// Create new objects
 	if(snd_sackit == NULL)
 	{
+#ifdef MUSIC_MONO
+		snd_sackit = snd_alloc(65536, 0, 44100);
+#else
 		snd_sackit = snd_alloc(65536, audio_spec.channels >= 2, 44100);
+#endif
 		assert(ac_sackit == NULL);
 		ac_sackit = snd_play(snd_sackit, 0x80, 0, 0, 0, 0x100, 0, 0);
 		ac_sackit->nokill = 1;
@@ -517,13 +525,23 @@ void music_play(it_module_t *mod)
 
 	// Create sackit playback object
 	sackit = sackit_playback_new(mod, 2048, 128,
+#ifdef MUSIC_INT
+#ifdef MUSIC_MONO
+		MIXER_IT212);
+#else
+		audio_spec.channels >= 2 ? MIXER_IT212S : MIXER_IT212);
+#endif
+#else
 		audio_spec.channels >= 2 ? MIXER_IT214FS : MIXER_IT214F);
+#endif
 
 	// Prime the buffer
 	music_buffer_free = snd_sackit->len;
 
 	// Unlock audio
 	SDL_UnlockAudio();
+#endif
+#endif
 }
 
 void snd_play_splat(int use_world, int sx, int sy)

@@ -467,8 +467,10 @@ int main(int argc, char *argv[])
 
 	// Do title
 #ifndef NO_AUDIO
+#ifndef NO_MUSIC
 	if(titleloop())
 		return 0;
+#endif
 #endif
 
 	// Play music
