@@ -200,6 +200,7 @@ int title_presents(void)
 
 }
 
+#if 0
 int title_main(void)
 {
 	int i, j;
@@ -308,6 +309,7 @@ int title_main(void)
 
 
 }
+#endif
 
 int titleloop(void)
 {
@@ -321,12 +323,14 @@ int titleloop(void)
 	// Clear screen
 	memset(screen->data, 0, screen->w*screen->h);
 
+#if 0
 	// Intro sequence
 	if(title_main())
 		return 1;
 
 	// Clear screen
 	memset(screen->data, 0, screen->w*screen->h);
+#endif
 
 	// Switch to game palette
 	memcpy(pal_main, pal_src, sizeof(pal_main));
