@@ -75,12 +75,13 @@ void screen_dim_halftone(void)
 
 }
 
-static uint16_t pal_dither_16[256][2][8];
+static uint16_t pal_dither_16[256][2][4];
 static void screen_flip_16(void)
 {
 	int x, y, i;
 	int r, g, b;
 	uint16_t *palp;
+	uint16_t *palp0, *palp1, *palp2, *palp3;
 
 	// Generate palette
 	for(i = 0; i < 256; i++)
@@ -118,18 +119,10 @@ static void screen_flip_16(void)
 		pal_dither_16[i][0][1] = c01;
 		pal_dither_16[i][0][2] = c00;
 		pal_dither_16[i][0][3] = c01;
-		pal_dither_16[i][0][4] = c00;
-		pal_dither_16[i][0][5] = c01;
-		pal_dither_16[i][0][6] = c00;
-		pal_dither_16[i][0][7] = c01;
 		pal_dither_16[i][1][0] = c10;
 		pal_dither_16[i][1][1] = c11;
 		pal_dither_16[i][1][2] = c10;
 		pal_dither_16[i][1][3] = c11;
-		pal_dither_16[i][1][4] = c10;
-		pal_dither_16[i][1][5] = c11;
-		pal_dither_16[i][1][6] = c10;
-		pal_dither_16[i][1][7] = c11;
 
 	}
 
@@ -156,19 +149,36 @@ static void screen_flip_16(void)
 				palp = pal_dither_16[*src][0];
 
 				*(uint32_t *)(dst + 2*0 + pitch*0) = *(uint32_t *)(palp + 0);
-				*(uint32_t *)(dst + 2*0 + pitch*1) = *(uint32_t *)(palp + 8);
+				*(uint32_t *)(dst + 2*0 + pitch*1) = *(uint32_t *)(palp + 4);
 			}
 			break;
 
 		case 3:
 			for(y = 0; y < screen->h; y++, dst += dpitch + 2*pitch)
-			for(x = 0; x < screen->w; x++, dst += 6, src++)
+			for(x = 0; x < screen->w; x += 2, dst += 12, src += 2)
 			{
-				palp = pal_dither_16[*src][0];
+				// Yeah OK, the pi's ARMv6 data bus is 64 bits and not 32 bits,
+				// but a 32-bit alignment should be fine.
+				palp0 = &pal_dither_16[src[0]][(y&1)][0];
+				palp1 = &pal_dither_16[src[1]][(y&1)^1][1];
+				palp2 = &pal_dither_16[src[0]][(y&1)][1];
+				palp3 = &pal_dither_16[src[1]][(y&1)^1][0];
 
-				memcpy(dst + 2*0 + pitch*0, palp + ((y<<2)&8) + (x&1), 6);
-				memcpy(dst + 2*0 + pitch*1, palp + (((y<<2)&8)^8) + (x&1), 6);
-				memcpy(dst + 2*0 + pitch*2, palp + ((y<<2)&8) + (x&1), 6);
+				// XXX: Assumes little-endian!
+				*(uint32_t *)(dst + 2*0 + pitch*0) = *(uint32_t *)palp0;
+				*(uint16_t *)(dst + 2*2 + pitch*0) = *(uint16_t *)palp0;
+				*(uint16_t *)(dst + 2*3 + pitch*0) = *(uint16_t *)(palp1+2);
+				*(uint32_t *)(dst + 2*4 + pitch*0) = *(uint32_t *)palp1;
+
+				*(uint32_t *)(dst + 2*0 + pitch*1) = *(uint32_t *)palp2;
+				*(uint16_t *)(dst + 2*2 + pitch*1) = *(uint16_t *)palp2;
+				*(uint16_t *)(dst + 2*3 + pitch*1) = *(uint16_t *)(palp3+2);
+				*(uint32_t *)(dst + 2*4 + pitch*1) = *(uint32_t *)palp3;
+
+				*(uint32_t *)(dst + 2*0 + pitch*2) = *(uint32_t *)palp0;
+				*(uint16_t *)(dst + 2*2 + pitch*2) = *(uint16_t *)palp0;
+				*(uint16_t *)(dst + 2*3 + pitch*2) = *(uint16_t *)(palp1+2);
+				*(uint32_t *)(dst + 2*4 + pitch*2) = *(uint32_t *)palp1;
 			}
 			break;
 
@@ -178,24 +188,62 @@ static void screen_flip_16(void)
 			{
 				palp = pal_dither_16[*src][0];
 
-				memcpy(dst + 2*0 + pitch*0, palp + 0, 8);
-				memcpy(dst + 2*0 + pitch*1, palp + 8, 8);
-				memcpy(dst + 2*0 + pitch*2, palp + 0, 8);
-				memcpy(dst + 2*0 + pitch*3, palp + 8, 8);
+				*(uint32_t *)(dst + 2*0 + pitch*0) = *(uint32_t *)(palp + 0);
+				*(uint32_t *)(dst + 2*2 + pitch*0) = *(uint32_t *)(palp + 0);
+				*(uint32_t *)(dst + 2*0 + pitch*1) = *(uint32_t *)(palp + 4);
+				*(uint32_t *)(dst + 2*2 + pitch*1) = *(uint32_t *)(palp + 4);
+				*(uint32_t *)(dst + 2*0 + pitch*2) = *(uint32_t *)(palp + 0);
+				*(uint32_t *)(dst + 2*2 + pitch*2) = *(uint32_t *)(palp + 0);
+				*(uint32_t *)(dst + 2*0 + pitch*3) = *(uint32_t *)(palp + 4);
+				*(uint32_t *)(dst + 2*2 + pitch*3) = *(uint32_t *)(palp + 4);
 			}
 			break;
 
 		case 5:
 			for(y = 0; y < screen->h; y++, dst += dpitch + 4*pitch)
-			for(x = 0; x < screen->w; x++, dst += 10, src++)
+			for(x = 0; x < screen->w; x += 2, dst += 20, src += 2)
 			{
-				palp = pal_dither_16[*src][0];
+				palp0 = &pal_dither_16[src[0]][(y&1)][0];
+				palp1 = &pal_dither_16[src[1]][(y&1)^1][1];
+				palp2 = &pal_dither_16[src[0]][(y&1)][1];
+				palp3 = &pal_dither_16[src[1]][(y&1)^1][0];
 
-				memcpy(dst + 2*0 + pitch*0, palp + ((y<<3)&8) + (x&1), 10);
-				memcpy(dst + 2*0 + pitch*1, palp + (((y<<3)&8)^8) + (x&1), 10);
-				memcpy(dst + 2*0 + pitch*2, palp + ((y<<3)&8) + (x&1), 10);
-				memcpy(dst + 2*0 + pitch*3, palp + (((y<<3)&8)^8) + (x&1), 10);
-				memcpy(dst + 2*0 + pitch*4, palp + ((y<<3)&8) + (x&1), 10);
+				// XXX: Assumes little-endian!
+				*(uint32_t *)(dst + 2*0 + pitch*0) = *(uint32_t *)palp0;
+				*(uint32_t *)(dst + 2*2 + pitch*0) = *(uint32_t *)palp0;
+				*(uint16_t *)(dst + 2*4 + pitch*0) = *(uint16_t *)palp0;
+				*(uint16_t *)(dst + 2*5 + pitch*0) = *(uint16_t *)(palp1+2);
+				*(uint32_t *)(dst + 2*6 + pitch*0) = *(uint32_t *)palp1;
+				*(uint32_t *)(dst + 2*8 + pitch*0) = *(uint32_t *)palp1;
+
+				*(uint32_t *)(dst + 2*0 + pitch*1) = *(uint32_t *)palp2;
+				*(uint32_t *)(dst + 2*2 + pitch*1) = *(uint32_t *)palp2;
+				*(uint16_t *)(dst + 2*4 + pitch*1) = *(uint16_t *)palp2;
+				*(uint16_t *)(dst + 2*5 + pitch*1) = *(uint16_t *)(palp3+2);
+				*(uint32_t *)(dst + 2*6 + pitch*1) = *(uint32_t *)palp3;
+				*(uint32_t *)(dst + 2*8 + pitch*1) = *(uint32_t *)palp3;
+
+				*(uint32_t *)(dst + 2*0 + pitch*2) = *(uint32_t *)palp0;
+				*(uint32_t *)(dst + 2*2 + pitch*2) = *(uint32_t *)palp0;
+				*(uint16_t *)(dst + 2*4 + pitch*2) = *(uint16_t *)palp0;
+				*(uint16_t *)(dst + 2*5 + pitch*2) = *(uint16_t *)(palp1+2);
+				*(uint32_t *)(dst + 2*6 + pitch*2) = *(uint32_t *)palp1;
+				*(uint32_t *)(dst + 2*8 + pitch*2) = *(uint32_t *)palp1;
+
+				*(uint32_t *)(dst + 2*0 + pitch*3) = *(uint32_t *)palp2;
+				*(uint32_t *)(dst + 2*2 + pitch*3) = *(uint32_t *)palp2;
+				*(uint16_t *)(dst + 2*4 + pitch*3) = *(uint16_t *)palp2;
+				*(uint16_t *)(dst + 2*5 + pitch*3) = *(uint16_t *)(palp3+2);
+				*(uint32_t *)(dst + 2*6 + pitch*3) = *(uint32_t *)palp3;
+				*(uint32_t *)(dst + 2*8 + pitch*3) = *(uint32_t *)palp3;
+
+				*(uint32_t *)(dst + 2*0 + pitch*4) = *(uint32_t *)palp0;
+				*(uint32_t *)(dst + 2*2 + pitch*4) = *(uint32_t *)palp0;
+				*(uint16_t *)(dst + 2*4 + pitch*4) = *(uint16_t *)palp0;
+				*(uint16_t *)(dst + 2*5 + pitch*4) = *(uint16_t *)(palp1+2);
+				*(uint32_t *)(dst + 2*6 + pitch*4) = *(uint32_t *)palp1;
+				*(uint32_t *)(dst + 2*8 + pitch*4) = *(uint32_t *)palp1;
+
 			}
 			break;
 
