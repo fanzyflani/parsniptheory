@@ -533,10 +533,10 @@ void music_play(it_module_t *mod)
 #ifdef MUSIC_INT
 #ifdef MUSIC_MONO
 	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
-		MIXER_ITINTFAST_A);
+		MIXER_INTFAST_A);
 #else
 	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
-		audio_spec.channels >= 2 ? MIXER_ITINTFAST_AS : MIXER_ITINTFAST_A);
+		audio_spec.channels >= 2 ? MIXER_INTFAST_AS : MIXER_INTFAST_A);
 #endif
 #else
 	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
