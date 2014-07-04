@@ -472,7 +472,7 @@ void ai_free(ai_t *ai);
 ai_t *ai_new(game_t *game, abuf_t *ab, int tid);
 
 // audio.c
-extern sackit_playback_t *sackit;
+extern volatile sackit_playback_t *sackit;
 
 extern snd_t *snd_splat[];
 extern snd_t *snd_step[];

@@ -155,9 +155,8 @@ static void screen_flip_16(void)
 			{
 				palp = pal_dither_16[*src][0];
 
-				memcpy(dst + 2*0 + pitch*0, palp + 0, 4);
-				memcpy(dst + 2*0 + pitch*1, palp + 8, 4);
-
+				*(uint32_t *)(dst + 2*0 + pitch*0) = *(uint32_t *)(palp + 0);
+				*(uint32_t *)(dst + 2*0 + pitch*1) = *(uint32_t *)(palp + 8);
 			}
 			break;
 

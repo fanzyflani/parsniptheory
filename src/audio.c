@@ -5,6 +5,12 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
+#ifdef MUSIC_INT
+#define AUDIO_SAMPLES 4096
+#else
+#define AUDIO_SAMPLES 2048
+#endif
+
 // These 2 tables are from here: http://wiki.multimedia.cx/index.php?title=IMA_ADPCM
 int ima_index_table[16] = {
 	-1, -1, -1, -1, 2, 4, 6, 8,
@@ -32,9 +38,9 @@ snd_t *snd_step[SND_STEP_COUNT];
 it_module_t *mod_titleff1;
 it_module_t *mod_trk1;
 it_module_t *mod_trk2;
-sackit_playback_t *sackit = NULL;
-achn_t *ac_sackit = NULL;
-snd_t *snd_sackit = NULL;
+volatile sackit_playback_t *sackit = NULL;
+volatile achn_t *ac_sackit = NULL;
+volatile snd_t *snd_sackit = NULL;
 int music_buffer_free = 0;
 
 static void music_update(void);
@@ -524,14 +530,16 @@ void music_play(it_module_t *mod)
 	}
 
 	// Create sackit playback object
-	sackit = sackit_playback_new(mod, 2048, 128,
 #ifdef MUSIC_INT
 #ifdef MUSIC_MONO
-		MIXER_IT212);
+	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
+		MIXER_ITINTFAST_A);
 #else
-		audio_spec.channels >= 2 ? MIXER_IT212S : MIXER_IT212);
+	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
+		audio_spec.channels >= 2 ? MIXER_ITINTFAST_AS : MIXER_ITINTFAST_A);
 #endif
 #else
+	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
 		audio_spec.channels >= 2 ? MIXER_IT214FS : MIXER_IT214F);
 #endif
 
@@ -692,8 +700,7 @@ int audio_init(void)
 	desired.freq = 48000;
 	desired.format = AUDIO_S16SYS;
 	desired.channels = 2;
-	//desired.samples = 4096; // This is usually long enough
-	desired.samples = 2048;
+	desired.samples = AUDIO_SAMPLES;
 	desired.callback = audio_callback;
 	desired.userdata = NULL;
 

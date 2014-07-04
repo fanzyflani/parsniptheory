@@ -311,6 +311,9 @@ int title_main(void)
 
 int titleloop(void)
 {
+#ifdef NO_TITLE
+	return 0;
+#endif
 	// PRESENTS
 	if(title_presents())
 		return 1;
