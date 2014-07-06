@@ -296,7 +296,7 @@ static void screen_flip_32(void)
 			{
 				palp = pal_main[*src];
 
-				memcpy(dst + 4*0 + pitch*0, palp, 4);
+				*(uint32_t *)(dst + 4*0 + pitch*0) = *(uint32_t *)(palp);
 
 			}
 			break;
@@ -307,10 +307,10 @@ static void screen_flip_32(void)
 			{
 				palp = pal_main[*src];
 
-				memcpy(dst + 4*0 + pitch*0, palp, 4);
-				memcpy(dst + 4*1 + pitch*0, palp, 4);
-				memcpy(dst + 4*0 + pitch*1, palp, 4);
-				memcpy(dst + 4*1 + pitch*1, palp, 4);
+				*(uint32_t *)(dst + 4*0 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*1) = *(uint32_t *)(palp);
 
 			}
 			break;
@@ -321,15 +321,15 @@ static void screen_flip_32(void)
 			{
 				palp = pal_main[*src];
 
-				memcpy(dst + 4*0 + pitch*0, palp, 4);
-				memcpy(dst + 4*1 + pitch*0, palp, 4);
-				memcpy(dst + 4*2 + pitch*0, palp, 4);
-				memcpy(dst + 4*0 + pitch*1, palp, 4);
-				memcpy(dst + 4*1 + pitch*1, palp, 4);
-				memcpy(dst + 4*2 + pitch*1, palp, 4);
-				memcpy(dst + 4*0 + pitch*2, palp, 4);
-				memcpy(dst + 4*1 + pitch*2, palp, 4);
-				memcpy(dst + 4*2 + pitch*2, palp, 4);
+				*(uint32_t *)(dst + 4*0 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*2) = *(uint32_t *)(palp);
 
 			}
 			break;
@@ -340,22 +340,22 @@ static void screen_flip_32(void)
 			{
 				palp = pal_main[*src];
 
-				memcpy(dst + 4*0 + pitch*0, palp, 4);
-				memcpy(dst + 4*1 + pitch*0, palp, 4);
-				memcpy(dst + 4*2 + pitch*0, palp, 4);
-				memcpy(dst + 4*3 + pitch*0, palp, 4);
-				memcpy(dst + 4*0 + pitch*1, palp, 4);
-				memcpy(dst + 4*1 + pitch*1, palp, 4);
-				memcpy(dst + 4*2 + pitch*1, palp, 4);
-				memcpy(dst + 4*3 + pitch*1, palp, 4);
-				memcpy(dst + 4*0 + pitch*2, palp, 4);
-				memcpy(dst + 4*1 + pitch*2, palp, 4);
-				memcpy(dst + 4*2 + pitch*2, palp, 4);
-				memcpy(dst + 4*3 + pitch*2, palp, 4);
-				memcpy(dst + 4*0 + pitch*3, palp, 4);
-				memcpy(dst + 4*1 + pitch*3, palp, 4);
-				memcpy(dst + 4*2 + pitch*3, palp, 4);
-				memcpy(dst + 4*3 + pitch*3, palp, 4);
+				*(uint32_t *)(dst + 4*0 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*3) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*3) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*3) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*3) = *(uint32_t *)(palp);
 
 			}
 			break;
@@ -366,31 +366,31 @@ static void screen_flip_32(void)
 			{
 				palp = pal_main[*src];
 
-				memcpy(dst + 4*0 + pitch*0, palp, 4);
-				memcpy(dst + 4*1 + pitch*0, palp, 4);
-				memcpy(dst + 4*2 + pitch*0, palp, 4);
-				memcpy(dst + 4*3 + pitch*0, palp, 4);
-				memcpy(dst + 4*4 + pitch*0, palp, 4);
-				memcpy(dst + 4*0 + pitch*1, palp, 4);
-				memcpy(dst + 4*1 + pitch*1, palp, 4);
-				memcpy(dst + 4*2 + pitch*1, palp, 4);
-				memcpy(dst + 4*3 + pitch*1, palp, 4);
-				memcpy(dst + 4*4 + pitch*1, palp, 4);
-				memcpy(dst + 4*0 + pitch*2, palp, 4);
-				memcpy(dst + 4*1 + pitch*2, palp, 4);
-				memcpy(dst + 4*2 + pitch*2, palp, 4);
-				memcpy(dst + 4*3 + pitch*2, palp, 4);
-				memcpy(dst + 4*4 + pitch*2, palp, 4);
-				memcpy(dst + 4*0 + pitch*3, palp, 4);
-				memcpy(dst + 4*1 + pitch*3, palp, 4);
-				memcpy(dst + 4*2 + pitch*3, palp, 4);
-				memcpy(dst + 4*3 + pitch*3, palp, 4);
-				memcpy(dst + 4*4 + pitch*3, palp, 4);
-				memcpy(dst + 4*0 + pitch*4, palp, 4);
-				memcpy(dst + 4*1 + pitch*4, palp, 4);
-				memcpy(dst + 4*2 + pitch*4, palp, 4);
-				memcpy(dst + 4*3 + pitch*4, palp, 4);
-				memcpy(dst + 4*4 + pitch*4, palp, 4);
+				*(uint32_t *)(dst + 4*0 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*4 + pitch*0) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*4 + pitch*1) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*4 + pitch*2) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*3) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*3) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*3) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*3) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*4 + pitch*3) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*0 + pitch*4) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*1 + pitch*4) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*2 + pitch*4) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*3 + pitch*4) = *(uint32_t *)(palp);
+				*(uint32_t *)(dst + 4*4 + pitch*4) = *(uint32_t *)(palp);
 			}
 			break;
 

@@ -541,6 +541,7 @@ void music_play(it_module_t *mod)
 #else
 	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
 		audio_spec.channels >= 2 ? MIXER_IT214FS : MIXER_IT214F);
+		//audio_spec.channels >= 2 ? MIXER_INTFAST_AS : MIXER_INTFAST_A);
 #endif
 
 	// Prime the buffer

@@ -1,5 +1,12 @@
 Changelog:
 
+Alpha 10:
+* Added a simple graphics setup screen
+* Added optimised 1x-through-5x scalers
+* Raspberry Pi build actually works again!
+* Raspi: Added a faster mixer to the music playroutine
+* Music playback may be a little bit less likely to crash now
+
 Alpha 9:
 * GAMEPLAY CHANGE: Added in crouch/stand mechanic. Now you can hide behind tables!
 * Added in a title screen - please let me know if I need to punch Windows in the face repeatedly to make it not crash!
