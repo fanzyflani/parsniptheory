@@ -90,17 +90,6 @@ void level_free(level_t *lv)
 {
 	int i;
 
-	if(lv->layers != NULL)
-	{
-		// Free layers
-		for(i = 0; i < lv->lcount; i++)
-			layer_free(lv->layers[i]);
-
-		// Free layer list
-		free(lv->layers);
-
-	}
-
 	if(lv->objects != NULL)
 	{
 		// Free objects
@@ -109,6 +98,17 @@ void level_free(level_t *lv)
 
 		// Free object list
 		free(lv->objects);
+
+	}
+
+	if(lv->layers != NULL)
+	{
+		// Free layers
+		for(i = 0; i < lv->lcount; i++)
+			layer_free(lv->layers[i]);
+
+		// Free layer list
+		free(lv->layers);
 
 	}
 

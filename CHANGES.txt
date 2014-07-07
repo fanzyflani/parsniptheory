@@ -1,6 +1,12 @@
 Changelog:
 
+Alpha 10a:
+* Fixed said obnoxious crash bug
+* Added fullscreen support!
+* Updated sackit (music playroutine) to the latest version - music now mixed at 48000Hz
+
 Alpha 10:
+Note, due to a crash bug, the Windows version here is actually Alpha 9.
 * Added a simple graphics setup screen
 * Added optimised 1x-through-5x scalers
 * Raspberry Pi build actually works again!

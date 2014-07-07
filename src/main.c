@@ -288,7 +288,7 @@ widget_t *menu_gen_widget(struct menu_data *mdat, const char *name)
 	g->sx = groot->w/2 - 8*strlen(name);
 	g->sy = groot->h/2 - 8;
 
-	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 10 - SHAREWARE - Spread to all your friends!");
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 10a - SHAREWARE - Spread to all your friends!");
 	g->sx = 0;
 	g->sy = 0;
 
@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
 	chdir_to_exe(argv[0]);
 
 	// General SDL setup
-	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE);
 	SDLNet_Init();
 #ifndef WIN32
 	signal(SIGINT,  SIG_DFL);
@@ -426,8 +426,7 @@ int main(int argc, char *argv[])
 	SDL_EnableUNICODE(1);
 
 	// Set up basic video mode
-	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 10)", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 10a)", NULL);
 	loadicon("dat/icon.tga");
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
 	printf("screen %p %i %i\n", screen_surface, screen_surface->w, screen_surface->h);
@@ -439,18 +438,17 @@ int main(int argc, char *argv[])
 	// Load images
 	if(!load_graphics())
 		return 0;
+	// Prepare teams
+	for(i = 0; i < TEAM_MAX; i++)
+		teams[i] = team_new(i);
 
+#ifdef __EMSCRIPTEN__
 	// Load sound
 #ifndef NO_AUDIO
 	if(!audio_init())
 		return 0;
 #endif
 	
-	// Prepare teams
-	for(i = 0; i < TEAM_MAX; i++)
-		teams[i] = team_new(i);
-
-#ifdef __EMSCRIPTEN__
 	// Play music
 	music_play(mod_trk1);
 
@@ -464,6 +462,13 @@ int main(int argc, char *argv[])
 	// Do graphics setup
 	if(!screen_setup())
 		return 0;
+
+	// Load sound
+#ifndef NO_AUDIO
+	if(!audio_init())
+		return 0;
+#endif
+	
 
 	// Do title
 #ifndef NO_AUDIO

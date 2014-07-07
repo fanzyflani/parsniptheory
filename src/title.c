@@ -140,7 +140,7 @@ int title_presents(void)
 		// Deal to palette
 		int row = title_get_time();
 
-		if(sackit->process_order == 0)
+		if(sackit == NULL || sackit->process_order == 0)
 		{
 			if(row == 65534)
 			{

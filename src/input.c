@@ -144,7 +144,7 @@ int input_poll(void)
 			if(ev.motion.y >= screen_ofy + 200*screen_scale) break;
 
 			mouse_x = (ev.motion.x - screen_ofx) / screen_scale;
-			mouse_y = (ev.motion.y - screen_ofx) / screen_scale;
+			mouse_y = (ev.motion.y - screen_ofy) / screen_scale;
 
 			break;
 

@@ -436,6 +436,87 @@ void screen_flip(void)
 	//SDL_UpdateRect(screen_surface, 0, 0, screen_surface->w, screen_surface->h);
 }
 
+int screen_setmode(int scale, int bpp, int fullscreen)
+{
+	if(fullscreen)
+	{
+		// Move a mode up (if we don't have an exact mode, dwm fucks everything up)
+		int w, h, i;
+		int bestw, besth;
+
+		w = 320 * scale;
+		h = 200 * scale;
+		SDL_Rect **r = SDL_ListModes(NULL, SDL_SWSURFACE | SDL_FULLSCREEN);
+
+		if(r == (SDL_Rect **)-1)
+		{
+			printf("No restrictions - picking exact mode\n");
+		} else if(r == (SDL_Rect **)0 || r[0] == NULL) {
+			printf("No fullscreen support!\n");
+			return 0;
+		} else {
+			bestw = r[0]->w;
+			besth = r[0]->h;
+
+			for(i = 0; r[i] != NULL; i++)
+			{
+				printf("checking mode %i x %i\n", r[i]->w, r[i]->h);
+				if(r[i]->w < w || r[i]->h < h) continue;
+
+				int dbestw = bestw - w;
+				int dbesth = besth - h;
+				int dw = r[i]->w - w;
+				int dh = r[i]->h - h;
+
+				if(dbestw < 0 || dbesth < 0 || dw*dw + dh*dh < dbestw*dbestw + dbesth*dbesth)
+				{
+					bestw = r[i]->w;
+					besth = r[i]->h;
+				}
+			}
+
+			if(bestw < w || besth < h)
+			{
+				printf("cannot find a suitable mode\n");
+				return 0;
+			}
+
+			w = bestw;
+			h = besth;
+
+			printf("picking mode %i x %i\n", w, h);
+
+		}
+		
+		//SDL_Quit(); SDL_Init(SDL_INIT_VIDEO);
+		screen_surface = SDL_SetVideoMode(w, h, bpp, SDL_SWSURFACE | SDL_FULLSCREEN);
+
+		if(screen_surface != NULL)
+		{
+			screen_ofx = (w - 320*scale)>>1;
+			screen_ofy = (h - 200*scale)>>1;
+		}
+
+	} else {
+		screen_surface = SDL_SetVideoMode(320 * scale, 200 * scale, bpp, SDL_SWSURFACE);
+
+		if(screen_surface != NULL)
+		{
+			screen_ofx = 0;
+			screen_ofy = 0;
+		}
+	}
+
+	if(screen_surface != NULL)
+	{
+		screen_scale = scale;
+		screen_bpp = bpp;
+		screen_fullscreen = fullscreen;
+	}
+
+	return screen_surface != NULL;
+}
+
 int screen_setup(void)
 {
 	// Flush input
@@ -460,6 +541,7 @@ int screen_setup(void)
 
 	int sel_bpp = screen_bpp;
 	int sel_scale = screen_scale;
+	int sel_fullscreen = 0;
 
 #define SETUP_BUTTON(x, y, w, h) (mouse_x >= (x) && mouse_y >= (y) && mouse_x < (x)+(w) && mouse_y < (y)+(h))
 #define DRAW_SETUP_BUTTON(x, y, w, h, u, s) draw_rect_d(screen, (x), (y), (w), (h), SETUP_BUTTON(x,y,w,h) ? s : u)
@@ -476,27 +558,25 @@ int screen_setup(void)
 			{
 				// GO!
 
-				screen_surface = SDL_SetVideoMode(320 * sel_scale, 200 * sel_scale, sel_bpp, SDL_SWSURFACE);
-				if(screen_surface == NULL)
+				if(!screen_setmode(sel_scale, sel_bpp, sel_fullscreen))
 				{
 					printf("FAILED TO SET VIDEO MODE. Use the test button, please!\n");
 					return 0;
-				} else {
-					screen_bpp = sel_bpp;
-					screen_scale = sel_scale;
 				}
 
 				return 1;
 
 			} else if(SETUP_BUTTON(0, screen->h-8*4, 16*6, 8*4)) {
 				// TEST
-				screen_surface = SDL_SetVideoMode(320 * sel_scale, 200 * sel_scale, sel_bpp, SDL_SWSURFACE);
-				if(screen_surface == NULL)
+				if(!screen_setmode(sel_scale, sel_bpp, sel_fullscreen))
 				{
-					screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
-				} else {
-					screen_bpp = sel_bpp;
-					screen_scale = sel_scale;
+					printf("Mode failed, reverting\n");
+					if(!screen_setmode(screen_scale, screen_bpp, screen_fullscreen))
+						abort();
+
+					sel_scale = screen_scale;
+					sel_bpp = screen_bpp;
+					sel_fullscreen = screen_fullscreen;
 				}
 
 			} else if(SETUP_BUTTON(16*1, 32+44*0+18, 16*2+4, 20)) {
@@ -526,6 +606,14 @@ int screen_setup(void)
 			} else if(SETUP_BUTTON(16*13, 32+44*1+18, 16*2+4, 20)) {
 				// Scale 5x 
 				sel_scale = 5;
+
+			} else if(SETUP_BUTTON(16*1, 32+44*2+18, 16*2+4, 20)) {
+				// Windowed
+				sel_fullscreen = 0;
+
+			} else if(SETUP_BUTTON(16*4, 32+44*2+18, 16*3+4, 20)) {
+				// Fullscreen
+				sel_fullscreen = 1;
 
 			}
 		}
@@ -560,6 +648,12 @@ int screen_setup(void)
 		draw_printf(screen, i_font16, 16, 1, 16*10, 32+44*1+20, 1, "4x");
 		DRAW_SETUP_BUTTON(16*13, 32+44*1+18, 16*2+4, 20, (sel_scale == 5 ? 4 : 3), 1);
 		draw_printf(screen, i_font16, 16, 1, 16*13, 32+44*1+20, 1, "5x");
+
+		draw_printf(screen, i_font16, 16, 1, 8, 32+44*2, 1, "FULLSCREEN");
+		DRAW_SETUP_BUTTON(16*1, 32+44*2+18, 16*2+4, 20, (sel_fullscreen == 0 ? 4 : 3), 1);
+		draw_printf(screen, i_font16, 16, 1, 16*1, 32+44*2+20, 1, "NO");
+		DRAW_SETUP_BUTTON(16*4, 32+44*2+18, 16*3+4, 20, (sel_fullscreen == 1 ? 4 : 3), 1);
+		draw_printf(screen, i_font16, 16, 1, 16*4, 32+44*2+20, 1, "YES");
 
 		// Flip and wait
 		screen_flip();

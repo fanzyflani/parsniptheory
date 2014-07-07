@@ -38,9 +38,9 @@ snd_t *snd_step[SND_STEP_COUNT];
 it_module_t *mod_titleff1;
 it_module_t *mod_trk1;
 it_module_t *mod_trk2;
-volatile sackit_playback_t *sackit = NULL;
-volatile achn_t *ac_sackit = NULL;
-volatile snd_t *snd_sackit = NULL;
+sackit_playback_t *sackit = NULL;
+achn_t *ac_sackit = NULL;
+snd_t *snd_sackit = NULL;
 int music_buffer_free = 0;
 
 static void music_update(void);
@@ -519,9 +519,9 @@ void music_play(it_module_t *mod)
 	if(snd_sackit == NULL)
 	{
 #ifdef MUSIC_MONO
-		snd_sackit = snd_alloc(65536, 0, 44100);
+		snd_sackit = snd_alloc(65536, 0, 48000);
 #else
-		snd_sackit = snd_alloc(65536, audio_spec.channels >= 2, 44100);
+		snd_sackit = snd_alloc(65536, audio_spec.channels >= 2, 48000);
 #endif
 		assert(ac_sackit == NULL);
 		ac_sackit = snd_play(snd_sackit, 0x80, 0, 0, 0, 0x100, 0, 0);
@@ -533,14 +533,18 @@ void music_play(it_module_t *mod)
 #ifdef MUSIC_INT
 #ifdef MUSIC_MONO
 	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
-		MIXER_INTFAST_A);
+		fnlist_itmixer[MIXER_INTFAST_A], 2, audio_spec.freq);
 #else
 	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
-		audio_spec.channels >= 2 ? MIXER_INTFAST_AS : MIXER_INTFAST_A);
+		fnlist_itmixer[audio_spec.channels >= 2 ? MIXER_INTFAST_AS : MIXER_INTFAST_A],
+		audio_spec.channels*2, audio_spec.freq);
 #endif
 #else
-	sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
-		audio_spec.channels >= 2 ? MIXER_IT214FS : MIXER_IT214F);
+	sackit = sackit_playback_new2(mod, AUDIO_SAMPLES, 128,
+		fnlist_itmixer[audio_spec.channels >= 2 ? MIXER_IT214FS : MIXER_IT214F],
+		audio_spec.channels*2, audio_spec.freq);
+	//sackit = sackit_playback_new(mod, AUDIO_SAMPLES, 128,
+		//audio_spec.channels >= 2 ? MIXER_IT214FS : MIXER_IT214F);
 		//audio_spec.channels >= 2 ? MIXER_INTFAST_AS : MIXER_INTFAST_A);
 #endif
 

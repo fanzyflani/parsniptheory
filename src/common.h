@@ -472,7 +472,7 @@ void ai_free(ai_t *ai);
 ai_t *ai_new(game_t *game, abuf_t *ab, int tid);
 
 // audio.c
-extern volatile sackit_playback_t *sackit;
+extern sackit_playback_t *sackit;
 
 extern snd_t *snd_splat[];
 extern snd_t *snd_step[];
@@ -626,6 +626,7 @@ extern const int face_dir[4][2];
 
 extern SDL_Surface *screen_surface;
 extern img_t *screen;
+extern int screen_fullscreen;
 extern int screen_bpp;
 extern int screen_scale;
 extern int screen_ofx;

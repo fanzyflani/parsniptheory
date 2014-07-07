@@ -16,6 +16,7 @@ const int face_dir[4][2] = {
 // Screen
 SDL_Surface *screen_surface = NULL;
 img_t *screen = NULL;
+int screen_fullscreen = 0;
 #ifdef SCREEN_BPP
 int screen_bpp = SCREEN_BPP;
 #else
