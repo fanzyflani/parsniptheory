@@ -1,5 +1,8 @@
 Changelog:
 
+Alpha 10b:
+* Fixed a crash bug when you action-click an empty tile with no player selected.
+
 Alpha 10a:
 * Fixed said obnoxious crash bug
 * Added fullscreen support!

@@ -256,7 +256,7 @@ void game_push_click(game_t *game, abuf_t *ab, int rmx, int rmy, int camx, int c
 	{
 		// Check if we have an object selected
 
-		if(ce->ob == game->selob)
+		if(game->selob != NULL && ce != NULL && ce->ob == game->selob)
 		{
 			// Crouch/uncrouch
 			abuf_write_u8(ce->ob->f.flags & OF_CROUCH ? ACT_STAND : ACT_CROUCH, ab);
