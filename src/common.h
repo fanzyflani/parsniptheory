@@ -44,6 +44,10 @@ typedef void *IPaddress;
 #include <signal.h>
 #endif
 
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
 #ifdef __EMSCRIPTEN__
 #define SDL_CreateMutex() ((void *)1)
 #define SDL_mutexP(x) (0)
@@ -433,6 +437,8 @@ struct ai
 
 	int wait;
 
+	lua_State *L;
+
 	void (*f_do_move)(ai_t *ai);
 };
 
@@ -579,6 +585,14 @@ void input_key_queue_push(uint32_t key);
 uint32_t input_key_queue_peek(void);
 uint32_t input_key_queue_pop(void);
 int input_poll(void);
+
+// lint.c
+int lint_f_astar_layer(lua_State *L);
+int lint_f_line_layer(lua_State *L);
+
+void lint_lock(void);
+void lint_unlock(void);
+int lint_init(void);
 
 // network.c
 void game_push_version(game_t *game, abuf_t *ab, int version);

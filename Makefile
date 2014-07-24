@@ -39,6 +39,7 @@ OBJS_COMMON = \
 	$(OBJDIR)/gui.o \
 	$(OBJDIR)/img.o \
 	$(OBJDIR)/input.o \
+	$(OBJDIR)/lint.o \
 	$(OBJDIR)/network.o \
 	$(OBJDIR)/obj.o \
 	$(OBJDIR)/screen.o \
@@ -71,10 +72,12 @@ LIBS_DIRS = -L/usr/local/lib
 LIBS_SDL = `sdl-config --libs` -lSDL_net
 LIBS_ZLIB = -lz
 LIBS_SACKIT = sackit/*.o
+LIBS_Lua = -llua-5.1
+INCLUDE_Lua = -I/usr/local/include/lua51/
 
-CFLAGS = -Wall -Wextra -Wno-unused-parameter -O2 -g -Isackit -Isrc -I/usr/local/include `sdl-config --cflags`
-LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) $(LIBS_SACKIT) -lm
-LDFLAGS_SERVER = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) $(LIBS_SACKIT) -lm
+CFLAGS = -Wall -Wextra -Wno-unused-parameter -O2 -g -Isackit -Isrc -I/usr/local/include `sdl-config --cflags` $(INCLUDE_Lua)
+LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) $(LIBS_SACKIT) $(LIBS_Lua) -lm
+LDFLAGS_SERVER = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) $(LIBS_SACKIT) $(LIBS_Lua) -lm
 
 all: $(BINNAME) $(BINNAME_SERVER) dat/pal1.pal $(IMAGES_PNG)
 

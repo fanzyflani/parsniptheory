@@ -1,5 +1,10 @@
 Changelog:
 
+Alpha 11:
+* Added support for Lua-based AIs (if the Lua AI gets an error, it reverts to the C AI)
+* Ported the C AI behaviour to Lua... and added crouching to it!
+* Changed the table tile to something that looks less like a vent
+
 Alpha 10b:
 * Fixed a crash bug when you action-click an empty tile with no player selected.
 
