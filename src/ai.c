@@ -248,7 +248,7 @@ void ai_lua_do_move(ai_t *ai)
 		lua_setfield(L, -2, "astar_layer");
 		lua_setglobal(L, "game");
 
-		if(luaL_dofile(L, "lua/ai/ai_b.lua"))
+		if(luaL_dofile(L, "lua/ai/main.lua"))
 		{
 			printf("ERROR: AI failed to load!\n");
 			printf("Lua says: %s\n", lua_tostring(L, -1));

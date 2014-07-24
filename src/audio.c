@@ -5,7 +5,8 @@ CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
 
 #include "common.h"
 
-#define NO_MUSIC
+// Useful for testing while listening to other music.
+//define NO_MUSIC
 
 #ifdef MUSIC_INT
 #define AUDIO_SAMPLES 4096
