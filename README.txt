@@ -2,9 +2,13 @@ Parsnip Theory
 Copyright (c) 2014, fanzyflani. All rights reserved.
 See LICENCE.txt for licensing details.
 
-This program is SHAREWARE. Unfortunately, there is no "registered version" yet, as this is currently in ALPHA TESTING. That means this ISN'T FINISHED.
+This program is now OPEN SOURCE. Share it however you like... although you should probably include the LICENCE.txt file.
 
-Please, if you're sharing this program, make sure you share the unmodified files. (You can share modified files, just make sure you have unmodified files handy)
+If you want to build this, you may want to fight with the Makefile first.
+Also, read autobuild.sh for how I actually build this - I use different systems to do the Linux builds, though.
+
+Here's my general routine:
+cd sackit && gmake -j8 && cd .. && gmake -j8 && ./parsniptheory
 
 ----
 

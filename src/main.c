@@ -1,6 +1,24 @@
 /*
-Copyright (c) 2014 fanzyflani. All rights reserved.
-CONFIDENTIAL PROPERTY OF FANZYFLANI, DO NOT DISTRIBUTE
+Parsnip Theory
+Copyright (c) 2014, fanzyflani
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
 */
 
 #include "common.h"
@@ -288,11 +306,11 @@ widget_t *menu_gen_widget(struct menu_data *mdat, const char *name)
 	g->sx = groot->w/2 - 8*strlen(name);
 	g->sy = groot->h/2 - 8;
 
-	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 11 - SHAREWARE - Spread to all your friends!");
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 12 - OPEN SOURCE - Spread to all your friends!");
 	g->sx = 0;
 	g->sy = 0;
 
-	g = gui_new(gui_label57_init, groot, groot->w, 7, "Copyright (C) 2014, fanzyflani. All rights reserved. https://fanzyflani.itch.io");
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Copyright (C) 2014, fanzyflani. https://fanzyflani.itch.io");
 	g->sx = 0;
 	g->sy = groot->h-7;
 
@@ -426,7 +444,7 @@ int main(int argc, char *argv[])
 	SDL_EnableUNICODE(1);
 
 	// Set up basic video mode
-	SDL_WM_SetCaption("Parsnip Theory - SHAREWARE (alpha 11)", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - OPEN SOURCE (alpha 12)", NULL);
 	loadicon("dat/icon.tga");
 	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
 	printf("screen %p %i %i\n", screen_surface, screen_surface->w, screen_surface->h);

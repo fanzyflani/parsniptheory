@@ -1,5 +1,19 @@
 Changelog:
 
+Alpha 12:
+* Finally added in the lua/ directory. Really sorry about this!
+* Free Open Source Software release.
+No longer attempting to sell this software,
+but if you want to throw money at me, there should be a tip jar on the itch.io site.
+
+The Linux builds are Alpha 11, which are functionally identical to Alpha 12,
+just with a few strings changed here and there.
+
+Yes, the build system is a mess. Look into autobuild.sh for how stuff's built.
+
+I haven't got Lua set up for the Emscripten HTML5 build, so that's currently broken,
+but the file I would normally use is esbuild.sh.
+
 Alpha 11:
 * Added support for Lua-based AIs (if the Lua AI gets an error, it reverts to the C AI)
 * Ported the C AI behaviour to Lua... and added crouching to it!
