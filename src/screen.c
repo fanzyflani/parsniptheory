@@ -462,8 +462,8 @@ int screen_setmode(int scale, int bpp, int fullscreen)
 		int w, h, i;
 		int bestw, besth;
 
-		w = 320 * scale;
-		h = 200 * scale;
+		w = screen_width * scale;
+		h = screen_height * scale;
 		SDL_Rect **r = SDL_ListModes(NULL, SDL_SWSURFACE | SDL_FULLSCREEN);
 
 		if(r == (SDL_Rect **)-1)
@@ -511,12 +511,12 @@ int screen_setmode(int scale, int bpp, int fullscreen)
 
 		if(screen_surface != NULL)
 		{
-			screen_ofx = (w - 320*scale)>>1;
-			screen_ofy = (h - 200*scale)>>1;
+			screen_ofx = (w - screen_width*scale)>>1;
+			screen_ofy = (h - screen_height*scale)>>1;
 		}
 
 	} else {
-		screen_surface = SDL_SetVideoMode(320 * scale, 200 * scale, bpp, SDL_SWSURFACE);
+		screen_surface = SDL_SetVideoMode(screen_width * scale, screen_height * scale, bpp, SDL_SWSURFACE);
 
 		if(screen_surface != NULL)
 		{

@@ -145,13 +145,13 @@ void ai_normal_do_move(ai_t *ai)
 			printf("enemy LoS\n");
 #endif
 
-			game->camx = tob->f.cx*32+16 - 160;
-			game->camy = tob->f.cy*24+12 - 100;
+			game->camx = tob->f.cx*32+16 - screen_width/2;
+			game->camy = tob->f.cy*24+12 - screen_height/2;
 			if(game->camx < 0) game->camx = 0;
 			if(game->camy < 0) game->camy = 0;
 			// TODO: not hardcode this
-			if(game->camx > 32*40 - 320) game->camx = 32*40 - 320;
-			if(game->camy > 32*40 - 320) game->camy = 32*40 - 320;
+			if(game->camx > 32*40 - screen_width) game->camx = 32*40 - screen_width;
+			if(game->camy > 32*40 - screen_width) game->camy = 32*40 - screen_width;
 			game->mx = tob->f.cx*32+16 - game->camx;
 			game->my = tob->f.cy*24+12 - game->camy;
 			game_push_hover(game, ai->ab, game->mx, game->my, game->camx, game->camy);
@@ -190,13 +190,13 @@ void ai_normal_do_move(ai_t *ai)
 
 		if(asl >= 1)
 		{
-			game->camx = ob->f.cx*32+16 - 160;
-			game->camy = ob->f.cy*24+12 - 100;
+			game->camx = ob->f.cx*32+16 - screen_width/2;
+			game->camy = ob->f.cy*24+12 - screen_height/2;
 			if(game->camx < 0) game->camx = 0;
 			if(game->camy < 0) game->camy = 0;
 			// TODO: not hardcode this
-			if(game->camx > 32*40 - 320) game->camx = 32*40 - 320;
-			if(game->camy > 32*40 - 320) game->camy = 32*40 - 320;
+			if(game->camx > 32*40 - screen_width) game->camx = 32*40 - screen_width;
+			if(game->camy > 32*40 - screen_width) game->camy = 32*40 - screen_width;
 
 			asl = 1;
 			if(asl > ob->steps_left)
@@ -493,13 +493,13 @@ void ai_lua_do_move(ai_t *ai)
 			printf("Reverting to C behaviour.\n");
 			ai->f_do_move = ai_normal_do_move;
 		} else {
-			game->camx = tx*32+16 - 160;
-			game->camy = ty*24+12 - 100;
+			game->camx = tx*32+16 - screen_width/2;
+			game->camy = ty*24+12 - screen_height/2;
 			if(game->camx < 0) game->camx = 0;
 			if(game->camy < 0) game->camy = 0;
 			// TODO: not hardcode this
-			if(game->camx > 32*40 - 320) game->camx = 32*40 - 320;
-			if(game->camy > 32*40 - 320) game->camy = 32*40 - 320;
+			if(game->camx > 32*40 - screen_width) game->camx = 32*40 - screen_width;
+			if(game->camy > 32*40 - screen_width) game->camy = 32*40 - screen_width;
 			game->mx = tx*32+16 - game->camx;
 			game->my = ty*24+12 - game->camy;
 			game_push_hover(game, ai->ab, game->mx, game->my, game->camx, game->camy);
@@ -540,15 +540,15 @@ void ai_lua_do_move(ai_t *ai)
 			printf("Reverting to C behaviour.\n");
 			ai->f_do_move = ai_normal_do_move;
 		} else {
-			game->camx = ob->f.cx*32+16 - 160;
-			game->camy = ob->f.cy*24+12 - 100;
+			game->camx = ob->f.cx*32+16 - screen_width/2;
+			game->camy = ob->f.cy*24+12 - screen_height/2;
 			if(game->camx < 0) game->camx = 0;
 			if(game->camy < 0) game->camy = 0;
 			// TODO: not hardcode this
-			if(game->camx > 32*40 - 320) game->camx = 32*40 - 320;
-			if(game->camy > 32*40 - 320) game->camy = 32*40 - 320;
-			game->mx = tx*32+16 - game->camx;
-			game->my = ty*24+12 - game->camy;
+			if(game->camx > 32*40 - screen_width) game->camx = 32*40 - screen_width;
+			if(game->camy > 32*40 - screen_width) game->camy = 32*40 - screen_width;
+			game->mx = ob->f.cx*32+16 - game->camx;
+			game->my = ob->f.cy*24+12 - game->camy;
 			game_push_hover(game, ai->ab, game->mx, game->my, game->camx, game->camy);
 
 			abuf_write_u8(ACT_SELECT, ai->ab);
@@ -588,13 +588,13 @@ void ai_lua_do_move(ai_t *ai)
 			// TODO: Actually do A*
 			int asl = 1;
 
-			game->camx = ob->f.cx*32+16 - 160;
-			game->camy = ob->f.cy*24+12 - 100;
+			game->camx = ob->f.cx*32+16 - screen_width/2;
+			game->camy = ob->f.cy*24+12 - screen_height/2;
 			if(game->camx < 0) game->camx = 0;
 			if(game->camy < 0) game->camy = 0;
 			// TODO: not hardcode this
-			if(game->camx > 32*40 - 320) game->camx = 32*40 - 320;
-			if(game->camy > 32*40 - 320) game->camy = 32*40 - 320;
+			if(game->camx > 32*40 - screen_width) game->camx = 32*40 - screen_width;
+			if(game->camy > 32*40 - screen_width) game->camy = 32*40 - screen_width;
 			game->mx = tx*32+16 - game->camx;
 			game->my = ty*24+12 - game->camy;
 			game_push_hover(game, ai->ab, game->mx, game->my, game->camx, game->camy);

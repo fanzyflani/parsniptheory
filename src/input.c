@@ -118,6 +118,12 @@ int input_poll(void)
 			break;
 
 		case SDL_KEYDOWN:
+			if(ev.key.keysym.sym == SDLK_F10)
+			{
+				ret = 1;
+				break;
+			}
+
 			if(ev.key.keysym.sym < SDLK_LAST)
 				key_state[ev.key.keysym.sym] = 1;
 
@@ -129,6 +135,11 @@ int input_poll(void)
 			break;
 
 		case SDL_KEYUP:
+			if(ev.key.keysym.sym == SDLK_F10)
+			{
+				break;
+			}
+
 			if(ev.key.keysym.sym < SDLK_LAST)
 				key_state[ev.key.keysym.sym] = 0;
 
@@ -158,8 +169,8 @@ int input_poll(void)
 		case SDL_MOUSEMOTION:
 			if(ev.motion.x < screen_ofx) break;
 			if(ev.motion.y < screen_ofy) break;
-			if(ev.motion.x >= screen_ofx + 320*screen_scale) break;
-			if(ev.motion.y >= screen_ofy + 200*screen_scale) break;
+			if(ev.motion.x >= screen_ofx + screen_width*screen_scale) break;
+			if(ev.motion.y >= screen_ofy + screen_height*screen_scale) break;
 
 			mouse_x = (ev.motion.x - screen_ofx) / screen_scale;
 			mouse_y = (ev.motion.y - screen_ofy) / screen_scale;

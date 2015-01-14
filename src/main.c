@@ -306,7 +306,7 @@ widget_t *menu_gen_widget(struct menu_data *mdat, const char *name)
 	g->sx = groot->w/2 - 8*strlen(name);
 	g->sy = groot->h/2 - 8;
 
-	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 12 - OPEN SOURCE - Spread to all your friends!");
+	g = gui_new(gui_label57_init, groot, groot->w, 7, "Alpha 13 - OPEN SOURCE - Spread to all your friends!");
 	g->sx = 0;
 	g->sy = 0;
 
@@ -351,10 +351,12 @@ int menuloop(int menuid)
 		screen_plasma();
 
 		// Draw title card
+		int ttlx = (screen_width-320)/2;
+		int ttly = (screen_height-200)/2;
 		/**/ if(menuid == 0) draw_img_trans_cmap_d_sd(screen, i_title[1],
-			0, 0, 160, 200, 320, 200, 0, cmaps[i_title[1]->cmidx].data);
+			ttlx, ttly, 160, 200, 320, 200, 0, cmaps[i_title[1]->cmidx].data);
 		else if(menuid == 2) draw_img_trans_cmap_d_sd(screen, i_title[0],
-			0, 0, 0, 0, 320, 200, 0, cmaps[i_title[0]->cmidx].data);
+			ttlx, ttly, 0, 0, 320, 200, 0, cmaps[i_title[0]->cmidx].data);
 
 
 		// Pick menu
@@ -444,11 +446,14 @@ int main(int argc, char *argv[])
 	SDL_EnableUNICODE(1);
 
 	// Set up basic video mode
-	SDL_WM_SetCaption("Parsnip Theory - OPEN SOURCE (alpha 12)", NULL);
+	SDL_WM_SetCaption("Parsnip Theory - OPEN SOURCE (alpha 13)", NULL);
 	loadicon("dat/icon.tga");
-	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, SDL_SWSURFACE);
+	screen_surface = SDL_SetVideoMode(
+		screen_width * screen_scale,
+		screen_height * screen_scale,
+		screen_bpp, SDL_SWSURFACE);
 	printf("screen %p %i %i\n", screen_surface, screen_surface->w, screen_surface->h);
-	screen = img_new(320, 200);
+	screen = img_new(screen_width, screen_height);
 
 	// Load palette and colourmaps
 	load_palette("dat/pal1.pal");

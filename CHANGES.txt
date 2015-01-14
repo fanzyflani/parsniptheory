@@ -1,5 +1,11 @@
 Changelog:
 
+Alpha 13:
+NOT RELEASED YET
+* Support for resolutions other than 320x200!
+* Probably fixed a minor issue where AI crouching would put the mouse in a weird spot.
+* Added F10 as an "exit" shortcut, just in case you're using, say, svgalib.
+
 Alpha 12:
 * Finally added in the lua/ directory. Really sorry about this!
 * Free Open Source Software release.

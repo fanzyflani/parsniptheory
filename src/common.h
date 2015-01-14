@@ -661,6 +661,8 @@ extern img_t *screen;
 extern int screen_fullscreen;
 extern int screen_bpp;
 extern int screen_scale;
+extern int screen_width;
+extern int screen_height;
 extern int screen_ofx;
 extern int screen_ofy;
 

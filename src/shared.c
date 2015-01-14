@@ -45,6 +45,13 @@ int screen_scale = SCREEN_SCALE;
 #else
 int screen_scale = 2;
 #endif
+#if defined(SCREEN_WIDTH) || defined(SCREEN_HEIGHT)
+int screen_width = SCREEN_WIDTH;
+int screen_height = SCREEN_HEIGHT;
+#else
+int screen_width = 320;
+int screen_height = 200;
+#endif
 int screen_ofx = 0;
 int screen_ofy = 0;
 

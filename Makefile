@@ -75,9 +75,11 @@ LIBS_SACKIT = sackit/*.o
 LIBS_Lua = -llua-5.1
 INCLUDE_Lua = -I/usr/local/include/lua51/
 
-CFLAGS = -Wall -Wextra -Wno-unused-parameter -O2 -g -Isackit -Isrc -I/usr/local/include `sdl-config --cflags` $(INCLUDE_Lua)
-LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) $(LIBS_SACKIT) $(LIBS_Lua) -lm
+CFLAGS = -Wall -Wextra -Wno-unused-parameter -O2 -g -Isackit -Isrc -I/usr/local/include `sdl-config --cflags` $(INCLUDE_Lua) $(CFLAGS_EXTRA)
+LDFLAGS = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) $(LIBS_SACKIT) $(LIBS_Lua) -lm $(LDFLAGS_EXTRA)
 LDFLAGS_SERVER = -O2 -g $(LIBS_DIRS) $(LIBS_SDL) $(LIBS_ZLIB) $(LIBS_SACKIT) $(LIBS_Lua) -lm
+CFLAGS_EXTRA =
+LDFLAGS_EXTRA =
 
 all: $(BINNAME) $(BINNAME_SERVER) dat/pal1.pal $(IMAGES_PNG)
 

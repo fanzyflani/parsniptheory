@@ -275,8 +275,8 @@ void draw_layer(img_t *dst, layer_t *ar, int dx, int dy)
 	// Get cell boundaries
 	cx1 = dx / 32;
 	cy1 = dy / 24;
-	cx2 = (dx + 320 -1) / 32;
-	cy2 = (dy + 200 -1) / 24;
+	cx2 = (dx + screen_width -1) / 32;
+	cy2 = (dy + screen_height -1) / 24;
 
 	// Clamp to layer boundary
 	if(cx1 < ar->x) cx1 = ar->x;

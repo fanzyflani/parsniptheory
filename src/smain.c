@@ -41,9 +41,12 @@ int main(int argc, char *argv[])
 
 	// Set up basic video mode
 	// TODO: Video mode selector
-	SDL_WM_SetCaption("Parsnip SERVER - OPEN SOURCE (alpha 12)", NULL);
-	screen_surface = SDL_SetVideoMode(320 * screen_scale, 200 * screen_scale, screen_bpp, 0);
-	screen = img_new(320, 200);
+	SDL_WM_SetCaption("Parsnip SERVER - OPEN SOURCE (alpha 13)", NULL);
+	screen_surface = SDL_SetVideoMode(
+		screen_width * screen_scale,
+		screen_height * screen_scale,
+		screen_bpp, 0);
+	screen = img_new(screen_width, screen_height);
 
 	// Load palette and colourmaps
 	load_palette("dat/pal1.pal");

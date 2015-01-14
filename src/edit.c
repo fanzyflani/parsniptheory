@@ -49,10 +49,10 @@ void editloop_draw(void)
 	// Draw a grid
 	if(key_state[SDLK_g])
 	{
-		for(y = smod(-edit_camy-1, 24); y < 200; y += 24)
-			draw_dot_hline_d(screen, 0, y, 320, 2);
-		for(x = smod(-edit_camx-1, 32); x < 320; x += 32)
-			draw_dot_vline_d(screen, x, 0, 200, 2);
+		for(y = smod(-edit_camy-1, 24); y < screen_height; y += 24)
+			draw_dot_hline_d(screen, 0, y, screen_width, 2);
+		for(x = smod(-edit_camx-1, 32); x < screen_width; x += 32)
+			draw_dot_vline_d(screen, x, 0, screen_height, 2);
 	}
 
 	// Draw the current layer boundaries
@@ -72,10 +72,10 @@ void edit_tselloop_draw(void)
 	layer_t *ay;
 
 	// Calculate camera offset
-	const int tcamx_spread = 32*16 - 320;
-	const int tcamy_spread = 24*16 - 200;
-	int tcamx = (mouse_x * tcamx_spread) / 320;
-	int tcamy = (mouse_y * tcamy_spread) / 200;
+	const int tcamx_spread = 32*16 - screen_width;
+	const int tcamy_spread = 24*16 - screen_height;
+	int tcamx = (mouse_x * tcamx_spread) / screen_width;
+	int tcamy = (mouse_y * tcamy_spread) / screen_height;
 
 	// Get tile cell
 	int cx = (mouse_x + tcamx) / 32;
@@ -93,10 +93,10 @@ void edit_tselloop_draw(void)
 		32*16, 24*16, 0, cm_tiles1);
 
 	// Draw a grid
-	for(y = smod(-tcamy-1, 24); y < 200; y += 24)
-		draw_dot_hline_d(screen, 0, y, 320, 2);
-	for(x = smod(-tcamx-1, 32); x < 320; x += 32)
-		draw_dot_vline_d(screen, x, 0, 200, 2);
+	for(y = smod(-tcamy-1, 24); y < screen_height; y += 24)
+		draw_dot_hline_d(screen, 0, y, screen_width, 2);
+	for(x = smod(-tcamx-1, 32); x < screen_width; x += 32)
+		draw_dot_vline_d(screen, x, 0, screen_height, 2);
 	
 	// Draw a box around the selected tile
 	draw_border_d(screen, cx*32-tcamx, cy*24-tcamy, 32, 24, 1);
@@ -125,10 +125,10 @@ int edit_tselloop(void)
 			// Tile select
 
 			// Calculate camera offset
-			const int tcamx_spread = 32*16 - 320;
-			const int tcamy_spread = 24*16 - 200;
-			int tcamx = (mouse_x * tcamx_spread) / 320;
-			int tcamy = (mouse_y * tcamy_spread) / 200;
+			const int tcamx_spread = 32*16 - screen_width;
+			const int tcamy_spread = 24*16 - screen_height;
+			int tcamx = (mouse_x * tcamx_spread) / screen_width;
+			int tcamy = (mouse_y * tcamy_spread) / screen_height;
 
 			// Get tile
 			int cx = (mouse_x + tcamx) / 32;
